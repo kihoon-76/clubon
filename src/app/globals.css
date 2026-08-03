@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   ClubOn Design System
+   매트 블랙 / 차콜 배경 · 샴페인 골드 & 브러시드 실버 강조 · 아이보리 타이포
+   다크모드 우선. 네온·카지노·선정적 비주얼 금지.
+   ========================================================================= */
+
+@theme {
+  /* Surfaces */
+  --color-ink: #0b0b0c;
+  --color-surface: #121214;
+  --color-surface-raised: #191a1d;
+  --color-surface-overlay: #212227;
+  --color-line: #2b2d33;
+  --color-line-strong: #3a3d45;
+
+  /* Type */
+  --color-ivory: #f4f1ea;
+  --color-muted: #9a968d;
+  --color-faint: #6b6862;
+
+  /* Accents */
+  --color-champagne: #d8be86;
+  --color-champagne-soft: #ebd9ae;
+  --color-champagne-dim: #8c7a52;
+  --color-silver: #b9bcc2;
+
+  /* Semantic — 채도를 낮춰 클럽 톤을 유지 */
+  --color-danger: #c4695f;
+  --color-danger-dim: #4a2723;
+  --color-success: #7e9b7a;
+  --color-success-dim: #26332a;
+  --color-warn: #c9a45c;
+  --color-warn-dim: #3d3320;
+
+  /* Fonts */
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+  --font-sans: var(--font-noto-kr), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  /* Radii */
+  --radius-card: 20px;
+  --radius-control: 12px;
+
+  /* Motion */
+  --ease-club: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-ivory);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: var(--color-champagne-dim);
+    color: var(--color-ivory);
+  }
+
+  /* 키보드 포커스만 링을 표시 */
+  :focus-visible {
+    outline: 2px solid var(--color-champagne);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::placeholder {
+    color: var(--color-faint);
+  }
+
+  /* 스크롤바 (Firefox / WebKit) */
+  * {
+    scrollbar-color: var(--color-line-strong) transparent;
+    scrollbar-width: thin;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* 클럽 전반의 은은한 골드 배경 광원 */
+  .club-ambience {
+    background-image:
+      radial-gradient(
+        60rem 40rem at 15% -10%,
+        rgba(216, 190, 134, 0.09),
+        transparent 60%
+      ),
+      radial-gradient(
+        50rem 36rem at 95% 8%,
+        rgba(185, 188, 194, 0.05),
+        transparent 60%
+      );
+  }
+
+  /* 카드 상단 헤어라인 골드 */
+  .hairline-top {
+    position: relative;
+  }
+  .hairline-top::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(216, 190, 134, 0.55),
+      transparent
+    );
+  }
+
+  .label-caps {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.6875rem;
+    color: var(--color-champagne);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
