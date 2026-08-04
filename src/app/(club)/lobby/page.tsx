@@ -51,7 +51,9 @@ export default async function LobbyPage() {
       </h1>
       <p className="mt-4 flex items-center gap-2 text-[0.9375rem] text-muted">
         <span aria-hidden className="size-1.5 rounded-full bg-success" />
-        지금 영업 중입니다 · {status.closesAtText}까지
+        {status.closesAtText
+          ? `지금 영업 중입니다 · ${status.closesAtText}까지`
+          : "지금 영업 중입니다"}
       </p>
 
       {activeTable ? (

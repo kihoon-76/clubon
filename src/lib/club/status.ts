@@ -21,6 +21,17 @@ export function describeClubStatus(
   hours: OperatingHour[],
   now: Date,
 ): ClubStatusView {
+  // 미리보기 편의: 기본적으로 운영시간 제한을 해제해 항상 영업 중으로 표시합니다.
+  // 실제 운영시간 게이트를 적용하려면 CLUBON_ENFORCE_HOURS=1 로 실행하세요.
+  if (process.env.CLUBON_ENFORCE_HOURS !== "1") {
+    return {
+      isOpen: true,
+      short: "상시 오픈",
+      opensAtText: null,
+      closesAtText: null,
+    };
+  }
+
   const status = getClubStatus(club, hours, now);
   const tz = club.timezone;
 
