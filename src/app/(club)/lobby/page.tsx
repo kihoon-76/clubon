@@ -1,4 +1,4 @@
-import { Plus, TicketCheck, Users } from "lucide-react";
+import { ArrowRight, Plus, Sparkles, TicketCheck, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { Container } from "@/components/layout/container";
@@ -59,7 +59,7 @@ export default async function LobbyPage() {
           <CardBody className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="label-caps">진행 중인 테이블</span>
+                <span className="label-caps">진행 중인 라운지</span>
                 <Badge tone="gold">
                   {TABLE_STATE_LABEL[activeTable.state] ?? activeTable.state}
                 </Badge>
@@ -75,34 +75,52 @@ export default async function LobbyPage() {
                 </span>
               </p>
             </div>
-            <ButtonLink href={`/tables/${activeTable.id}`} className="shrink-0">
-              테이블로 돌아가기
+            <ButtonLink href={`/lounges/${activeTable.id}`} className="shrink-0">
+              라운지로 돌아가기
             </ButtonLink>
           </CardBody>
         </Card>
       ) : (
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           <ActionCard
-            href="/tables/new"
+            href="/lounges/new"
             icon={Plus}
-            title="테이블 만들기"
-            body="2~4명 테이블을 열고 친구를 초대하세요. 준비되면 AI 웨이터가 어울리는 다른 테이블을 찾아드립니다."
-            cta="새 테이블 열기"
+            title="라운지 만들기"
+            body="2~4명 라운지를 열고 친구를 초대하세요. 준비되면 AI 웨이터가 어울리는 다른 라운지를 찾아드립니다."
+            cta="새 라운지 열기"
           />
           <ActionCard
-            href="/tables/join"
+            href="/lounges/join"
             icon={TicketCheck}
             title="초대코드로 참여"
-            body="친구에게 받은 초대코드로 이미 만들어진 테이블에 합류하세요."
+            body="친구에게 받은 초대코드로 이미 만들어진 라운지에 합류하세요."
             cta="코드 입력하기"
             variant="secondary"
           />
         </div>
       )}
 
+      {/* AI 웨이터 진입 */}
+      <ButtonLink
+        href="/waiters"
+        variant="secondary"
+        className="mt-5 h-auto w-full justify-between gap-4 px-6 py-5"
+      >
+        <span className="flex items-center gap-3">
+          <Sparkles aria-hidden className="size-5 text-champagne" />
+          <span className="flex flex-col items-start">
+            <span className="text-ivory">AI 웨이터 만나보기</span>
+            <span className="text-xs text-muted">
+              열 명의 집사 중 오늘의 호스트를 골라보세요
+            </span>
+          </span>
+        </span>
+        <ArrowRight aria-hidden className="size-4 text-champagne" />
+      </ButtonLink>
+
       <p className="mt-10 max-w-2xl text-sm leading-relaxed text-faint">
         모든 대화는 최소 4명 이상의 그룹으로 시작합니다. 1:1 매칭은 제공하지
-        않으며, 합석은 양쪽 테이블이 모두 수락해야 열립니다.
+        않으며, 합석은 양쪽 라운지가 모두 수락해야 열립니다.
       </p>
     </Container>
   );
