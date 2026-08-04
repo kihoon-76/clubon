@@ -111,7 +111,7 @@ export default async function LobbyPage() {
           <span className="flex flex-col items-start">
             <span className="text-ivory">AI 웨이터 만나보기</span>
             <span className="text-xs text-muted">
-              열 명의 집사 중 오늘의 호스트를 골라보세요
+              열 명의 라운지 매니저 중 오늘의 호스트를 골라보세요
             </span>
           </span>
         </span>
