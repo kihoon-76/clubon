@@ -1,12 +1,20 @@
 import {
+  ArrowRight,
+  Bot,
+  ChevronDown,
   Clock,
   Eye,
   Handshake,
+  MessageCircle,
   MessageSquare,
+  Music2,
+  ScanFace,
   ShieldCheck,
   Sparkles,
   UserRoundCheck,
   Users,
+  VenetianMask,
+  WineOff,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -19,7 +27,8 @@ export default function LandingPage() {
   return (
     <>
       <Hero />
-      <Promises />
+      <StatusMarquee />
+      <BentoUsp />
       <HowItWorks />
       <Waiter />
       <MaskAndReveal />
@@ -35,14 +44,18 @@ export default function LandingPage() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <Container className="pt-20 pb-24 sm:pt-28 sm:pb-32">
-        <div className="max-w-3xl">
+      {/* 시네마틱 앰비언트 배경 + 비네트 */}
+      <div aria-hidden className="hero-atmosphere absolute inset-0" />
+      <div aria-hidden className="vignette absolute inset-0" />
+
+      <Container className="relative flex min-h-[86vh] flex-col justify-center pt-20 pb-24 sm:pt-24 sm:pb-28">
+        <div className="reveal max-w-3xl">
           <Badge tone="gold">만 19세 이상 · 회원제 · 술 없는 클럽</Badge>
 
-          <h1 className="mt-7 font-display text-[2.375rem] leading-[1.1] text-ivory sm:text-6xl sm:leading-[1.08] lg:text-[4.25rem]">
+          <h1 className="mt-7 font-display text-[2.5rem] leading-[1.08] text-ivory sm:text-6xl sm:leading-[1.06] lg:text-[4.5rem]">
             어디에 있든,
             <br />
-            <span className="text-champagne">프라이빗 소셜 클럽.</span>
+            <span className="italic text-champagne">프라이빗 소셜 클럽.</span>
           </h1>
 
           <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
@@ -51,12 +64,18 @@ function Hero() {
             공개합니다.
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <ButtonLink href="/signup" size="lg">
+          <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
+            <ButtonLink href="/signup" size="lg" className="gold-glow">
               입장 신청하기
             </ButtonLink>
-            <ButtonLink href="#how" variant="secondary" size="lg">
-              이용 방식 보기
+            <ButtonLink
+              href="#how"
+              variant="ghost"
+              size="lg"
+              className="group px-1 text-ivory/70 hover:text-champagne"
+            >
+              이용 방식 살펴보기
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </ButtonLink>
           </div>
 
@@ -65,44 +84,225 @@ function Hero() {
             시작됩니다.
           </p>
         </div>
+
+        <a
+          href="#how"
+          aria-label="아래로 스크롤"
+          className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 flex-col items-center text-champagne/50 transition-colors hover:text-champagne sm:flex"
+        >
+          <span className="label-caps mb-2 text-champagne/50">Discover</span>
+          <ChevronDown
+            className="size-5"
+            style={{ animation: "soft-bounce 2s var(--ease-club) infinite" }}
+          />
+        </a>
       </Container>
     </section>
   );
 }
 
-/* -------------------------------------------------------------- Promises */
+/* -------------------------------------------------------- Status marquee */
 
-const PROMISES = [
-  {
-    title: "술이 없습니다",
-    body: "음주 없이도 대화는 충분히 즐겁습니다. 다음 날을 망치지 않는 저녁을 제안합니다.",
-  },
-  {
-    title: "이동이 없습니다",
-    body: "예약도, 웨이팅도, 귀가 걱정도 없습니다. 있는 자리에서 그대로 입장하세요.",
-  },
-  {
-    title: "어색한 첫 장소가 없습니다",
-    body: "처음부터 그룹으로 만나기 때문에, 마주 앉은 두 사람의 부담이 없습니다.",
-  },
+const MARQUEE_ITEMS = [
+  "회원제 전용",
+  "저녁 6시 – 새벽 4시",
+  "본인확인 필수",
+  "그룹으로만 대화",
+  "상호 동의 얼굴 공개",
+  "촬영·녹화 금지",
 ];
 
-function Promises() {
+function MarqueeRow({ ariaHidden = false }: { ariaHidden?: boolean }) {
   return (
-    <section className="border-y border-line/70 bg-surface/50">
-      <Container className="grid gap-10 py-16 sm:grid-cols-3 sm:py-20">
-        {PROMISES.map((item) => (
-          <div key={item.title}>
-            <h2 className="font-display text-2xl text-champagne">
-              {item.title}
-            </h2>
-            <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted">
-              {item.body}
+    <div
+      aria-hidden={ariaHidden || undefined}
+      className="marquee items-center gap-6 pr-6"
+    >
+      {MARQUEE_ITEMS.map((item, i) => (
+        <span key={`${item}-${i}`} className="flex items-center gap-6">
+          <span className="label-caps whitespace-nowrap text-champagne/80">
+            {item}
+          </span>
+          <span
+            aria-hidden
+            className="size-1.5 shrink-0 rounded-full bg-champagne/50"
+          />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StatusMarquee() {
+  return (
+    <div className="marquee-track overflow-hidden border-y border-line/70 bg-surface-raised/60 py-3.5">
+      <MarqueeRow />
+      <MarqueeRow ariaHidden />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- Bento USP */
+
+function BentoUsp() {
+  return (
+    <section className="scroll-mt-20">
+      <Container className="py-20 sm:py-28">
+        <SectionHeading
+          eyebrow="ClubOn이 다른 이유"
+          title="더 진짜에 가까운 만남을, 더 낮은 부담으로"
+          description="술도, 이동도, 어색한 첫 장소도 없습니다. 대화가 먼저인 저녁을 위한 네 가지 약속."
+        />
+
+        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-12">
+          {/* 1. 술이 없습니다 */}
+          <article className="hairline-top group relative flex flex-col justify-between overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-raised p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] transition-colors hover:border-champagne-dim md:col-span-7 md:p-10">
+            <div className="relative z-10 max-w-md">
+              <IconRing icon={WineOff} />
+              <h3 className="mt-8 font-display text-2xl text-ivory sm:text-[1.75rem]">
+                술 없이 만나는 대화
+              </h3>
+              <p className="mt-4 leading-relaxed text-muted">
+                취기 없이도 저녁은 충분히 즐겁습니다. 다음 날을 망치지 않는,
+                맑은 정신의 이야기와 재치를 위한 자리입니다.
+              </p>
+            </div>
+            <WineOff
+              aria-hidden
+              className="pointer-events-none absolute -right-6 -bottom-6 size-48 text-champagne/[0.06] transition-transform duration-700 group-hover:scale-110"
+              strokeWidth={1}
+            />
+          </article>
+
+          {/* 2. 그룹 기반 매칭 */}
+          <article className="hairline-top group relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-raised p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] transition-colors hover:border-champagne-dim md:col-span-5 md:p-10">
+            <IconRing icon={Users} />
+            <h3 className="mt-8 font-display text-2xl text-ivory sm:text-[1.75rem]">
+              그룹 기반 매칭
+            </h3>
+            <p className="mt-4 leading-relaxed text-muted">
+              어색한 1:1이 아닙니다. 친구와 한 테이블로 입장하거나 대기
+              라운지에서 합류해, 자연스러운 그룹 분위기에서 시작합니다.
             </p>
-          </div>
-        ))}
+            <div
+              aria-hidden
+              className="mt-8 flex items-center gap-2.5"
+              title="한 테이블은 2~4명, 합석 룸은 최소 4명"
+            >
+              {[0, 1, 2, 3].map((i) => (
+                <span
+                  key={i}
+                  className="flex size-9 items-center justify-center rounded-full border border-champagne-dim/50 bg-surface-overlay text-champagne"
+                >
+                  <VenetianMask className="size-4" />
+                </span>
+              ))}
+              <span className="ml-1 text-sm text-faint">최소 4인</span>
+            </div>
+          </article>
+
+          {/* 3. AI 웨이터 컨시어지 (미니 UI) */}
+          <article className="relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-champagne-dim/30 bg-ink p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] md:col-span-4 md:p-10">
+            <div className="gold-glow flex size-16 items-center justify-center rounded-full border border-champagne-dim/50 bg-surface-raised text-champagne">
+              <Bot className="size-7" />
+            </div>
+            <h3 className="mt-6 font-display text-xl text-ivory">
+              AI 웨이터 컨시어지
+            </h3>
+            <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted">
+              전담 디지털 웨이터가 테이블을 소개하고, 대화가 끊기면 이야깃거리를
+              건네며 분위기를 이어갑니다.
+            </p>
+            <div className="mt-7 space-y-2.5 border-t border-line/70 pt-6">
+              <WaiterChip icon={MessageCircle} label="대화 주제 제안" active />
+              <WaiterChip icon={Music2} label="분위기 음악 추천" />
+            </div>
+            <span className="mt-6">
+              <Badge tone="warn">모의 기능</Badge>
+            </span>
+          </article>
+
+          {/* 4. 안전 우선 */}
+          <article className="hairline-top group relative flex flex-col items-start gap-10 overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-raised p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] transition-colors hover:border-champagne-dim md:col-span-8 md:flex-row md:items-center md:p-10">
+            <div className="order-2 flex-1 md:order-1">
+              <IconRing icon={ShieldCheck} />
+              <h3 className="mt-8 font-display text-2xl text-ivory sm:text-[1.75rem]">
+                안전이 먼저입니다
+              </h3>
+              <p className="mt-4 max-w-md leading-relaxed text-muted">
+                성인 본인확인은 필수입니다. 신뢰가 쌓이기 전까지는 마스크를 쓴
+                실시간 화상으로 익명을 지키고, 준비됐을 때만 서로 얼굴을
+                공개합니다.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                <SafetyChip>성인 본인확인</SafetyChip>
+                <SafetyChip>마스크 화상</SafetyChip>
+                <SafetyChip>상호 동의 공개</SafetyChip>
+              </div>
+            </div>
+
+            {/* 마스크 모티프 */}
+            <div className="order-1 aspect-square w-full shrink-0 md:order-2 md:w-56">
+              <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[var(--radius-control)] border border-champagne-dim/30 bg-[radial-gradient(120%_120%_at_30%_20%,rgba(216,190,134,0.16),transparent_60%)]">
+                <VenetianMask
+                  className="size-24 text-champagne/70"
+                  strokeWidth={1}
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-champagne/[0.06] opacity-0 backdrop-blur-[1px] transition-opacity duration-500 group-hover:opacity-100">
+                  <ScanFace className="size-14 text-champagne" strokeWidth={1.25} />
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
       </Container>
     </section>
+  );
+}
+
+function IconRing({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span
+      aria-hidden
+      className="flex size-12 items-center justify-center rounded-full border border-champagne-dim/60 text-champagne"
+    >
+      <Icon className="size-5" />
+    </span>
+  );
+}
+
+function WaiterChip({
+  icon: Icon,
+  label,
+  active = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-[10px] border border-line bg-surface px-4 py-2.5">
+      <span
+        className={
+          active
+            ? "text-[0.8125rem] text-champagne"
+            : "text-[0.8125rem] text-muted"
+        }
+      >
+        {label}
+      </span>
+      <Icon
+        className={active ? "size-4 text-champagne" : "size-4 text-faint"}
+      />
+    </div>
+  );
+}
+
+function SafetyChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full border border-line px-3.5 py-1.5 text-[0.6875rem] uppercase tracking-[0.14em] text-muted">
+      {children}
+    </span>
   );
 }
 
@@ -143,7 +343,7 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
 
 function HowItWorks() {
   return (
-    <section id="how" className="scroll-mt-20">
+    <section id="how" className="scroll-mt-20 border-y border-line/70 bg-surface/50">
       <Container className="py-20 sm:py-28">
         <SectionHeading
           eyebrow="이용 방식"
@@ -154,7 +354,7 @@ function HowItWorks() {
         <ol className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {STEPS.map((step, index) => (
             <li key={step.title}>
-              <Card hairline className="h-full">
+              <Card hairline className="h-full transition-colors hover:border-champagne-dim">
                 <CardBody>
                   <div className="flex items-center gap-3">
                     <span
@@ -191,7 +391,7 @@ const WAITER_LINES = [
 
 function Waiter() {
   return (
-    <section className="border-y border-line/70 bg-surface/50">
+    <section>
       <Container className="grid items-center gap-14 py-20 sm:py-28 lg:grid-cols-2">
         <div>
           <SectionHeading
@@ -241,7 +441,7 @@ function Waiter() {
 
 function MaskAndReveal() {
   return (
-    <section id="reveal" className="scroll-mt-20">
+    <section id="reveal" className="scroll-mt-20 border-y border-line/70 bg-surface/50">
       <Container className="py-20 sm:py-28">
         <SectionHeading
           eyebrow="마스크와 얼굴 공개"
@@ -283,10 +483,7 @@ function MaskAndReveal() {
 
 function Safety() {
   return (
-    <section
-      id="safety"
-      className="scroll-mt-20 border-y border-line/70 bg-surface/50"
-    >
+    <section id="safety" className="scroll-mt-20">
       <Container className="py-20 sm:py-28">
         <SectionHeading
           eyebrow="안전과 신뢰"
@@ -338,7 +535,7 @@ function Safety() {
 
 function Hours() {
   return (
-    <section>
+    <section className="border-t border-line/70 bg-surface/50">
       <Container className="py-20 sm:py-24">
         <Card hairline className="overflow-hidden">
           <CardBody className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -373,18 +570,19 @@ function Hours() {
 
 function ClosingCta() {
   return (
-    <section>
-      <Container className="pb-8 text-center sm:pb-16">
+    <section className="relative overflow-hidden">
+      <div aria-hidden className="hero-atmosphere absolute inset-0 opacity-70" />
+      <Container className="relative py-24 text-center sm:py-32">
         <h2 className="mx-auto max-w-2xl font-display text-4xl leading-tight text-ivory sm:text-5xl">
           대화로 먼저 만나는 저녁,
           <br />
-          <span className="text-champagne">오늘 열립니다.</span>
+          <span className="italic text-champagne">오늘 열립니다.</span>
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-[0.9375rem] leading-relaxed text-muted">
           더 진짜에 가까운 만남을, 더 낮은 부담으로.
         </p>
         <div className="mt-9 flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/signup" size="lg">
+          <ButtonLink href="/signup" size="lg" className="gold-glow">
             입장 신청하기
           </ButtonLink>
           <ButtonLink href="/membership" variant="secondary" size="lg">

@@ -143,6 +143,95 @@
     font-size: 0.6875rem;
     color: var(--color-champagne);
   }
+
+  /* 참고 디자인 무드 — 샴페인 토큰으로 조화한 럭셔리 다크 효과들 */
+
+  /* 은은한 골드 광원(글로우). 강조 요소 주변에 사용 */
+  .gold-glow {
+    box-shadow:
+      0 0 0 1px rgba(216, 190, 134, 0.14),
+      0 0 28px rgba(216, 190, 134, 0.12);
+  }
+
+  /* 히어로 하단으로 갈수록 어두워지는 비네트 */
+  .vignette {
+    background: radial-gradient(
+      120% 90% at 50% 0%,
+      transparent 0%,
+      transparent 45%,
+      rgba(11, 11, 12, 0.55) 78%,
+      var(--color-ink) 100%
+    );
+  }
+
+  /* 시네마틱 히어로 배경 — 앰비언트 골드/실버 메시 */
+  .hero-atmosphere {
+    background-image:
+      radial-gradient(
+        44rem 30rem at 18% 6%,
+        rgba(216, 190, 134, 0.16),
+        transparent 62%
+      ),
+      radial-gradient(
+        40rem 30rem at 88% 0%,
+        rgba(185, 188, 194, 0.08),
+        transparent 60%
+      ),
+      radial-gradient(
+        60rem 44rem at 50% 120%,
+        rgba(216, 190, 134, 0.07),
+        transparent 60%
+      );
+  }
+
+  /* 수평 마퀴(무한 스크롤 상태바) */
+  .marquee {
+    display: inline-flex;
+    flex-shrink: 0;
+    white-space: nowrap;
+    will-change: transform;
+    animation: marquee-scroll 38s linear infinite;
+  }
+  .marquee-track:hover .marquee {
+    animation-play-state: paused;
+  }
+
+  /* 진입 시 부드럽게 나타나는 리빌 */
+  .reveal {
+    animation: reveal-fade 1s var(--ease-club) both;
+  }
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes soft-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
