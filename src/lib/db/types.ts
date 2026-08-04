@@ -9,6 +9,9 @@
 export type UserRole = "user" | "moderator" | "admin";
 export type AccountStatus = "active" | "suspended" | "banned";
 export type ConversationEnergy = "relaxed" | "balanced" | "lively";
+export type Gender = "female" | "male" | "other";
+/** 매칭 시 원하는 상대 성별 (any = 상관없음) */
+export type DesiredGender = "female" | "male" | "any";
 
 export type TableState =
   | "FORMING"
@@ -37,6 +40,7 @@ export interface User {
 export interface Profile {
   userId: string;
   nickname: string;
+  gender: Gender;
   ageBand: string;
   region: string | null;
   languages: string[];
@@ -82,6 +86,8 @@ export interface Table {
   state: TableState;
   maxSize: number;
   inviteCode: string;
+  /** 이 라운지를 안내하는 AI 웨이터 (lib/waiters의 id) */
+  waiterId: string | null;
   createdAt: string;
   updatedAt: string;
   waitingSince: string | null;
@@ -99,12 +105,26 @@ export interface TableMember {
 
 export interface TablePreferences {
   tableId: string;
+  /** 원하는 상대 성별 */
+  desiredGender: DesiredGender;
   ageBands: string[];
   languages: string[];
   interests: string[];
   energy: ConversationEnergy;
   topicFocus: string[];
   regionPreference: string | null;
+}
+
+/** 웨이터가 성사시킨 라운지↔라운지 부킹 */
+export interface Booking {
+  id: string;
+  requesterTableId: string;
+  matchedTableId: string;
+  waiterId: string | null;
+  score: number;
+  /** 공통점 근거 문구 */
+  reasons: string[];
+  createdAt: string;
 }
 
 export interface Invitation {

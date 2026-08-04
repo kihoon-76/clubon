@@ -83,11 +83,11 @@ export default async function LobbyPage() {
       ) : (
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           <ActionCard
-            href="/lounges/new"
+            href="/waiters"
             icon={Plus}
             title="라운지 만들기"
-            body="2~4명 라운지를 열고 친구를 초대하세요. 준비되면 AI 웨이터가 어울리는 다른 라운지를 찾아드립니다."
-            cta="새 라운지 열기"
+            body="먼저 AI 웨이터를 고르면, 웨이터가 내 라운지로 안내하고 원하는 스타일의 상대를 찾아드립니다."
+            cta="웨이터 고르고 시작하기"
           />
           <ActionCard
             href="/lounges/join"

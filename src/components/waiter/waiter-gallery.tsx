@@ -5,7 +5,8 @@ import { useState } from "react";
 
 import { WaiterAvatar } from "@/components/waiter/waiter-avatar";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { startWithWaiter } from "@/app/(club)/lounges/actions";
 import { cn } from "@/lib/utils";
 import { WAITERS, type Waiter } from "@/lib/waiters";
 
@@ -108,9 +109,12 @@ function WaiterDetail({ waiter }: { waiter: Waiter }) {
           </p>
         </div>
 
-        <ButtonLink href={`/lounges/new?waiter=${waiter.id}`} className="w-full">
-          {waiter.name} 웨이터로 시작하기
-        </ButtonLink>
+        <form action={startWithWaiter}>
+          <input type="hidden" name="waiterId" value={waiter.id} />
+          <Button type="submit" className="w-full">
+            {waiter.name} 웨이터로 시작하기
+          </Button>
+        </form>
         <p className="text-center text-[0.6875rem] leading-relaxed text-faint">
           AI 웨이터는 대화를 돕는 디지털 페르소나이며 실제 사람이 아닙니다.
         </p>
