@@ -61,7 +61,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["첫 만남의 긴장 완화", "정중한 응대", "격식 있는 진행"],
     specialty:
       "처음 라운지에 든 회원이 편안히 자리 잡도록, 예우를 갖춘 소개와 안내로 분위기를 정돈합니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/dohyun.webp",
   },
   {
     id: "ian",
@@ -76,7 +76,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["대화 주제 큐레이션", "취향 파악", "매끄러운 화제 전환"],
     specialty:
       "테이블의 관심사를 살펴 어울리는 이야깃거리를 제안하고, 대화가 자연스럽게 이어지도록 돕습니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/ian.webp",
   },
   {
     id: "jaeha",
@@ -91,7 +91,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["어색함 해소", "편안한 분위기", "자연스러운 아이스브레이킹"],
     specialty:
       "가벼운 질문과 유쾌한 리액션으로, 처음 만난 사이도 오래 알던 것처럼 편안하게 만듭니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/jaeha.webp",
   },
   {
     id: "taeo",
@@ -106,7 +106,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["활기찬 분위기", "트렌디한 화제", "즉흥적인 재미"],
     specialty:
       "요즘 뜨는 이야기와 리듬감 있는 진행으로, 라운지를 생기 있게 달굽니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/taeo.webp",
   },
   {
     id: "sunwoo",
@@ -121,7 +121,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["케미 감지", "상호 영상 부킹 타이밍", "섬세한 진행"],
     specialty:
       "대화의 온도를 살펴, 서로 마음이 통할 때 상호 영상 부킹을 자연스럽게 제안합니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/sunwoo.webp",
   },
   {
     id: "seojun",
@@ -136,7 +136,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["공통 관심사 발굴", "여행·취향 매칭", "여유로운 리드"],
     specialty:
       "좋아하는 도시와 취향을 실마리 삼아, 테이블이 함께 설렐 만한 화제를 엮어냅니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/seojun.webp",
   },
   {
     id: "yujin",
@@ -151,7 +151,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["내향적인 분 배려", "편안한 페이스 조절", "경청"],
     specialty:
       "재촉하지 않는 진행으로, 말수가 적은 회원도 자기 속도로 대화에 스며들게 합니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/yujin.webp",
   },
   {
     id: "haram",
@@ -166,7 +166,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["깊이 있는 대화", "예술·문화 화제", "사려 깊은 질문"],
     specialty:
       "책·음악·전시 같은 취향의 결을 짚어, 오래 기억에 남는 대화를 이끕니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/haram.webp",
   },
   {
     id: "jin",
@@ -181,7 +181,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["빠른 케미", "재치있는 진행", "유머"],
     specialty:
       "가벼운 농담과 순발력 있는 진행으로, 처음의 어색함을 웃음으로 바꿉니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/jin.webp",
   },
   {
     id: "noah",
@@ -196,7 +196,7 @@ export const WAITERS: Waiter[] = [
     strengths: ["안전·매너 우선", "세심한 배려", "편안한 진행"],
     specialty:
       "경계와 예의를 부드럽게 챙겨, 누구나 존중받으며 편안히 머무는 라운지를 만듭니다.",
-    photoUrl: null,
+    photoUrl: "/waiters/noah.webp",
   },
 ];
 

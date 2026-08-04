@@ -151,10 +151,15 @@ export function WaiterAvatar({
       )}
     >
       {waiter.photoUrl ? (
+        // 이미 400px WebP로 최적화된 정적 에셋이라 next/image 리사이즈가 불필요합니다.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={waiter.photoUrl}
           alt={`웨이터 ${waiter.name}`}
+          width={400}
+          height={400}
+          loading="lazy"
+          decoding="async"
           className="size-full object-cover"
         />
       ) : (
