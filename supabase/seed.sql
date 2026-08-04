@@ -105,3 +105,37 @@ begin
     values (demo.id, 'email', 'verified', 'seed-mock-ref', now());
   end loop;
 end $$;
+
+-- ---------------------------------------------- 매칭용 스타일/성별 반영 --
+
+update public.profiles set gender='male',   interests=array['와인','여행','재즈'], group_vibe='relaxed',  age_band='30대 초반' where user_id='aaaaaaaa-0000-0000-0000-000000000001';
+update public.profiles set gender='male',   interests=array['영화','게임','음악'], group_vibe='lively',   age_band='30대 초반' where user_id='aaaaaaaa-0000-0000-0000-000000000002';
+update public.profiles set gender='female', interests=array['여행','음악','영화'], group_vibe='balanced', age_band='20대 후반' where user_id='aaaaaaaa-0000-0000-0000-000000000003';
+update public.profiles set gender='male',   interests=array['음악','재즈','책'],   group_vibe='relaxed',  age_band='30대 초반' where user_id='aaaaaaaa-0000-0000-0000-000000000004';
+update public.profiles set gender='female', interests=array['여행','미식','사진'], group_vibe='balanced', age_band='20대 후반' where user_id='aaaaaaaa-0000-0000-0000-000000000005';
+update public.profiles set gender='male',   interests=array['음악','영화','러닝'], group_vibe='relaxed',  age_band='30대 초반' where user_id='aaaaaaaa-0000-0000-0000-000000000006';
+update public.profiles set gender='female', interests=array['여행','전시','카페'], group_vibe='balanced', age_band='20대 후반' where user_id='aaaaaaaa-0000-0000-0000-000000000007';
+update public.profiles set gender='male',   interests=array['운동','게임','영화'], group_vibe='lively',   age_band='30대 초반' where user_id='aaaaaaaa-0000-0000-0000-000000000008';
+
+-- 매칭 후보 라운지 (하나를 제외한 데모 유저로 구성)
+insert into public.tables (id, club_id, host_user_id, name, state, max_size, invite_code, waiting_since)
+values
+ ('cccccccc-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000004','재즈 & 북','WAITING',4,'JAZZ42',now()),
+ ('cccccccc-0000-0000-0000-000000000002','11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000005','주말 여행자','WAITING',4,'TRIP88',now()),
+ ('cccccccc-0000-0000-0000-000000000003','11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000008','심야 플레이','WAITING',4,'PLAY07',now())
+on conflict (id) do nothing;
+
+insert into public.table_members (table_id, user_id, role) values
+ ('cccccccc-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000004','host'),
+ ('cccccccc-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000006','member'),
+ ('cccccccc-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000005','host'),
+ ('cccccccc-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000007','member'),
+ ('cccccccc-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000008','host'),
+ ('cccccccc-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000002','member')
+on conflict do nothing;
+
+insert into public.table_preferences (table_id, energy, desired_gender) values
+ ('cccccccc-0000-0000-0000-000000000001','relaxed','any'),
+ ('cccccccc-0000-0000-0000-000000000002','balanced','any'),
+ ('cccccccc-0000-0000-0000-000000000003','lively','any')
+on conflict (table_id) do nothing;

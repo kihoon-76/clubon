@@ -17,6 +17,7 @@ import type {
   TablePreferences,
   User,
 } from "./types";
+import { scoreCandidate } from "@/lib/match/score";
 
 /**
  * 로컬 개발/데모용 인메모리 어댑터.
@@ -386,44 +387,18 @@ export class DevMemoryAdapter implements DataAdapter {
       // 내가 이미 속한 라운지 제외
       if (profiles.some((p) => myMemberIds.has(p.userId))) continue;
 
-      const genders = new Set(profiles.map((p) => p.gender));
-      // 성별 선호가 명확하면 해당 성별이 있는 라운지만 후보로.
-      if (pref.desiredGender !== "any" && !genders.has(pref.desiredGender)) {
-        continue;
-      }
-
-      const interests = new Set(profiles.flatMap((p) => p.interests));
-      const ageBands = new Set(profiles.map((p) => p.ageBand));
-      const candidateEnergy = s.tablePreferences.get(table.id)?.energy;
-
-      let score = 0;
-      const reasons: string[] = [];
-
-      if (pref.desiredGender !== "any") {
-        score += 3;
-        reasons.push(
-          `원하는 성별(${pref.desiredGender === "female" ? "여성" : "남성"}) 일치`,
-        );
-      }
-
-      const commonInterests = pref.interests.filter((i) => interests.has(i));
-      if (commonInterests.length > 0) {
-        score += commonInterests.length * 2;
-        reasons.push(`공통 관심사: ${commonInterests.join(", ")}`);
-      }
-
-      if (candidateEnergy && candidateEnergy === pref.energy) {
-        score += 2;
-        reasons.push("대화 분위기 일치");
-      }
-
-      const commonAges = pref.ageBands.filter((a) => ageBands.has(a));
-      if (commonAges.length > 0) {
-        score += commonAges.length;
-        reasons.push(`연령대: ${commonAges.join(", ")}`);
-      }
-
-      if (score <= 0) continue;
+      const candidateEnergy = s.tablePreferences.get(table.id)?.energy ?? null;
+      const { eligible, score, reasons } = scoreCandidate(
+        {
+          desiredGender: pref.desiredGender,
+          energy: pref.energy,
+          interests: pref.interests,
+          ageBands: pref.ageBands,
+        },
+        profiles,
+        candidateEnergy,
+      );
+      if (!eligible) continue;
 
       const candidate: MatchCandidate = {
         table: { ...table },
