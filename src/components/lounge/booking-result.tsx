@@ -1,7 +1,8 @@
-import { Check, Users, Video } from "lucide-react";
+import { Check, Clock, ShieldAlert, Users, Video } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
+import { respondToProposal } from "@/app/(club)/lounges/actions";
+import { Badge, MockBadge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import type { Booking, Profile, Table } from "@/lib/db/types";
 import type { Waiter } from "@/lib/waiters";
@@ -12,23 +13,44 @@ const GENDER_LABEL: Record<Profile["gender"], string> = {
   other: "기타",
 };
 
+/**
+ * 매치 제안 카드. 양측이 모두 수락해야 마스크 대화방이 열립니다.
+ * 팁·우선권은 상대의 수락을 강제하지 않습니다.
+ */
 export function BookingResult({
   booking,
-  matchedTable,
-  matchedProfiles,
+  counterpartTable,
+  counterpartProfiles,
   waiter,
-  tableId,
+  myResponse,
+  counterpartResponse,
+  counterpartIsDemo,
+  totalParticipants,
 }: {
   booking: Booking;
-  matchedTable: Table;
-  matchedProfiles: Profile[];
+  counterpartTable: Table;
+  counterpartProfiles: Profile[];
   waiter: Waiter | undefined;
-  tableId: string;
+  myResponse: Booking["requesterResponse"];
+  counterpartResponse: Booking["requesterResponse"];
+  counterpartIsDemo: boolean;
+  totalParticipants: number;
 }) {
+  const pending = booking.state === "PENDING";
+  const waitingForOther = myResponse === "accepted" && pending;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Badge tone="success">부킹 완료</Badge>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone={pending ? "gold" : booking.state === "ACCEPTED" ? "success" : "neutral"}>
+          {booking.state === "PENDING"
+            ? "매치 제안"
+            : booking.state === "ACCEPTED"
+              ? "합석 확정"
+              : booking.state === "DECLINED"
+                ? "성사되지 않음"
+                : "만료됨"}
+        </Badge>
         {waiter ? (
           <span className="text-sm text-muted">
             {waiter.name} 웨이터가 가장 잘 맞는 라운지를 찾았어요
@@ -41,16 +63,20 @@ export function BookingResult({
           <div>
             <p className="label-caps">상대 라운지</p>
             <h2 className="mt-2 font-display text-3xl text-ivory">
-              {matchedTable.name}
+              {counterpartTable.name}
             </h2>
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-              <Users aria-hidden className="size-4 text-champagne" />
-              {matchedProfiles.length}명 참여
+            <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
+              <span className="flex items-center gap-1.5">
+                <Users aria-hidden className="size-4 text-champagne" />
+                {counterpartProfiles.length}명 참여
+              </span>
+              <span>합석 시 총 {totalParticipants}명</span>
+              <span>적합도 {booking.score}점</span>
             </p>
           </div>
 
           <ul className="flex flex-wrap gap-2.5">
-            {matchedProfiles.map((p) => (
+            {counterpartProfiles.map((p) => (
               <li
                 key={p.userId}
                 className="flex items-center gap-2 rounded-full border border-line bg-surface-overlay/60 px-3.5 py-1.5 text-sm text-ivory"
@@ -81,16 +107,64 @@ export function BookingResult({
           <div className="flex items-start gap-3 rounded-[var(--radius-control)] border border-line bg-surface-overlay/50 p-4">
             <Video aria-hidden className="mt-0.5 size-4 shrink-0 text-champagne" />
             <p className="text-sm leading-relaxed text-muted">
-              양쪽 라운지가 모두 준비되면 마스크를 쓴 상호 영상으로 연결됩니다.
-              실시간 영상 연결은 다음 단계에서 제공됩니다.
+              입장하면 동물 마스크를 쓴 상태로 대화가 시작됩니다. 얼굴은 상대와
+              내가 <strong className="text-ivory">모두 동의</strong>했을 때만,
+              그 상대에게만 공개됩니다.
+            </p>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-[var(--radius-control)] border border-danger/30 bg-danger-dim/30 p-4">
+            <ShieldAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
+            <p className="text-sm leading-relaxed text-ivory">
+              다른 참가자의 영상·음성·개인정보를 캡처, 녹화, 촬영하거나 공유하는
+              행위는 금지됩니다. 위반 시 영구 이용정지 및 관련 법률에 따른 법적
+              책임이 따를 수 있습니다.
             </p>
           </div>
         </CardBody>
       </Card>
 
-      <ButtonLink href={`/lounges/${tableId}?edit=1`} variant="secondary">
-        다른 조건으로 다시 찾기
-      </ButtonLink>
+      {pending ? (
+        <div className="space-y-4">
+          {waitingForOther ? (
+            <p className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted">
+              <Clock aria-hidden className="size-4 text-champagne" />
+              내 라운지는 수락했습니다. 상대 라운지의 응답을 기다리는 중입니다.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              <form action={respondToProposal.bind(null, booking.id, "accepted")}>
+                <Button type="submit" size="lg" className="gold-glow">
+                  수락하고 합석하기
+                </Button>
+              </form>
+              <form action={respondToProposal.bind(null, booking.id, "declined")}>
+                <Button type="submit" size="lg" variant="secondary">
+                  이번엔 넘기기
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {counterpartIsDemo ? (
+            <p className="flex flex-wrap items-center gap-2 text-xs text-faint">
+              <MockBadge />
+              상대 라운지는 데모 참가자로 구성되어 있어, 수락하면 웨이터가 상대
+              측 응답을 대신 처리합니다.
+            </p>
+          ) : (
+            <p className="text-xs text-faint">
+              상대 라운지 응답: {responseLabel(counterpartResponse)}
+            </p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
+}
+
+function responseLabel(r: Booking["requesterResponse"]): string {
+  if (r === "accepted") return "수락";
+  if (r === "declined") return "거절";
+  return "대기 중";
 }

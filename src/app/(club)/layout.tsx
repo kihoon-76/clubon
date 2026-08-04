@@ -1,9 +1,7 @@
-import { redirect } from "next/navigation";
-
 import { ClubHeader } from "@/components/layout/club-header";
 import { getDb } from "@/lib/db";
 import { describeClubStatus } from "@/lib/club/status";
-import { getSession } from "@/lib/session";
+import { isAuthenticated, requireOnboardedSession } from "@/lib/session";
 import { now } from "@/lib/time";
 
 /**
@@ -15,13 +13,7 @@ export default async function ClubLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
-  if (!session) redirect("/login");
-
-  const { user, profile } = session;
-  if (user.status === "suspended" || user.status === "banned") {
-    redirect("/safety");
-  }
+  const { user, profile } = await requireOnboardedSession("/lobby");
 
   const db = getDb();
   const club = await db.getPrimaryClub();
@@ -31,9 +23,12 @@ export default async function ClubLayout({
   return (
     <div className="club-ambience flex min-h-screen flex-col bg-ink">
       <ClubHeader
+        userId={user.id}
         nickname={profile?.nickname ?? "회원"}
         isOpen={status.isOpen}
         statusText={status.short}
+        isStaff={user.role === "admin" || user.role === "moderator"}
+        isAuthenticated={await isAuthenticated()}
       />
       <main className="flex-1">{children}</main>
     </div>

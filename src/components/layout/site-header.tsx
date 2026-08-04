@@ -35,11 +35,12 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ButtonLink href="/lobby" variant="ghost" size="sm">
+          <ButtonLink href="/login" variant="ghost" size="sm">
             로그인
           </ButtonLink>
+          {/* 미리보기 단계 — 로그인 없이 바로 클럽에 입장할 수 있습니다. */}
           <ButtonLink href="/lobby" size="sm">
-            입장 신청
+            바로 입장
           </ButtonLink>
         </div>
       </Container>

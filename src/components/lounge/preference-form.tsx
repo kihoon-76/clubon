@@ -1,5 +1,5 @@
 import { requestBooking } from "@/app/(club)/lounges/actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   AGE_BAND_OPTIONS,
   ENERGY_OPTIONS,
@@ -11,7 +11,14 @@ import {
  * 원하는 상대 스타일 입력 폼. 웨이터가 이 조건과 공통점이 가장 많은 상대
  * 라운지를 찾아 부킹합니다. 서버 액션(requestBooking)으로 제출됩니다.
  */
-export function PreferenceForm({ tableId }: { tableId: string }) {
+export function PreferenceForm({
+  tableId,
+  disabled = false,
+}: {
+  tableId: string;
+  /** 라운지 인원이 최소치에 못 미치면 제출을 막습니다. */
+  disabled?: boolean;
+}) {
   return (
     <form action={requestBooking.bind(null, tableId)} className="space-y-8">
       <Fieldset legend="원하는 상대의 성별">
@@ -73,9 +80,15 @@ export function PreferenceForm({ tableId }: { tableId: string }) {
         </div>
       </Fieldset>
 
-      <Button type="submit" size="lg" className="w-full gold-glow">
-        이 조건으로 상대 찾기
-      </Button>
+      {disabled ? (
+        <p className="rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted">
+          라운지에 2명 이상 모이면 상대를 찾을 수 있습니다.
+        </p>
+      ) : (
+        <SubmitButton className="w-full gold-glow" pendingLabel="상대를 찾는 중…">
+          이 조건으로 상대 찾기
+        </SubmitButton>
+      )}
     </form>
   );
 }

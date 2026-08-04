@@ -24,7 +24,12 @@ const TABLE_STATE_LABEL: Record<string, string> = {
   MODERATION_LOCKED: "잠금",
 };
 
-export default async function LobbyPage() {
+export default async function LobbyPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
 
@@ -55,6 +60,16 @@ export default async function LobbyPage() {
           ? `지금 영업 중입니다 · ${status.closesAtText}까지`
           : "지금 영업 중입니다"}
       </p>
+
+      {sp.staff === "required" ? (
+        <p
+          role="status"
+          className="mt-6 rounded-[var(--radius-control)] border border-warn/40 bg-warn-dim/40 px-4 py-3 text-sm leading-relaxed text-ivory"
+        >
+          관리자 콘솔은 관리자·모더레이터 계정만 볼 수 있습니다. 상단의 회원
+          전환기에서 &lsquo;관리자&rsquo;를 고르면 로그인 없이 확인할 수 있어요.
+        </p>
+      ) : null}
 
       {activeTable ? (
         <Card hairline className="mt-10 overflow-hidden">

@@ -1,20 +1,29 @@
 import postgres from "postgres";
 
 import type {
+  ConsentInput,
   CreateLoungeInput,
+  CreateUserInput,
+  Credentials,
   DataAdapter,
+  JoinResult,
   MatchCandidate,
   MatchPreferenceInput,
+  ProfileInput,
 } from "./adapter";
 import type {
+  AccountStatus,
   Booking,
   Club,
+  Consent,
   ConversationEnergy,
   OperatingHour,
   Profile,
   Table,
   TableMember,
   TablePreferences,
+  TableState,
+  User,
 } from "./types";
 import { scoreCandidate } from "@/lib/match/score";
 
@@ -148,7 +157,37 @@ function mapBooking(r: Row): Booking {
     waiterId: (r.waiter_id as string) ?? null,
     score: Number(r.score),
     reasons: (r.reasons as string[]) ?? [],
+    state: r.state as Booking["state"],
+    requesterResponse: r.requester_response as Booking["requesterResponse"],
+    matchedResponse: r.matched_response as Booking["matchedResponse"],
+    expiresAt: iso(r.expires_at),
+    sessionId: (r.session_id as string) ?? null,
     createdAt: iso(r.created_at),
+  };
+}
+
+function mapUser(r: Row): User {
+  return {
+    id: r.id as string,
+    email: r.email as string,
+    role: r.role as User["role"],
+    status: r.status as User["status"],
+    adultConfirmedAt: isoOrNull(r.adult_confirmed_at),
+    birthYear: r.birth_year == null ? null : Number(r.birth_year),
+    onboardingCompletedAt: isoOrNull(r.onboarding_completed_at),
+    consentCompletedAt: isoOrNull(r.consent_completed_at),
+    createdAt: iso(r.created_at),
+  };
+}
+
+function mapConsent(r: Row): Consent {
+  return {
+    userId: r.user_id as string,
+    consentType: r.consent_type as Consent["consentType"],
+    version: r.version as string,
+    granted: r.granted as boolean,
+    grantedAt: isoOrNull(r.granted_at),
+    revokedAt: isoOrNull(r.revoked_at),
   };
 }
 
@@ -179,26 +218,107 @@ export class PostgresAdapter implements DataAdapter {
     return rows.map(mapOperatingHour);
   }
 
-  async getUser(id: string) {
+  /* ---------------------------------------------------------- 계정 · 인증 */
+
+  async getUser(id: string): Promise<User | null> {
     const rows = await this.sql`select * from public.users where id = ${id} limit 1`;
+    return rows.length ? mapUser(rows[0]) : null;
+  }
+
+  async getCredentialsByEmail(email: string): Promise<Credentials | null> {
+    const rows = await this.sql`
+      select * from public.users where lower(email) = ${email.trim().toLowerCase()} limit 1`;
     if (rows.length === 0) return null;
-    const r = rows[0];
     return {
-      id: r.id as string,
-      email: r.email as string,
-      role: r.role as "user" | "moderator" | "admin",
-      status: r.status as "active" | "suspended" | "banned",
-      adultConfirmedAt: isoOrNull(r.adult_confirmed_at),
-      birthYear: r.birth_year == null ? null : Number(r.birth_year),
-      onboardingCompletedAt: isoOrNull(r.onboarding_completed_at),
-      createdAt: iso(r.created_at),
+      user: mapUser(rows[0]),
+      passwordHash: (rows[0].password_hash as string) ?? null,
     };
   }
+
+  async createUser(input: CreateUserInput): Promise<User> {
+    const rows = await this.sql`
+      insert into public.users (email, password_hash)
+      values (${input.email.trim().toLowerCase()}, ${input.passwordHash})
+      returning *`;
+    return mapUser(rows[0]);
+  }
+
+  async confirmAdult(userId: string, birthYear: number): Promise<void> {
+    await this.sql`
+      update public.users
+      set birth_year = ${birthYear}, adult_confirmed_at = now(), updated_at = now()
+      where id = ${userId}`;
+  }
+
+  async saveConsents(
+    userId: string,
+    version: string,
+    entries: ConsentInput[],
+  ): Promise<void> {
+    for (const entry of entries) {
+      await this.sql`
+        insert into public.consents (user_id, consent_type, version, granted, granted_at, revoked_at)
+        values (
+          ${userId}, ${entry.consentType}, ${version}, ${entry.granted},
+          ${entry.granted ? this.sql`now()` : null},
+          ${entry.granted ? null : this.sql`now()`}
+        )
+        on conflict (user_id, consent_type) do update set
+          version = excluded.version,
+          granted = excluded.granted,
+          granted_at = excluded.granted_at,
+          revoked_at = excluded.revoked_at`;
+    }
+  }
+
+  async getConsents(userId: string): Promise<Consent[]> {
+    const rows = await this.sql`
+      select * from public.consents where user_id = ${userId}`;
+    return rows.map(mapConsent);
+  }
+
+  async markConsentCompleted(userId: string): Promise<void> {
+    await this.sql`
+      update public.users set consent_completed_at = now(), updated_at = now()
+      where id = ${userId}`;
+  }
+
+  async markOnboardingCompleted(userId: string): Promise<void> {
+    await this.sql`
+      update public.users set onboarding_completed_at = now(), updated_at = now()
+      where id = ${userId}`;
+  }
+
+  /* -------------------------------------------------------------- 프로필 */
 
   async getProfile(userId: string): Promise<Profile | null> {
     const rows = await this.sql`
       select * from public.profiles where user_id = ${userId} limit 1`;
     return rows.length ? mapProfile(rows[0]) : null;
+  }
+
+  async upsertProfile(userId: string, input: ProfileInput): Promise<Profile> {
+    const rows = await this.sql`
+      insert into public.profiles
+        (user_id, nickname, gender, age_band, region, languages, interests,
+         conversation_style, group_vibe)
+      values (
+        ${userId}, ${input.nickname}, ${input.gender}, ${input.ageBand},
+        ${input.region}, ${this.sql.array(input.languages)},
+        ${this.sql.array(input.interests)}, ${input.conversationStyle},
+        ${input.groupVibe}
+      )
+      on conflict (user_id) do update set
+        nickname = excluded.nickname,
+        gender = excluded.gender,
+        age_band = excluded.age_band,
+        region = excluded.region,
+        languages = excluded.languages,
+        interests = excluded.interests,
+        conversation_style = excluded.conversation_style,
+        group_vibe = excluded.group_vibe
+      returning *`;
+    return mapProfile(rows[0]);
   }
 
   async getActiveTableForUser(userId: string): Promise<Table | null> {
@@ -273,6 +393,100 @@ export class PostgresAdapter implements DataAdapter {
       on conflict (table_id) do nothing`;
 
     return table;
+  }
+
+  async joinTableByCode(userId: string, code: string): Promise<JoinResult> {
+    const rows = await this.sql`
+      select * from public.tables where upper(invite_code) = ${code.trim().toUpperCase()} limit 1`;
+    if (rows.length === 0) return { ok: false, reason: "not_found" };
+
+    const table = mapTable(rows[0]);
+    if (table.closedAt || table.state === "CLOSED") {
+      return { ok: false, reason: "closed" };
+    }
+
+    const members = await this.getActiveTableMembers(table.id);
+    if (members.some((m) => m.userId === userId)) {
+      return { ok: false, reason: "already_member" };
+    }
+    if (await this.getActiveTableForUser(userId)) {
+      return { ok: false, reason: "in_other" };
+    }
+    if (members.length >= table.maxSize) return { ok: false, reason: "full" };
+
+    await this.sql`
+      insert into public.table_members (table_id, user_id, role)
+      values (${table.id}, ${userId}, 'member')`;
+
+    const club = await this.getPrimaryClub();
+    if (table.state === "FORMING" && members.length + 1 >= club.minTableSize) {
+      await this.sql`
+        update public.tables set state = 'READY', updated_at = now() where id = ${table.id}`;
+      table.state = "READY";
+    }
+    return { ok: true, table };
+  }
+
+  async addMemberToTable(tableId: string, userId: string): Promise<void> {
+    const table = await this.getTable(tableId);
+    if (!table) return;
+
+    const members = await this.getActiveTableMembers(tableId);
+    if (members.length >= table.maxSize) return;
+    if (members.some((m) => m.userId === userId)) return;
+    if (await this.getActiveTableForUser(userId)) return;
+
+    await this.sql`
+      insert into public.table_members (table_id, user_id, role)
+      values (${tableId}, ${userId}, 'member')`;
+
+    const club = await this.getPrimaryClub();
+    if (table.state === "FORMING" && members.length + 1 >= club.minTableSize) {
+      await this.sql`
+        update public.tables set state = 'READY', updated_at = now() where id = ${tableId}`;
+    }
+  }
+
+  async leaveTable(userId: string, tableId: string): Promise<void> {
+    const updated = await this.sql`
+      update public.table_members set left_at = now()
+      where table_id = ${tableId} and user_id = ${userId} and left_at is null
+      returning id`;
+    if (updated.length === 0) return;
+
+    const remaining = await this.getActiveTableMembers(tableId);
+    if (remaining.length === 0) {
+      await this.sql`
+        update public.tables set state = 'CLOSED', closed_at = now(), updated_at = now()
+        where id = ${tableId}`;
+      return;
+    }
+
+    const table = await this.getTable(tableId);
+    if (table && table.hostUserId === userId) {
+      // 호스트가 나가면 남은 최고참이 승계합니다.
+      const heir = remaining[0];
+      await this.sql`
+        update public.tables set host_user_id = ${heir.userId}, updated_at = now()
+        where id = ${tableId}`;
+      await this.sql`
+        update public.table_members set role = 'host' where id = ${heir.id}`;
+
+      const club = await this.getPrimaryClub();
+      if (table.state === "READY" && remaining.length < club.minTableSize) {
+        await this.sql`
+          update public.tables set state = 'FORMING', updated_at = now() where id = ${tableId}`;
+      }
+    }
+  }
+
+  async setTableState(tableId: string, state: TableState): Promise<void> {
+    await this.sql`
+      update public.tables
+      set state = ${state}::public.table_state,
+          waiting_since = case when ${state} = 'WAITING' then now() else waiting_since end,
+          updated_at = now()
+      where id = ${tableId}`;
   }
 
   async setMatchPreference(
@@ -353,25 +567,126 @@ export class PostgresAdapter implements DataAdapter {
     waiterId: string | null,
   ): Promise<Booking> {
     await this.sql`
-      delete from public.bookings where requester_table_id = ${requesterTableId}`;
+      delete from public.bookings
+      where requester_table_id = ${requesterTableId} and state = 'PENDING'`;
     const rows = await this.sql`
       insert into public.bookings
-        (requester_table_id, matched_table_id, waiter_id, score, reasons)
+        (requester_table_id, matched_table_id, waiter_id, score, reasons, expires_at)
       values (
         ${requesterTableId}, ${candidate.table.id}, ${waiterId},
-        ${candidate.score}, ${this.sql.json(candidate.reasons)}
+        ${candidate.score}, ${this.sql.json(candidate.reasons)},
+        now() + interval '5 minutes'
       ) returning *`;
     await this.sql`
       update public.tables set state = 'MATCH_PROPOSED', updated_at = now()
-      where id = ${requesterTableId}`;
+      where id in (${requesterTableId}, ${candidate.table.id})`;
     return mapBooking(rows[0]);
   }
 
+  /** 만료된 PENDING 제안을 정리합니다(읽기 시점 지연 평가). */
+  private async expireStale(): Promise<void> {
+    const expired = await this.sql`
+      update public.bookings set state = 'EXPIRED'
+      where state = 'PENDING' and expires_at <= now()
+      returning requester_table_id, matched_table_id`;
+    for (const row of expired) {
+      await this.sql`
+        update public.tables
+        set state = 'WAITING', waiting_since = now(), updated_at = now()
+        where id in (${row.requester_table_id as string}, ${row.matched_table_id as string})
+          and state = 'MATCH_PROPOSED'`;
+    }
+  }
+
   async getBookingForTable(tableId: string): Promise<Booking | null> {
+    await this.expireStale();
     const rows = await this.sql`
       select * from public.bookings
-      where requester_table_id = ${tableId}
+      where requester_table_id = ${tableId} or matched_table_id = ${tableId}
       order by created_at desc limit 1`;
     return rows.length ? mapBooking(rows[0]) : null;
+  }
+
+  async getBooking(id: string): Promise<Booking | null> {
+    await this.expireStale();
+    const rows = await this.sql`select * from public.bookings where id = ${id} limit 1`;
+    return rows.length ? mapBooking(rows[0]) : null;
+  }
+
+  async respondToBooking(
+    bookingId: string,
+    side: "requester" | "matched",
+    response: "accepted" | "declined",
+  ): Promise<Booking | null> {
+    await this.expireStale();
+    const column =
+      side === "requester" ? this.sql`requester_response` : this.sql`matched_response`;
+    const rows = await this.sql`
+      update public.bookings
+      set ${column} = ${response}::public.booking_response
+      where id = ${bookingId} and state = 'PENDING'
+      returning *`;
+    if (rows.length === 0) return this.getBooking(bookingId);
+
+    const b = mapBooking(rows[0]);
+    if (b.requesterResponse === "declined" || b.matchedResponse === "declined") {
+      await this.sql`update public.bookings set state = 'DECLINED' where id = ${b.id}`;
+      await this.sql`
+        update public.tables
+        set state = 'WAITING', waiting_since = now(), updated_at = now()
+        where id in (${b.requesterTableId}, ${b.matchedTableId}) and state = 'MATCH_PROPOSED'`;
+      b.state = "DECLINED";
+    } else if (
+      b.requesterResponse === "accepted" &&
+      b.matchedResponse === "accepted"
+    ) {
+      await this.sql`update public.bookings set state = 'ACCEPTED' where id = ${b.id}`;
+      await this.sql`
+        update public.tables set state = 'MATCH_ACCEPTED', updated_at = now()
+        where id in (${b.requesterTableId}, ${b.matchedTableId})`;
+      b.state = "ACCEPTED";
+    }
+    return b;
+  }
+
+  async attachSessionToBooking(
+    bookingId: string,
+    sessionId: string,
+  ): Promise<void> {
+    const rows = await this.sql`
+      update public.bookings set session_id = ${sessionId}
+      where id = ${bookingId}
+      returning requester_table_id, matched_table_id`;
+    if (rows.length === 0) return;
+    await this.sql`
+      update public.tables set state = 'LIVE', updated_at = now()
+      where id in (${rows[0].requester_table_id as string}, ${rows[0].matched_table_id as string})`;
+  }
+
+  /* -------------------------------------------------------------- 관리자 */
+
+  async listUsers(limit = 100): Promise<User[]> {
+    const rows = await this.sql`
+      select * from public.users order by created_at desc limit ${limit}`;
+    return rows.map(mapUser);
+  }
+
+  async setUserStatus(userId: string, status: AccountStatus): Promise<void> {
+    await this.sql`
+      update public.users set status = ${status}::public.account_status, updated_at = now()
+      where id = ${userId}`;
+  }
+
+  async listTables(limit = 100): Promise<Table[]> {
+    const rows = await this.sql`
+      select * from public.tables order by updated_at desc limit ${limit}`;
+    return rows.map(mapTable);
+  }
+
+  async listBookings(limit = 100): Promise<Booking[]> {
+    await this.expireStale();
+    const rows = await this.sql`
+      select * from public.bookings order by created_at desc limit ${limit}`;
+    return rows.map(mapBooking);
   }
 }

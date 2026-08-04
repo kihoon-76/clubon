@@ -26,6 +26,18 @@ export type TableState =
 
 export type TableMemberRole = "host" | "member";
 
+export type ConsentType =
+  | "terms_of_service"
+  | "privacy_policy"
+  | "adult_only"
+  | "camera_microphone"
+  | "ai_text_moderation"
+  | "ai_video_moderation"
+  | "face_tracking"
+  | "anti_recording"
+  | "community_standards"
+  | "mutual_face_reveal";
+
 export interface User {
   id: string;
   email: string;
@@ -34,7 +46,18 @@ export interface User {
   adultConfirmedAt: string | null;
   birthYear: number | null;
   onboardingCompletedAt: string | null;
+  /** 동의 플로우를 마친 시각 (필수 항목 전체 동의) */
+  consentCompletedAt: string | null;
   createdAt: string;
+}
+
+export interface Consent {
+  userId: string;
+  consentType: ConsentType;
+  version: string;
+  granted: boolean;
+  grantedAt: string | null;
+  revokedAt: string | null;
 }
 
 export interface Profile {
@@ -115,7 +138,10 @@ export interface TablePreferences {
   regionPreference: string | null;
 }
 
-/** 웨이터가 성사시킨 라운지↔라운지 부킹 */
+export type BookingState = "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+export type BookingResponse = "pending" | "accepted" | "declined";
+
+/** 웨이터가 성사시킨 라운지↔라운지 부킹(매치 제안) */
 export interface Booking {
   id: string;
   requesterTableId: string;
@@ -124,6 +150,15 @@ export interface Booking {
   score: number;
   /** 공통점 근거 문구 */
   reasons: string[];
+  state: BookingState;
+  /** 제안한 라운지의 응답 */
+  requesterResponse: BookingResponse;
+  /** 제안받은 라운지의 응답 */
+  matchedResponse: BookingResponse;
+  /** 이 시각이 지나면 EXPIRED로 간주 */
+  expiresAt: string;
+  /** 양측 수락 후 개설된 화상 세션 id */
+  sessionId: string | null;
   createdAt: string;
 }
 
