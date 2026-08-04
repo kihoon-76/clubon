@@ -25,6 +25,8 @@ export type WaiterStyle =
 export interface Waiter {
   id: string;
   name: string;
+  /** 웨이터 성별 (아바타 렌더·표시에 사용) */
+  gender: "female" | "male";
   /** 별칭 — 그 웨이터의 역할을 한마디로 */
   epithet: string;
   /** 복장 스타일 키 (아바타 렌더에 사용) */
@@ -49,6 +51,7 @@ export const WAITERS: Waiter[] = [
   {
     id: "dohyun",
     name: "도현",
+    gender: "male",
     epithet: "정통 집사",
     style: "tuxedo",
     outfit: "클래식 블랙타이 턱시도",
@@ -62,7 +65,8 @@ export const WAITERS: Waiter[] = [
   },
   {
     id: "ian",
-    name: "이안",
+    name: "이서",
+    gender: "female",
     epithet: "대화 큐레이터",
     style: "suit",
     outfit: "쓰리피스 테일러드 수트",
@@ -77,6 +81,7 @@ export const WAITERS: Waiter[] = [
   {
     id: "jaeha",
     name: "재하",
+    gender: "male",
     epithet: "친근한 호스트",
     style: "casual",
     outfit: "니트 · 슬랙스 캐주얼",
@@ -91,6 +96,7 @@ export const WAITERS: Waiter[] = [
   {
     id: "taeo",
     name: "태오",
+    gender: "male",
     epithet: "트렌드세터",
     style: "hiphop",
     outfit: "오버사이즈 스트리트 · 체인",
@@ -104,7 +110,8 @@ export const WAITERS: Waiter[] = [
   },
   {
     id: "sunwoo",
-    name: "선우",
+    name: "세린",
+    gender: "female",
     epithet: "케미 조율가",
     style: "smoking",
     outfit: "벨벳 스모킹 재킷",
@@ -119,6 +126,7 @@ export const WAITERS: Waiter[] = [
   {
     id: "seojun",
     name: "서준",
+    gender: "male",
     epithet: "여행가",
     style: "resort",
     outfit: "화이트 디너 재킷",
@@ -133,6 +141,7 @@ export const WAITERS: Waiter[] = [
   {
     id: "yujin",
     name: "유진",
+    gender: "male",
     epithet: "조율된 침묵",
     style: "allblack",
     outfit: "미니멀 올블랙 테일러드",
@@ -146,7 +155,8 @@ export const WAITERS: Waiter[] = [
   },
   {
     id: "haram",
-    name: "하람",
+    name: "하린",
+    gender: "female",
     epithet: "문화통",
     style: "tweed",
     outfit: "브리티시 트위드 재킷",
@@ -161,6 +171,7 @@ export const WAITERS: Waiter[] = [
   {
     id: "jin",
     name: "진",
+    gender: "male",
     epithet: "위트메이커",
     style: "leather",
     outfit: "락 시크 레더 재킷",
@@ -175,6 +186,7 @@ export const WAITERS: Waiter[] = [
   {
     id: "noah",
     name: "노아",
+    gender: "male",
     epithet: "세심한 수호자",
     style: "hospitality",
     outfit: "스탠드칼라 호스피탈리티 화이트",

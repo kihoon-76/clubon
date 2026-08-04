@@ -184,21 +184,39 @@ export function WaiterAvatar({
               fill={spec.garment}
             />
 
+            {/* 여성: 뒤쪽 긴 머리 (머리보다 먼저 그려 뒤에 위치) */}
+            {waiter.gender === "female" ? (
+              <path
+                d="M30 40 Q28 20 50 19 Q72 20 70 40 Q71 58 66 74 L60 74 Q65 55 63 40 Q63 30 50 29 Q37 30 37 40 Q35 55 40 74 L34 74 Q29 58 30 40 Z"
+                fill={HAIR}
+              />
+            ) : null}
+
             {/* 목 */}
             <rect x="45.5" y="52" width="9" height="14" rx="3" fill={SKIN_SHADOW} />
 
             {/* 머리 */}
             <ellipse cx="50" cy="40" rx="15" ry="17" fill={SKIN} />
-            {/* 헤어 */}
-            <path
-              d="M34 40 Q33 21 50 21 Q67 21 66 40 Q62 31 50 30 Q38 31 34 40 Z"
-              fill={HAIR}
-            />
-            <path
-              d="M35 39 Q36 33 42 31 Q38 35 38 41 Z"
-              fill={HAIR}
-              opacity="0.8"
-            />
+
+            {/* 헤어(앞머리) */}
+            {waiter.gender === "female" ? (
+              <path
+                d="M33 41 Q32 20 50 20 Q68 20 67 41 Q63 29 50 28 Q37 29 33 41 Z"
+                fill={HAIR}
+              />
+            ) : (
+              <>
+                <path
+                  d="M34 40 Q33 21 50 21 Q67 21 66 40 Q62 31 50 30 Q38 31 34 40 Z"
+                  fill={HAIR}
+                />
+                <path
+                  d="M35 39 Q36 33 42 31 Q38 35 38 41 Z"
+                  fill={HAIR}
+                  opacity="0.8"
+                />
+              </>
+            )}
 
             {/* 의상 디테일(칼라/타이 등) */}
             {spec.detail(waiter.accent)}
