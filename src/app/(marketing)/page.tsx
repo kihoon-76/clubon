@@ -65,7 +65,7 @@ function Hero() {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
-            <ButtonLink href="/signup" size="lg" className="gold-glow">
+            <ButtonLink href="/lobby" size="lg" className="gold-glow">
               입장 신청하기
             </ButtonLink>
             <ButtonLink
@@ -556,7 +556,7 @@ function Hours() {
                 </p>
               </div>
             </div>
-            <ButtonLink href="/signup" variant="secondary" className="shrink-0">
+            <ButtonLink href="/lobby" variant="secondary" className="shrink-0">
               먼저 가입해 두기
             </ButtonLink>
           </CardBody>
@@ -582,7 +582,7 @@ function ClosingCta() {
           더 진짜에 가까운 만남을, 더 낮은 부담으로.
         </p>
         <div className="mt-9 flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/signup" size="lg" className="gold-glow">
+          <ButtonLink href="/lobby" size="lg" className="gold-glow">
             입장 신청하기
           </ButtonLink>
           <ButtonLink href="/membership" variant="secondary" size="lg">

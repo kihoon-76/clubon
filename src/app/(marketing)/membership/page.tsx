@@ -103,7 +103,7 @@ export default function MembershipPage() {
               </ul>
 
               <ButtonLink
-                href="/signup"
+                href="/lobby"
                 variant={tier.featured ? "primary" : "secondary"}
                 className="mt-8 w-full"
               >

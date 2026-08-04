@@ -8,7 +8,7 @@ const GROUPS: { title: string; links: { href: string; label: string }[] }[] = [
     links: [
       { href: "/#how", label: "이용 방식" },
       { href: "/membership", label: "멤버십" },
-      { href: "/signup", label: "입장 신청" },
+      { href: "/lobby", label: "입장 신청" },
     ],
   },
   {

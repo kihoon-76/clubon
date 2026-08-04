@@ -35,10 +35,10 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ButtonLink href="/login" variant="ghost" size="sm">
+          <ButtonLink href="/lobby" variant="ghost" size="sm">
             로그인
           </ButtonLink>
-          <ButtonLink href="/signup" size="sm">
+          <ButtonLink href="/lobby" size="sm">
             입장 신청
           </ButtonLink>
         </div>
