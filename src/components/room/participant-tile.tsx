@@ -1,14 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
-import { Ban, Eye, EyeOff, Flag, Mic, MicOff, ShieldAlert } from "lucide-react";
+import { Ban, Crown, Eye, Flag, Mic, MicOff } from "lucide-react";
 
-import {
-  blockParticipant,
-  remask,
-  requestReveal,
-  respondReveal,
-} from "@/app/(club)/room/[sessionId]/actions";
+import { blockParticipant } from "@/app/(club)/room/[sessionId]/actions";
 import { LocalCamera } from "@/components/room/local-camera";
 import { MASK_LABEL, MaskAvatar, RevealedAvatar } from "@/components/room/mask-avatar";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +29,8 @@ export function ParticipantTile({
 }) {
   const [pending, startTransition] = useTransition();
   const p = participant;
-  const revealed = p.revealState === "REVEALED";
+  // 공개 여부는 방장끼리의 합의로 방 전체에 한꺼번에 적용됩니다(뷰에서 계산).
+  const revealed = p.revealed;
   const statusLabel = STATUS_LABEL[p.status];
 
   return (
@@ -75,6 +71,12 @@ export function ParticipantTile({
 
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
           {p.isMe ? <Badge tone="gold">나</Badge> : null}
+          {p.isRoomHost ? (
+            <Badge tone="gold">
+              <Crown aria-hidden className="size-3" />
+              방장
+            </Badge>
+          ) : null}
           {revealed ? (
             <Badge tone="success">
               <Eye aria-hidden className="size-3" />
@@ -112,59 +114,6 @@ export function ParticipantTile({
           <p className="text-xs text-faint">차단한 참가자입니다.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {p.awaitingMyReply ? (
-              <>
-                <TileButton
-                  pending={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await respondReveal(sessionId, p.userId, true);
-                    })
-                  }
-                  tone="accent"
-                >
-                  <Eye aria-hidden className="size-3.5" />
-                  공개 수락
-                </TileButton>
-                <TileButton
-                  pending={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await respondReveal(sessionId, p.userId, false);
-                    })
-                  }
-                >
-                  거절
-                </TileButton>
-              </>
-            ) : revealed ? (
-              <TileButton
-                pending={pending}
-                onClick={() =>
-                  startTransition(async () => {
-                    await remask(sessionId, p.userId);
-                  })
-                }
-              >
-                <EyeOff aria-hidden className="size-3.5" />
-                다시 마스크
-              </TileButton>
-            ) : p.revealState === "REVEAL_REQUESTED" ? (
-              <span className="text-xs text-champagne">공개 요청 보냄 · 응답 대기</span>
-            ) : (
-              <TileButton
-                pending={pending}
-                onClick={() =>
-                  startTransition(async () => {
-                    await requestReveal(sessionId, p.userId);
-                  })
-                }
-              >
-                <Eye aria-hidden className="size-3.5" />
-                얼굴 공개 요청
-              </TileButton>
-            )}
-
             <TileButton pending={pending} onClick={() => onReport(p)} tone="danger">
               <Flag aria-hidden className="size-3.5" />
               신고
@@ -184,12 +133,6 @@ export function ParticipantTile({
           </div>
         )}
 
-        {p.revealState === "REVEAL_CANCELLED" && !p.isMe ? (
-          <p className="flex items-center gap-1.5 text-xs text-faint">
-            <ShieldAlert aria-hidden className="size-3.5" />
-            상대가 공개를 원하지 않았습니다.
-          </p>
-        ) : null}
       </div>
     </li>
   );

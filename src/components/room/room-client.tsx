@@ -11,6 +11,7 @@ import {
 import { ChatPanel } from "@/components/room/chat-panel";
 import { ParticipantTile } from "@/components/room/participant-tile";
 import { ReportDialog } from "@/components/room/report-dialog";
+import { RevealControl } from "@/components/room/reveal-control";
 import { Badge, MockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { RoomParticipantView, RoomView } from "@/lib/runtime/view";
@@ -88,6 +89,13 @@ export function RoomClient({ initial }: { initial: RoomView }) {
             세션이 종료되었습니다.
           </p>
         ) : null}
+
+        <RevealControl
+          sessionId={view.sessionId}
+          reveal={view.reveal}
+          disabled={view.state !== "live" || me.status === "removed"}
+          onChanged={refresh}
+        />
 
         <ul className="grid gap-4 sm:grid-cols-2">
           <ParticipantTile

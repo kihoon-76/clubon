@@ -10,7 +10,7 @@ import type {
   Participant,
   ParticipantStatus,
   Report,
-  RevealPair,
+  RevealAgreement,
   RevealState,
   SessionFeedback,
   VideoSession,
@@ -31,7 +31,8 @@ interface Runtime {
   sessions: Map<string, VideoSession>;
   participants: Participant[];
   messages: ChatMessage[];
-  reveals: RevealPair[];
+  /** 세션당 최대 하나 */
+  reveals: RevealAgreement[];
   moderationEvents: ModerationEvent[];
   reports: Report[];
   blocks: Block[];
@@ -93,6 +94,9 @@ export function createSession(input: {
   bookingId: string;
   tableAId: string;
   tableBId: string;
+  /** 각 라운지의 방장 — 얼굴 공개를 결정할 수 있는 유일한 두 사람 */
+  hostAUserId: string | null;
+  hostBUserId: string | null;
   waiterId: string | null;
   members: CreateSessionMember[];
 }): VideoSession {
@@ -109,6 +113,8 @@ export function createSession(input: {
     bookingId: input.bookingId,
     tableAId: input.tableAId,
     tableBId: input.tableBId,
+    hostAUserId: input.hostAUserId,
+    hostBUserId: input.hostBUserId,
     state: "live",
     pausedSince: null,
     startedAt: nowIso(),
@@ -143,7 +149,7 @@ export function createSession(input: {
     waiter?.name ?? "라운지 매니저",
     `두 라운지가 합석했습니다. 오늘 자리는 ${
       waiter?.name ?? "라운지 매니저"
-    } 웨이터가 안내합니다. 서로의 얼굴은 양쪽이 모두 동의할 때만 공개됩니다.`,
+    } 웨이터가 안내합니다. 얼굴 공개는 양쪽 라운지의 방장이 모두 수락할 때만 이루어지며, 그때 방 전체의 마스크가 함께 벗겨집니다.`,
   );
   pushSystemMessage(
     session.id,
@@ -214,8 +220,8 @@ export function leaveSession(sessionId: string, userId: string): void {
   if (!p || p.leftAt) return;
   p.leftAt = nowIso();
 
-  // 퇴장은 해당 사용자의 모든 공개 권한을 즉시 취소합니다.
-  revokeAllRevealsFor(sessionId, userId);
+  // 방장이 나가면 그 방장이 맺은 공개 합의도 함께 효력을 잃습니다.
+  revokeRevealOnHostLeave(sessionId, userId);
   pushSystemMessage(sessionId, "system", "시스템", `${p.nickname}님이 나갔습니다.`);
   reconcileSessionState(sessionId);
 }
@@ -229,10 +235,10 @@ export function endSession(sessionId: string, reason: string): void {
   for (const p of r.participants.filter((x) => x.sessionId === sessionId)) {
     if (!p.leftAt) p.leftAt = s.endedAt;
   }
-  // 세션 종료는 모든 공개 권한을 취소합니다.
-  for (const pair of r.reveals.filter((x) => x.sessionId === sessionId)) {
-    pair.state = "REMASKED";
-    pair.updatedAt = s.endedAt!;
+  // 세션 종료는 공개 합의를 취소합니다.
+  for (const agreement of r.reveals.filter((x) => x.sessionId === sessionId)) {
+    agreement.state = "REMASKED";
+    agreement.updatedAt = s.endedAt!;
   }
   pushSystemMessage(sessionId, "system", "시스템", `세션이 종료되었습니다. (${reason})`);
 }
@@ -448,121 +454,141 @@ export function listModerationEvents(limit = 100): ModerationEvent[] {
 
 /* ------------------------------------------------------------ 얼굴 공개 */
 
-function pairKey(a: string, b: string): [string, string] {
-  return a < b ? [a, b] : [b, a];
+/**
+ * 얼굴 공개는 참가자 개인이 아니라 **두 라운지의 방장**이 결정합니다.
+ * 한쪽 방장이 요청하고 반대쪽 방장이 수락하면 방 전체의 마스크가 함께 벗겨지고,
+ * 어느 방장이든 되돌리면 전원 즉시 마스크로 복귀합니다.
+ */
+
+/** 이 사용자가 세션 양쪽 라운지 중 한쪽의 방장인지. */
+export function isRoomHost(sessionId: string, userId: string): boolean {
+  const s = rt().sessions.get(sessionId);
+  if (!s) return false;
+  return s.hostAUserId === userId || s.hostBUserId === userId;
 }
 
-function findPair(
-  sessionId: string,
-  a: string,
-  b: string,
-): RevealPair | undefined {
-  const [x, y] = pairKey(a, b);
-  return rt().reveals.find(
-    (p) => p.sessionId === sessionId && p.userAId === x && p.userBId === y,
+function findAgreement(sessionId: string): RevealAgreement | undefined {
+  return rt().reveals.find((a) => a.sessionId === sessionId);
+}
+
+export function getRevealAgreement(sessionId: string): RevealAgreement {
+  return (
+    findAgreement(sessionId) ?? {
+      sessionId,
+      state: "MASKED" as RevealState,
+      requesterId: null,
+      requesterTableId: null,
+      updatedAt: nowIso(),
+    }
   );
 }
 
-export function getRevealPairsFor(
-  sessionId: string,
-  userId: string,
-): RevealPair[] {
-  return rt()
-    .reveals.filter(
-      (p) =>
-        p.sessionId === sessionId &&
-        (p.userAId === userId || p.userBId === userId),
-    )
-    .map((p) => ({ ...p }));
+export function getRevealState(sessionId: string): RevealState {
+  return findAgreement(sessionId)?.state ?? "MASKED";
 }
 
-export function getRevealState(
-  sessionId: string,
-  a: string,
-  b: string,
-): RevealState {
-  return findPair(sessionId, a, b)?.state ?? "MASKED";
-}
+/** 한쪽 방장이 상대 라운지에 얼굴 공개를 제안합니다. */
+export function requestReveal(sessionId: string, requesterId: string): void {
+  if (!isRoomHost(sessionId, requesterId)) return;
 
-/** A가 B에게 얼굴 공개를 요청합니다. */
-export function requestReveal(
-  sessionId: string,
-  requesterId: string,
-  targetId: string,
-): void {
-  const r = rt();
-  const [x, y] = pairKey(requesterId, targetId);
-  const existing = findPair(sessionId, requesterId, targetId);
+  const requester = rt().participants.find(
+    (p) => p.sessionId === sessionId && p.userId === requesterId,
+  );
+  if (!requester) return;
 
-  if (existing) {
-    // 이미 공개된 쌍이면 재요청하지 않습니다.
-    if (existing.state === "REVEALED") return;
-    existing.state = "REVEAL_REQUESTED";
-    existing.requesterId = requesterId;
-    existing.updatedAt = nowIso();
-    return;
-  }
+  const existing = findAgreement(sessionId);
+  // 이미 공개된 방이면 다시 요청하지 않습니다.
+  if (existing?.state === "REVEALED") return;
 
-  r.reveals.push({
-    sessionId,
-    userAId: x,
-    userBId: y,
-    state: "REVEAL_REQUESTED",
+  const next = {
+    state: "REVEAL_REQUESTED" as RevealState,
     requesterId,
+    requesterTableId: requester.tableId,
     updatedAt: nowIso(),
-  });
-}
+  };
 
-/** 요청을 받은 쪽이 응답합니다. 양측 동의가 확정되면 REVEALED. */
-export function respondReveal(
-  sessionId: string,
-  responderId: string,
-  otherId: string,
-  accept: boolean,
-): void {
-  const pair = findPair(sessionId, responderId, otherId);
-  if (!pair || pair.state !== "REVEAL_REQUESTED") return;
-  // 요청자 본인은 응답할 수 없습니다.
-  if (pair.requesterId === responderId) return;
+  if (existing) Object.assign(existing, next);
+  else rt().reveals.push({ sessionId, ...next });
 
-  pair.updatedAt = nowIso();
-  if (!accept) {
-    pair.state = "REVEAL_CANCELLED";
-    return;
-  }
-  // 서버가 양측 동의를 확정한 뒤 동시에 공개합니다.
-  pair.state = "REVEALED";
-
-  const names = getParticipants(sessionId)
-    .filter((p) => p.userId === responderId || p.userId === otherId)
-    .map((p) => p.nickname)
-    .join(" · ");
   pushSystemMessage(
     sessionId,
     "system",
     "시스템",
-    `${names} 두 분이 서로 얼굴을 공개했습니다. 다른 참가자에게는 계속 마스크가 적용됩니다.`,
+    `${requester.nickname} 방장이 얼굴 공개를 제안했습니다. 상대 라운지 방장이 수락하면 방 전체의 마스크가 벗겨집니다.`,
   );
 }
 
-/** 어느 한쪽이 마스크를 복구하면 양방향 모두 즉시 마스크로 돌아갑니다. */
-export function remask(
+/** 반대쪽 라운지 방장이 응답합니다. 수락하면 방 전체가 동시에 공개됩니다. */
+export function respondReveal(
   sessionId: string,
-  userId: string,
-  otherId: string,
+  responderId: string,
+  accept: boolean,
 ): void {
-  const pair = findPair(sessionId, userId, otherId);
-  if (!pair) return;
-  pair.state = "REMASKED";
-  pair.updatedAt = nowIso();
+  const agreement = findAgreement(sessionId);
+  if (!agreement || agreement.state !== "REVEAL_REQUESTED") return;
+  if (!isRoomHost(sessionId, responderId)) return;
+
+  const responder = rt().participants.find(
+    (p) => p.sessionId === sessionId && p.userId === responderId,
+  );
+  // 제안한 쪽 라운지의 방장은 자기 제안에 응답할 수 없습니다.
+  if (!responder || responder.tableId === agreement.requesterTableId) return;
+
+  agreement.updatedAt = nowIso();
+  if (!accept) {
+    agreement.state = "REVEAL_CANCELLED";
+    pushSystemMessage(
+      sessionId,
+      "system",
+      "시스템",
+      "상대 라운지 방장이 이번에는 얼굴 공개를 원하지 않았습니다. 모두 마스크를 유지합니다.",
+    );
+    return;
+  }
+
+  // 서버가 양쪽 방장의 동의를 확정한 뒤 방 전체를 동시에 공개합니다.
+  agreement.state = "REVEALED";
+  pushSystemMessage(
+    sessionId,
+    "system",
+    "시스템",
+    "양쪽 라운지 방장이 모두 수락해 이 방 참가자 전원의 마스크가 벗겨졌습니다. 어느 방장이든 언제든지 다시 마스크를 씌울 수 있습니다.",
+  );
 }
 
-function revokeAllRevealsFor(sessionId: string, userId: string): void {
-  for (const pair of rt().reveals) {
-    if (pair.sessionId !== sessionId) continue;
-    if (pair.userAId !== userId && pair.userBId !== userId) continue;
-    pair.state = "REMASKED";
-    pair.updatedAt = nowIso();
+/** 어느 방장이든 되돌리면 방 전체가 즉시 마스크로 복귀합니다. */
+export function remask(sessionId: string, userId: string): void {
+  if (!isRoomHost(sessionId, userId)) return;
+  const agreement = findAgreement(sessionId);
+  if (!agreement || agreement.state !== "REVEALED") return;
+
+  agreement.state = "REMASKED";
+  agreement.updatedAt = nowIso();
+  pushSystemMessage(
+    sessionId,
+    "system",
+    "시스템",
+    "방장이 마스크를 다시 씌웠습니다. 참가자 전원이 마스크 상태로 돌아갑니다.",
+  );
+}
+
+/** 공개를 결정한 방장이 자리를 뜨면 합의는 효력을 잃고 전원 마스크로 돌아갑니다. */
+function revokeRevealOnHostLeave(sessionId: string, userId: string): void {
+  if (!isRoomHost(sessionId, userId)) return;
+  const agreement = findAgreement(sessionId);
+  if (!agreement || agreement.state === "MASKED") return;
+
+  const wasRevealed = agreement.state === "REVEALED";
+  agreement.state = "REMASKED";
+  agreement.updatedAt = nowIso();
+
+  if (wasRevealed) {
+    pushSystemMessage(
+      sessionId,
+      "system",
+      "시스템",
+      "공개를 결정한 방장이 나가 참가자 전원이 다시 마스크를 착용했습니다.",
+    );
   }
 }
 
@@ -603,18 +629,9 @@ export function reportUser(input: {
     createdAt: nowIso(),
   });
 
-  // 신고는 해당 쌍의 공개 권한을 즉시 취소합니다.
-  if (input.sessionId) {
-    const pair = findPair(
-      input.sessionId,
-      input.reporterId,
-      input.reportedUserId,
-    );
-    if (pair) {
-      pair.state = "REMASKED";
-      pair.updatedAt = nowIso();
-    }
-  }
+  // 신고 한 건이 방 전체의 공개를 되돌리지는 않습니다. 신고와 함께 차단하면
+  // 신고자에게만 상대가 다시 마스크로 보이고, 위반이 확인되면 모더레이션이
+  // 해당 참가자의 영상을 제한합니다.
   return { ...report };
 }
 
@@ -637,25 +654,15 @@ export function resolveReport(
   r.resolvedBy = resolvedBy;
 }
 
-export function blockUser(
-  blockerId: string,
-  blockedId: string,
-  sessionId: string | null,
-): void {
+export function blockUser(blockerId: string, blockedId: string): void {
   const r = rt();
   if (
     !r.blocks.some((b) => b.blockerId === blockerId && b.blockedId === blockedId)
   ) {
     r.blocks.push({ blockerId, blockedId, createdAt: nowIso() });
   }
-  // 차단은 즉시 공개 권한을 취소합니다.
-  if (sessionId) {
-    const pair = findPair(sessionId, blockerId, blockedId);
-    if (pair) {
-      pair.state = "REMASKED";
-      pair.updatedAt = nowIso();
-    }
-  }
+  // 차단은 방 전체의 공개 합의를 건드리지 않습니다. 대신 차단한 사람에게는
+  // 상대가 다시 마스크 상태로만 보입니다(뷰 조립 시 blockedByMe로 처리).
 }
 
 export function getBlockedIds(userId: string): string[] {
@@ -750,17 +757,18 @@ export function simulateDemoActivity(sessionId: string, waiterId: string | null)
   );
   if (sims.length === 0) return;
 
-  // 1) 대기 중인 얼굴 공개 요청에 응답합니다.
-  for (const pair of r.reveals) {
-    if (pair.sessionId !== sessionId) continue;
-    if (pair.state !== "REVEAL_REQUESTED") continue;
-    const responderId =
-      pair.requesterId === pair.userAId ? pair.userBId : pair.userAId;
-    const responder = sims.find((p) => p.userId === responderId);
-    if (!responder) continue;
-    // 요청 후 3초가 지나면 수락합니다.
-    if (Date.now() - Date.parse(pair.updatedAt) < 3000) continue;
-    respondReveal(sessionId, responderId, pair.requesterId!, true);
+  // 1) 상대 라운지 방장이 데모 참가자라면 대기 중인 공개 제안에 응답합니다.
+  const agreement = r.reveals.find((a) => a.sessionId === sessionId);
+  if (agreement?.state === "REVEAL_REQUESTED") {
+    const responder = sims.find(
+      (p) =>
+        (p.userId === session.hostAUserId || p.userId === session.hostBUserId) &&
+        p.tableId !== agreement.requesterTableId,
+    );
+    // 제안 후 3초가 지나면 수락합니다.
+    if (responder && Date.now() - Date.parse(agreement.updatedAt) >= 3000) {
+      respondReveal(sessionId, responder.userId, true);
+    }
   }
 
   // 2) 일정 간격으로 한 명이 발화합니다.

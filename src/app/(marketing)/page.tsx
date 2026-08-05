@@ -60,8 +60,8 @@ function Hero() {
 
           <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
             프로필을 넘기는 대신 대화로 만납니다. 친구와 함께 한 테이블에
-            앉고, 마스크를 쓴 채 이야기하고, 서로 동의할 때만 얼굴을
-            공개합니다.
+            앉고, 마스크를 쓴 채 이야기하고, 양쪽 라운지의 방장이 모두 수락할 때만
+            얼굴을 공개합니다.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
@@ -108,7 +108,7 @@ const MARQUEE_ITEMS = [
   "저녁 6시 – 새벽 4시",
   "본인확인 필수",
   "그룹으로만 대화",
-  "상호 동의 얼굴 공개",
+  "방장 합의 얼굴 공개",
   "촬영·녹화 금지",
 ];
 
@@ -231,13 +231,13 @@ function BentoUsp() {
               </h3>
               <p className="mt-4 max-w-md leading-relaxed text-muted">
                 성인 본인확인은 필수입니다. 신뢰가 쌓이기 전까지는 마스크를 쓴
-                실시간 화상으로 익명을 지키고, 준비됐을 때만 서로 얼굴을
+                실시간 화상으로 익명을 지키고, 양쪽 방장이 준비됐다고 판단할 때만 얼굴을
                 공개합니다.
               </p>
               <div className="mt-6 flex flex-wrap gap-2.5">
                 <SafetyChip>성인 본인확인</SafetyChip>
                 <SafetyChip>마스크 화상</SafetyChip>
-                <SafetyChip>상호 동의 공개</SafetyChip>
+                <SafetyChip>방장 합의 공개</SafetyChip>
               </div>
             </div>
 
@@ -336,8 +336,8 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
   },
   {
     icon: Eye,
-    title: "서로 동의할 때만 공개",
-    body: "두 사람이 모두 수락한 경우에 한해, 그 두 사람 사이에서만 얼굴이 공개됩니다.",
+    title: "두 방장이 수락할 때만 공개",
+    body: "양쪽 라운지의 방장이 모두 수락하면, 그 순간 방 전체의 마스크가 함께 벗겨집니다.",
   },
 ];
 
@@ -445,23 +445,23 @@ function MaskAndReveal() {
       <Container className="py-20 sm:py-28">
         <SectionHeading
           eyebrow="마스크와 얼굴 공개"
-          title="공개는 언제나 양측 합의로만"
-          description="모든 대화는 동물 마스크를 쓴 상태에서 시작합니다. 마스크 해제는 두 사람이 각각 동의한 경우에만, 그 두 사람 사이에서만 이루어집니다."
+          title="공개는 두 방장의 합의로만"
+          description="모든 대화는 동물 마스크를 쓴 상태에서 시작합니다. 마스크 해제는 합석한 두 라운지의 방장이 모두 수락한 경우에만, 방 전체에 한꺼번에 적용됩니다."
         />
 
         <div className="mt-14 grid gap-5 md:grid-cols-3">
           {[
             {
-              title: "두 사람이 모두 동의해야 합니다",
-              body: "한 사람이 요청하면 상대에게 비공개로 확인 요청이 전달됩니다. 거절해도 상대에게 이유가 표시되지 않습니다.",
+              title: "두 방장이 모두 수락해야 합니다",
+              body: "한쪽 방장이 제안하면 상대 라운지의 방장에게 확인 요청이 전달됩니다. 거절해도 이유가 표시되지 않습니다.",
             },
             {
-              title: "그 두 사람 사이에서만 공개됩니다",
-              body: "같은 룸의 다른 참가자에게는 계속 마스크가 유지됩니다.",
+              title: "방 전체가 함께 공개됩니다",
+              body: "합의가 확정되면 양쪽 라운지의 모든 참가자가 동시에 마스크를 벗습니다. 다만 내가 차단한 상대는 계속 마스크로 보입니다.",
             },
             {
               title: "언제든 다시 마스크를 쓸 수 있습니다",
-              body: "어느 한쪽이 복구하면 양방향 모두 즉시 마스크 상태로 돌아갑니다. 차단·신고·퇴장 시에도 즉시 종료됩니다.",
+              body: "어느 방장이든 되돌리면 참가자 전원이 즉시 마스크 상태로 돌아갑니다. 방장이 나가거나 세션이 끝날 때도 마찬가지입니다.",
             },
           ].map((item) => (
             <Card key={item.title} className="h-full">
@@ -524,7 +524,7 @@ function Safety() {
           모더레이션은 자동 검사와 사람의 검토를 함께 사용하지만 모든 위반을
           완벽하게 걸러낸다고 보장하지 않습니다. 또한 플랫폼은 모든 스크린샷과
           외부 촬영을 기술적으로 차단할 수 없습니다. 그래서 마스크 기본 착용,
-          상호 동의 공개, 워터마크, 신고 절차를 함께 운영합니다.
+          방장 합의 공개, 워터마크, 신고 절차를 함께 운영합니다.
         </p>
       </Container>
     </section>

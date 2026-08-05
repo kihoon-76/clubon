@@ -28,6 +28,9 @@ export interface VideoSession {
   bookingId: string;
   tableAId: string;
   tableBId: string;
+  /** 각 라운지의 방장. 얼굴 공개는 이 두 사람의 합의로만 결정됩니다. */
+  hostAUserId: string | null;
+  hostBUserId: string | null;
   state: SessionState;
   /** 마지막으로 참가자가 최소 인원 아래로 떨어진 시각 (PAUSED 유예 판단) */
   pausedSince: string | null;
@@ -75,13 +78,19 @@ export type RevealState =
   | "REMASKED"
   | "REVEAL_CANCELLED";
 
-/** 쌍(pair) 단위 대칭 공개 권한. userAId < userBId로 정렬 저장합니다. */
-export interface RevealPair {
+/**
+ * 합석한 두 라운지 사이의 얼굴 공개 합의. 세션당 하나입니다.
+ *
+ * 공개는 참가자 개인이 아니라 **각 라운지의 방장**이 결정합니다. 한쪽 방장이
+ * 요청하고 다른 쪽 방장이 수락하면, 그 순간 방 전체 참가자의 마스크가 함께
+ * 해제됩니다. 어느 방장이든 다시 마스크를 씌우면 전원 즉시 복구됩니다.
+ */
+export interface RevealAgreement {
   sessionId: string;
-  userAId: string;
-  userBId: string;
   state: RevealState;
+  /** 공개를 요청한 방장과 그 방장의 라운지 */
   requesterId: string | null;
+  requesterTableId: string | null;
   updatedAt: string;
 }
 

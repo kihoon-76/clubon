@@ -59,8 +59,8 @@ export const CONSENT_ITEMS: ConsentItem[] = [
   },
   {
     type: "mutual_face_reveal",
-    title: "상호 얼굴 공개 방식",
-    body: "얼굴 공개는 양측이 모두 동의한 경우에만, 해당 상대에게만 적용됨을 이해했습니다.",
+    title: "얼굴 공개 방식",
+    body: "얼굴 공개는 합석한 두 라운지의 방장이 모두 수락한 경우에만 이루어지며, 확정되면 방 전체 참가자에게 함께 적용됨을 이해했습니다.",
     required: true,
   },
   {

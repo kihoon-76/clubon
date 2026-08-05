@@ -21,11 +21,27 @@ export interface RoomParticipantView {
   present: boolean;
   simulated: boolean;
   isMe: boolean;
-  /** 나와 이 참가자 사이의 공개 상태 */
-  revealState: RevealState;
-  /** 이 참가자가 나에게 공개를 요청했고, 내 응답을 기다리는 중 */
-  awaitingMyReply: boolean;
+  /** 이 참가자가 이 라운지의 방장인지 */
+  isRoomHost: boolean;
+  /** 지금 내 화면에서 이 참가자의 얼굴이 보이는지 */
+  revealed: boolean;
   blockedByMe: boolean;
+}
+
+/**
+ * 방 전체의 얼굴 공개 상태. 공개 여부는 참가자 개인이 아니라 양쪽 라운지의
+ * 방장이 합의로 결정하며, 확정되면 모든 참가자에게 한꺼번에 적용됩니다.
+ */
+export interface RoomRevealView {
+  state: RevealState;
+  /** 내가 방장이라 공개를 요청·수락·철회할 수 있는지 */
+  canDecide: boolean;
+  /** 상대 라운지 방장이 제안했고 내 응답을 기다리는 중 */
+  awaitingMyResponse: boolean;
+  /** 내가 제안했고 상대 라운지 방장의 응답을 기다리는 중 */
+  awaitingOtherResponse: boolean;
+  /** 제안한 방장의 닉네임 */
+  requesterName: string | null;
 }
 
 export interface RoomMessageView {
@@ -51,6 +67,7 @@ export interface RoomView {
   messages: RoomMessageView[];
   /** 내가 이 라운지의 호스트인지 (세션 종료 권한) */
   isHost: boolean;
+  reveal: RoomRevealView;
   waiterName: string | null;
 }
 
@@ -76,12 +93,12 @@ export async function buildRoomView(
   if (!meRaw) return null;
 
   const blocked = new Set(room.getBlockedIds(viewerId));
-  const pairs = room.getRevealPairsFor(sessionId, viewerId);
+  const agreement = room.getRevealAgreement(sessionId);
+  const roomRevealed = agreement.state === "REVEALED";
+  const isHostOf = (userId: string) =>
+    session.hostAUserId === userId || session.hostBUserId === userId;
 
   const toView = (p: (typeof participants)[number]): RoomParticipantView => {
-    const pair = pairs.find(
-      (x) => x.userAId === p.userId || x.userBId === p.userId,
-    );
     const isMe = p.userId === viewerId;
     return {
       userId: p.userId,
@@ -95,16 +112,19 @@ export async function buildRoomView(
       present: !p.leftAt && p.status !== "removed",
       simulated: p.simulated,
       isMe,
-      revealState: isMe ? "MASKED" : (pair?.state ?? "MASKED"),
-      awaitingMyReply:
-        !isMe &&
-        pair?.state === "REVEAL_REQUESTED" &&
-        pair.requesterId === p.userId,
+      isRoomHost: isHostOf(p.userId),
+      // 방이 공개 상태여도 내가 차단한 상대와 모더레이션으로 영상이 제한된
+      // 참가자는 계속 마스크로 보입니다.
+      revealed:
+        roomRevealed && !blocked.has(p.userId) && p.videoState !== "blurred",
       blockedByMe: blocked.has(p.userId),
     };
   };
 
   const myTable = await db.getTable(meRaw.tableId);
+  const iAmHost = isHostOf(viewerId);
+  const requestPending = agreement.state === "REVEAL_REQUESTED";
+  const iRequested = agreement.requesterTableId === meRaw.tableId;
 
   return {
     sessionId,
@@ -127,6 +147,15 @@ export async function buildRoomView(
       mine: m.senderId === viewerId,
     })),
     isHost: myTable?.hostUserId === viewerId,
+    reveal: {
+      state: agreement.state,
+      canDecide: iAmHost,
+      awaitingMyResponse: requestPending && iAmHost && !iRequested,
+      awaitingOtherResponse: requestPending && iRequested,
+      requesterName:
+        participants.find((p) => p.userId === agreement.requesterId)?.nickname ??
+        null,
+    },
     waiterName: null,
   };
 }

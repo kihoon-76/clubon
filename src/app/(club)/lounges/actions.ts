@@ -298,10 +298,18 @@ async function openRoom(booking: Booking, actingUserId: string): Promise<string>
     }
   }
 
+  // 얼굴 공개를 결정할 두 방장을 세션에 고정해 둡니다.
+  const [tableA, tableB] = await Promise.all([
+    db.getTable(booking.requesterTableId),
+    db.getTable(booking.matchedTableId),
+  ]);
+
   const session = createSession({
     bookingId: booking.id,
     tableAId: booking.requesterTableId,
     tableBId: booking.matchedTableId,
+    hostAUserId: tableA?.hostUserId ?? null,
+    hostBUserId: tableB?.hostUserId ?? null,
     waiterId: booking.waiterId,
     members,
   });

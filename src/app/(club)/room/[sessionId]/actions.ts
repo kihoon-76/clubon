@@ -64,30 +64,27 @@ export async function toggleMedia(
 
 /* ------------------------------------------------------------- 얼굴 공개 */
 
-export async function requestReveal(
-  sessionId: string,
-  targetId: string,
-): Promise<void> {
+/**
+ * 얼굴 공개는 방장 권한입니다. 세 동작 모두 요청자가 자기 라운지의 방장인지
+ * 런타임에서 다시 확인하므로, 일반 참가자가 직접 호출해도 아무 일도 없습니다.
+ */
+
+export async function requestReveal(sessionId: string): Promise<void> {
   const { user } = await requireParticipant(sessionId);
-  if (targetId === user.id) return;
-  room.requestReveal(sessionId, user.id, targetId);
+  room.requestReveal(sessionId, user.id);
 }
 
 export async function respondReveal(
   sessionId: string,
-  otherId: string,
   accept: boolean,
 ): Promise<void> {
   const { user } = await requireParticipant(sessionId);
-  room.respondReveal(sessionId, user.id, otherId, accept);
+  room.respondReveal(sessionId, user.id, accept);
 }
 
-export async function remask(
-  sessionId: string,
-  otherId: string,
-): Promise<void> {
+export async function remask(sessionId: string): Promise<void> {
   const { user } = await requireParticipant(sessionId);
-  room.remask(sessionId, user.id, otherId);
+  room.remask(sessionId, user.id);
 }
 
 /* ------------------------------------------------------------- 신고 · 차단 */
@@ -131,7 +128,7 @@ export async function reportParticipant(
   });
 
   if (parsed.data.block) {
-    room.blockUser(user.id, parsed.data.targetId, sessionId);
+    room.blockUser(user.id, parsed.data.targetId);
   }
 
   revalidatePath(`/room/${sessionId}`);
@@ -144,7 +141,7 @@ export async function blockParticipant(
 ): Promise<void> {
   const { user } = await requireParticipant(sessionId);
   if (targetId === user.id) return;
-  room.blockUser(user.id, targetId, sessionId);
+  room.blockUser(user.id, targetId);
   revalidatePath(`/room/${sessionId}`);
 }
 
