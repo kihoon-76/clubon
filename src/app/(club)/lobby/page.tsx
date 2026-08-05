@@ -136,8 +136,8 @@ export default async function LobbyPage({
       </ButtonLink>
 
       <p className="mt-10 max-w-2xl text-sm leading-relaxed text-faint">
-        모든 대화는 최소 4명 이상의 그룹으로 시작합니다. 1:1 매칭은 제공하지
-        않으며, 합석은 양쪽 라운지가 모두 수락해야 열립니다.
+        모든 대화는 최소 2명 이상의 그룹으로 시작합니다. 합석은 양쪽 라운지가
+        모두 수락해야 열립니다.
       </p>
     </Container>
   );

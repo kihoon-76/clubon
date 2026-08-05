@@ -25,7 +25,7 @@ export default async function JoinLoungePage() {
         </h1>
         <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted">
           한 라운지는 최대 4명까지 함께할 수 있습니다. 합석은 두 라운지를 합쳐
-          최소 4명이 모여야 열립니다.
+          최소 2명이 모여야 열립니다.
         </p>
 
         <Card hairline className="mt-8">

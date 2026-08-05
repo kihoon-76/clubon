@@ -167,7 +167,7 @@ export async function requestBooking(
   const myTable = await db.getActiveTableForUser(user.id);
   if (!myTable || myTable.id !== tableId) redirect("/lobby");
 
-  // 불변식: 합석 룸은 총 4명 이상 — 라운지당 최소 2명이 필요합니다.
+  // 불변식: 합석 룸은 총 2명 이상 — 라운지당 최소 1명이 필요합니다.
   const club = await db.getPrimaryClub();
   const members = await db.getActiveTableMembers(tableId);
   if (members.length < club.minTableSize) {

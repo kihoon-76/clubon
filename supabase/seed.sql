@@ -12,7 +12,7 @@ values (
   '11111111-1111-1111-1111-111111111111',
   'ClubOn Seoul',
   'Asia/Seoul',
-  2, 4, 4
+  1, 4, 2
 )
 on conflict (id) do nothing;
 

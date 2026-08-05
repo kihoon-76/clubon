@@ -61,7 +61,7 @@ export function LoungeRoster({
       {short ? (
         <div className="mt-5 rounded-[var(--radius-control)] border border-warn/40 bg-warn-dim/40 p-4">
           <p className="text-sm leading-relaxed text-ivory">
-            합석은 두 라운지를 합쳐 최소 4명이 필요합니다. 이 라운지에{" "}
+            합석은 두 라운지를 합쳐 최소 2명이 필요합니다. 이 라운지에{" "}
             <strong className="text-champagne">
               {minSize - profiles.length}명
             </strong>

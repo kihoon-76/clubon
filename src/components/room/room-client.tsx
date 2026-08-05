@@ -79,7 +79,7 @@ export function RoomClient({ initial }: { initial: RoomView }) {
 
         {view.state === "paused" ? (
           <p className="rounded-[var(--radius-control)] border border-warn/40 bg-warn-dim/40 px-4 py-3 text-sm text-ivory">
-            참가자가 최소 인원(4명) 아래로 줄어 대화가 일시 정지되었습니다.
+            참가자가 최소 인원(2명) 아래로 줄어 대화가 일시 정지되었습니다.
             인원이 회복되면 자동으로 재개됩니다.
           </p>
         ) : null}

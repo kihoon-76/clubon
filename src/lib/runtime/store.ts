@@ -244,10 +244,10 @@ export function endSession(sessionId: string, reason: string): void {
 }
 
 /**
- * 최소 참가 인원(4명) 불변식을 강제합니다.
+ * 최소 참가 인원(2명) 불변식을 강제합니다.
  * 인원이 모자라면 PAUSED, 회복되면 LIVE로 되돌립니다.
  */
-const MIN_ROOM_PARTICIPANTS = 4;
+const MIN_ROOM_PARTICIPANTS = 2;
 
 function reconcileSessionState(sessionId: string): void {
   const r = rt();

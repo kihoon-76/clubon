@@ -170,10 +170,10 @@ create table public.clubs (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   timezone text not null default 'Asia/Seoul',
-  min_table_size smallint not null default 2 check (min_table_size >= 2),
+  min_table_size smallint not null default 1 check (min_table_size >= 1),
   max_table_size smallint not null default 4 check (max_table_size >= min_table_size),
-  -- 1:1 매칭 금지: 합석 룸 최소 인원은 4명 이상이어야 합니다.
-  min_room_participants smallint not null default 4 check (min_room_participants >= 4),
+  -- 합석 룸 최소 인원. 이 아래로 떨어지면 세션은 일시 정지됩니다.
+  min_room_participants smallint not null default 2 check (min_room_participants >= 2),
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -558,7 +558,7 @@ insert into public.profiles (user_id,nickname,gender,age_band,region,languages,i
 on conflict (user_id) do nothing;
 
 insert into public.clubs (id,name,timezone,min_table_size,max_table_size,min_room_participants)
-values ('11111111-1111-1111-1111-111111111111','ClubOn Seoul','Asia/Seoul',2,4,4)
+values ('11111111-1111-1111-1111-111111111111','ClubOn Seoul','Asia/Seoul',1,4,2)
 on conflict (id) do nothing;
 
 insert into public.operating_hours (club_id,day_of_week,opens_at,closes_at,closes_next_day)

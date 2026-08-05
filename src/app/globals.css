@@ -184,30 +184,9 @@
       );
   }
 
-  /* 수평 마퀴(무한 스크롤 상태바) */
-  .marquee {
-    display: inline-flex;
-    flex-shrink: 0;
-    white-space: nowrap;
-    will-change: transform;
-    animation: marquee-scroll 38s linear infinite;
-  }
-  .marquee-track:hover .marquee {
-    animation-play-state: paused;
-  }
-
   /* 진입 시 부드럽게 나타나는 리빌 */
   .reveal {
     animation: reveal-fade 1s var(--ease-club) both;
-  }
-}
-
-@keyframes marquee-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
   }
 }
 

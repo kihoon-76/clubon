@@ -27,7 +27,6 @@ export default function LandingPage() {
   return (
     <>
       <Hero />
-      <StatusMarquee />
       <BentoUsp />
       <HowItWorks />
       <Waiter />
@@ -80,7 +79,7 @@ function Hero() {
           </div>
 
           <p className="mt-6 text-sm text-faint">
-            1:1 매칭은 제공하지 않습니다. 모든 대화는 최소 4명 이상의 그룹으로
+            1:1 매칭은 제공하지 않습니다. 모든 대화는 최소 2명 이상의 그룹으로
             시작됩니다.
           </p>
         </div>
@@ -98,47 +97,6 @@ function Hero() {
         </a>
       </Container>
     </section>
-  );
-}
-
-/* -------------------------------------------------------- Status marquee */
-
-const MARQUEE_ITEMS = [
-  "회원제 전용",
-  "저녁 6시 – 새벽 4시",
-  "본인확인 필수",
-  "그룹으로만 대화",
-  "방장 합의 얼굴 공개",
-  "촬영·녹화 금지",
-];
-
-function MarqueeRow({ ariaHidden = false }: { ariaHidden?: boolean }) {
-  return (
-    <div
-      aria-hidden={ariaHidden || undefined}
-      className="marquee items-center gap-6 pr-6"
-    >
-      {MARQUEE_ITEMS.map((item, i) => (
-        <span key={`${item}-${i}`} className="flex items-center gap-6">
-          <span className="label-caps whitespace-nowrap text-champagne/80">
-            {item}
-          </span>
-          <span
-            aria-hidden
-            className="size-1.5 shrink-0 rounded-full bg-champagne/50"
-          />
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function StatusMarquee() {
-  return (
-    <div className="marquee-track overflow-hidden border-y border-line/70 bg-surface-raised/60 py-3.5">
-      <MarqueeRow />
-      <MarqueeRow ariaHidden />
-    </div>
   );
 }
 
@@ -187,7 +145,7 @@ function BentoUsp() {
             <div
               aria-hidden
               className="mt-8 flex items-center gap-2.5"
-              title="한 테이블은 2~4명, 합석 룸은 최소 4명"
+              title="한 테이블은 1~4명, 합석 룸은 최소 2명"
             >
               {[0, 1, 2, 3].map((i) => (
                 <span
@@ -197,7 +155,7 @@ function BentoUsp() {
                   <VenetianMask className="size-4" />
                 </span>
               ))}
-              <span className="ml-1 text-sm text-faint">최소 4인</span>
+              <span className="ml-1 text-sm text-faint">최소 2인</span>
             </div>
           </article>
 
@@ -317,7 +275,7 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: Users,
     title: "테이블 구성",
-    body: "2~4명으로 테이블을 만들거나, 초대 코드로 친구의 테이블에 합류합니다. 혼자라면 대기 라운지에서 함께할 사람을 기다립니다.",
+    body: "1~4명으로 테이블을 만들거나, 초대 코드로 친구의 테이블에 합류합니다. 혼자여도 바로 상대 라운지를 찾을 수 있습니다.",
   },
   {
     icon: Sparkles,
@@ -498,7 +456,7 @@ function Safety() {
             },
             {
               title: "그룹 단위 대화",
-              body: "1:1 화상 매칭은 제공하지 않습니다. 합석 룸은 최소 4명으로 시작합니다.",
+              body: "대화는 라운지 단위로 합석합니다. 합석 룸은 최소 2명으로 시작합니다.",
             },
             {
               title: "실시간 모더레이션",

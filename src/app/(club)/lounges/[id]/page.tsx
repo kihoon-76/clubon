@@ -17,7 +17,7 @@ export const metadata = { title: "내 라운지" };
 
 const NOTICES: Record<string, string> = {
   too_small:
-    "합석하려면 이 라운지에 최소 2명이 필요합니다. 초대코드를 공유해 주세요.",
+    "합석하려면 이 라운지에 참가자가 한 명 이상 있어야 합니다. 초대코드를 공유해 주세요.",
   invalid: "입력한 조건을 다시 확인해 주세요.",
 };
 

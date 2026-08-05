@@ -82,7 +82,7 @@ export function PreferenceForm({
 
       {disabled ? (
         <p className="rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted">
-          라운지에 2명 이상 모이면 상대를 찾을 수 있습니다.
+          라운지에 한 명 이상 모이면 상대를 찾을 수 있습니다.
         </p>
       ) : (
         <SubmitButton className="w-full gold-glow" pendingLabel="상대를 찾는 중…">
