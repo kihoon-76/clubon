@@ -103,8 +103,8 @@ export default async function LobbyPage({
             href="/waiters"
             icon={Plus}
             title="라운지 만들기"
-            body="먼저 AI 웨이터를 고르면, 웨이터가 내 라운지로 안내하고 원하는 스타일의 상대를 찾아드립니다."
-            cta="웨이터 고르고 시작하기"
+            body="먼저 AI 라운지 매니저를 고르면, 매니저가 내 라운지로 안내하고 원하는 스타일의 상대를 찾아드립니다."
+            cta="매니저 고르고 시작하기"
           />
           <ActionCard
             href="/lounges/join"
@@ -117,7 +117,7 @@ export default async function LobbyPage({
         </div>
       )}
 
-      {/* AI 웨이터 진입 */}
+      {/* AI 라운지 매니저 진입 */}
       <ButtonLink
         href="/waiters"
         variant="secondary"
@@ -126,9 +126,9 @@ export default async function LobbyPage({
         <span className="flex items-center gap-3">
           <Sparkles aria-hidden className="size-5 text-champagne" />
           <span className="flex flex-col items-start">
-            <span className="text-ivory">AI 웨이터 만나보기</span>
+            <span className="text-ivory">AI 라운지 매니저 만나보기</span>
             <span className="text-xs text-muted">
-              열 명의 라운지 매니저 중 오늘의 호스트를 골라보세요
+              열 명의 매니저 중 오늘의 호스트를 골라보세요
             </span>
           </span>
         </span>

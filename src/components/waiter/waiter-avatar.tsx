@@ -2,7 +2,7 @@ import type { Waiter, WaiterStyle } from "@/lib/waiters";
 import { cn } from "@/lib/utils";
 
 /**
- * 웨이터 일러스트 아바타. 복장 스타일에 따라 의상·칼라 디테일이 달라집니다.
+ * 라운지 매니저 일러스트 아바타. 복장 스타일에 따라 의상·칼라 디테일이 달라집니다.
  * `photoUrl`이 채워지면 사진을 우선 사용합니다(추후 실사 교체용).
  *
  * 사진처럼 사실적인 얼굴이 아닌, 브랜드 톤의 절제된 일러스트입니다.
@@ -155,7 +155,7 @@ export function WaiterAvatar({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={waiter.photoUrl}
-          alt={`웨이터 ${waiter.name}`}
+          alt={`라운지 매니저 ${waiter.name}`}
           width={400}
           height={400}
           loading="lazy"
@@ -166,7 +166,7 @@ export function WaiterAvatar({
         <svg
           viewBox="0 0 100 100"
           role="img"
-          aria-label={`웨이터 ${waiter.name} — ${waiter.outfit}`}
+          aria-label={`라운지 매니저 ${waiter.name} — ${waiter.outfit}`}
           className="size-full"
         >
           <defs>

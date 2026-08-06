@@ -59,7 +59,7 @@ export function WaiterGallery() {
         })}
       </ul>
 
-      {/* 선택된 웨이터 상세 */}
+      {/* 선택된 라운지 매니저 상세 */}
       <div className="lg:sticky lg:top-24">
         <WaiterDetail waiter={selected} />
       </div>
@@ -112,11 +112,11 @@ function WaiterDetail({ waiter }: { waiter: Waiter }) {
         <form action={startWithWaiter}>
           <input type="hidden" name="waiterId" value={waiter.id} />
           <Button type="submit" className="w-full">
-            {waiter.name} 웨이터로 시작하기
+            {waiter.name} 매니저로 시작하기
           </Button>
         </form>
         <p className="text-center text-[0.6875rem] leading-relaxed text-faint">
-          AI 웨이터는 대화를 돕는 디지털 페르소나이며 실제 사람이 아닙니다.
+          AI 라운지 매니저는 대화를 돕는 디지털 페르소나이며 실제 사람이 아닙니다.
         </p>
       </div>
     </article>

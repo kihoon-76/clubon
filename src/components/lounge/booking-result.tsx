@@ -53,7 +53,7 @@ export function BookingResult({
         </Badge>
         {waiter ? (
           <span className="text-sm text-muted">
-            {waiter.name} 웨이터가 가장 잘 맞는 라운지를 찾았어요
+            {waiter.name} 매니저가 가장 잘 맞는 라운지를 찾았어요
           </span>
         ) : null}
       </div>
@@ -149,7 +149,7 @@ export function BookingResult({
           {counterpartIsDemo ? (
             <p className="flex flex-wrap items-center gap-2 text-xs text-faint">
               <MockBadge />
-              상대 라운지는 데모 참가자로 구성되어 있어, 수락하면 웨이터가 상대
+              상대 라운지는 데모 참가자로 구성되어 있어, 수락하면 라운지 매니저가 상대
               측 응답을 대신 처리합니다.
             </p>
           ) : (

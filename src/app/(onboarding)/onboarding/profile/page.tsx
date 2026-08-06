@@ -23,7 +23,7 @@ export default async function ProfileSetupPage() {
         프로필 설정
       </h1>
       <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted">
-        웨이터가 자리를 안내할 때 참고하는 정보입니다. 외모에 대한 항목은
+        라운지 매니저가 자리를 안내할 때 참고하는 정보입니다. 외모에 대한 항목은
         수집하지 않습니다.
       </p>
 

@@ -109,7 +109,7 @@ export interface Table {
   state: TableState;
   maxSize: number;
   inviteCode: string;
-  /** 이 라운지를 안내하는 AI 웨이터 (lib/waiters의 id) */
+  /** 이 라운지를 안내하는 AI 라운지 매니저 (lib/waiters의 id) */
   waiterId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -141,7 +141,7 @@ export interface TablePreferences {
 export type BookingState = "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED";
 export type BookingResponse = "pending" | "accepted" | "declined";
 
-/** 웨이터가 성사시킨 라운지↔라운지 부킹(매치 제안) */
+/** 라운지 매니저가 성사시킨 라운지↔라운지 부킹(매치 제안) */
 export interface Booking {
   id: string;
   requesterTableId: string;

@@ -55,7 +55,7 @@ export default async function MatchProposalPage({
 
   return (
     <Container className="py-14 sm:py-16">
-      <p className="label-caps">웨이터의 제안</p>
+      <p className="label-caps">라운지 매니저의 제안</p>
       <h1 className="mt-3 font-display text-4xl leading-tight text-ivory sm:text-5xl">
         합석해 보시겠어요?
       </h1>

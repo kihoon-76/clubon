@@ -8,7 +8,7 @@ import {
 } from "@/lib/match-options";
 
 /**
- * 원하는 상대 스타일 입력 폼. 웨이터가 이 조건과 공통점이 가장 많은 상대
+ * 원하는 상대 스타일 입력 폼. 라운지 매니저가 이 조건과 공통점이 가장 많은 상대
  * 라운지를 찾아 부킹합니다. 서버 액션(requestBooking)으로 제출됩니다.
  */
 export function PreferenceForm({

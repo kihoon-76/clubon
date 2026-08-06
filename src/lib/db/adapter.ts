@@ -111,7 +111,7 @@ export interface DataAdapter {
   getProfilesForTable(tableId: string): Promise<Profile[]>;
   getTablePreferences(tableId: string): Promise<TablePreferences | null>;
 
-  /** 라운지 생성(호스트 입장). 이미 활성 라운지가 있으면 웨이터만 갱신해 반환. */
+  /** 라운지 생성(호스트 입장). 이미 활성 라운지가 있으면 라운지 매니저만 갱신해 반환. */
   createLounge(input: CreateLoungeInput): Promise<Table>;
   /** 초대코드로 기존 라운지에 합류합니다. */
   joinTableByCode(userId: string, code: string): Promise<JoinResult>;

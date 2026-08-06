@@ -1,20 +1,14 @@
 import {
   ArrowRight,
-  Bot,
   ChevronDown,
   Clock,
   Eye,
   Handshake,
-  MessageCircle,
   MessageSquare,
-  Music2,
-  ScanFace,
   ShieldCheck,
   Sparkles,
   UserRoundCheck,
   Users,
-  VenetianMask,
-  WineOff,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -47,7 +41,7 @@ function Hero() {
       <div aria-hidden className="hero-atmosphere absolute inset-0" />
       <div aria-hidden className="vignette absolute inset-0" />
 
-      <Container className="relative flex min-h-[86vh] flex-col justify-center pt-20 pb-24 sm:pt-24 sm:pb-28">
+      <Container className="relative flex min-h-[86dvh] flex-col justify-center pt-16 pb-20 sm:pt-24 sm:pb-28">
         <div className="reveal max-w-3xl">
           <Badge tone="gold">만 19세 이상 · 회원제 · 술 없는 클럽</Badge>
 
@@ -104,163 +98,68 @@ function Hero() {
 
 function BentoUsp() {
   return (
-    <section className="scroll-mt-20">
-      <Container className="py-20 sm:py-28">
-        <SectionHeading
-          eyebrow="ClubOn이 다른 이유"
-          title="더 진짜에 가까운 만남을, 더 낮은 부담으로"
-          description="술도, 이동도, 어색한 첫 장소도 없습니다. 대화가 먼저인 저녁을 위한 네 가지 약속."
+    <section className="relative overflow-hidden scroll-mt-20">
+      <div aria-hidden className="club-ambience absolute inset-0 opacity-70" />
+      <Container className="relative py-16 text-center break-keep sm:py-28">
+        {/* 1. 가격 대비 — 한 줄로 읽혀야 해서 본문보다 넓게 잡습니다 */}
+        <p className="label-caps">ClubOn이 다른 이유</p>
+
+        <h2 className="mx-auto mt-6 max-w-[30rem] font-display text-[1.75rem] leading-[1.35] text-ivory sm:mt-8 sm:max-w-4xl sm:text-[2.25rem] sm:leading-[1.3] lg:max-w-5xl lg:text-[2.75rem]">
+          나이트클럽 부킹룸 한 번에{" "}
+          <span className="text-muted line-through decoration-danger/60 decoration-[1.5px] sm:whitespace-nowrap">
+            30만 원부터 150만&nbsp;원
+          </span>
+          .
+          <br />
+          <span className="italic text-champagne">
+            클럽온 라운지룸은 단 3만&nbsp;원.
+          </span>
+        </h2>
+
+        <span
+          aria-hidden
+          className="mx-auto mt-9 block h-px w-16 bg-gradient-to-r from-transparent via-champagne-dim to-transparent sm:mt-12"
         />
 
-        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-12">
-          {/* 1. 술이 없습니다 */}
-          <article className="hairline-top group relative flex flex-col justify-between overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-raised p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] transition-colors hover:border-champagne-dim md:col-span-7 md:p-10">
-            <div className="relative z-10 max-w-md">
-              <IconRing icon={WineOff} />
-              <h3 className="mt-8 font-display text-2xl text-ivory sm:text-[1.75rem]">
-                술 없이 만나는 대화
-              </h3>
-              <p className="mt-4 leading-relaxed text-muted">
-                취기 없이도 저녁은 충분히 즐겁습니다. 다음 날을 망치지 않는,
-                맑은 정신의 이야기와 재치를 위한 자리입니다.
-              </p>
-            </div>
-            <WineOff
-              aria-hidden
-              className="pointer-events-none absolute -right-6 -bottom-6 size-48 text-champagne/[0.06] transition-transform duration-700 group-hover:scale-110"
-              strokeWidth={1}
-            />
-          </article>
+        <div className="mx-auto max-w-[30rem] sm:max-w-2xl">
+          {/* 2. 부담 없는 입장 */}
+          <p className="mt-9 text-[1.0625rem] leading-[1.85] text-muted sm:mt-12 sm:text-lg">
+            비싼 술값도, 택시비도, 긴 대기 줄도 필요&nbsp;없습니다.
+            <br />
+            친구와 함께 라운지에 입장해 동물 마스크를 쓰고 편하게 대화하세요.
+          </p>
 
-          {/* 2. 그룹 기반 매칭 */}
-          <article className="hairline-top group relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-raised p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] transition-colors hover:border-champagne-dim md:col-span-5 md:p-10">
-            <IconRing icon={Users} />
-            <h3 className="mt-8 font-display text-2xl text-ivory sm:text-[1.75rem]">
-              그룹 기반 매칭
-            </h3>
-            <p className="mt-4 leading-relaxed text-muted">
-              어색한 1:1이 아닙니다. 친구와 한 테이블로 입장하거나 대기
-              라운지에서 합류해, 자연스러운 그룹 분위기에서 시작합니다.
+          {/* 3. 두 가지 약속 — 모바일에서는 강조구를 항상 둘째 줄로 내립니다 */}
+          <div className="mt-9 space-y-4 border-y border-line py-8 sm:mt-12 sm:py-10">
+            <p className="text-[1.0625rem] leading-[1.7] text-ivory sm:text-xl">
+              대화가 통했다면 양쪽 방장의 동의로 동시에{" "}
+              <span className="block text-champagne sm:inline">얼굴 공개!</span>
             </p>
-            <div
-              aria-hidden
-              className="mt-8 flex items-center gap-2.5"
-              title="한 테이블은 1~4명, 합석 룸은 최소 2명"
-            >
-              {[0, 1, 2, 3].map((i) => (
-                <span
-                  key={i}
-                  className="flex size-9 items-center justify-center rounded-full border border-champagne-dim/50 bg-surface-overlay text-champagne"
-                >
-                  <VenetianMask className="size-4" />
-                </span>
-              ))}
-              <span className="ml-1 text-sm text-faint">최소 2인</span>
-            </div>
-          </article>
-
-          {/* 3. AI 웨이터 컨시어지 (미니 UI) */}
-          <article className="relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-champagne-dim/30 bg-ink p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] md:col-span-4 md:p-10">
-            <div className="gold-glow flex size-16 items-center justify-center rounded-full border border-champagne-dim/50 bg-surface-raised text-champagne">
-              <Bot className="size-7" />
-            </div>
-            <h3 className="mt-6 font-display text-xl text-ivory">
-              AI 웨이터 컨시어지
-            </h3>
-            <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted">
-              전담 디지털 웨이터가 테이블을 소개하고, 대화가 끊기면 이야깃거리를
-              건네며 분위기를 이어갑니다.
+            <p className="text-[1.0625rem] leading-[1.7] text-ivory sm:text-xl">
+              마음에 들지 않으면 부담 없이{" "}
+              <span className="block text-champagne sm:inline">
+                다음 라운지로 이동!
+              </span>
             </p>
-            <div className="mt-7 space-y-2.5 border-t border-line/70 pt-6">
-              <WaiterChip icon={MessageCircle} label="대화 주제 제안" active />
-              <WaiterChip icon={Music2} label="분위기 음악 추천" />
-            </div>
-            <span className="mt-6">
-              <Badge tone="warn">모의 기능</Badge>
-            </span>
-          </article>
+          </div>
 
-          {/* 4. 안전 우선 */}
-          <article className="hairline-top group relative flex flex-col items-start gap-10 overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-raised p-8 shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_40px_rgba(0,0,0,0.35)] transition-colors hover:border-champagne-dim md:col-span-8 md:flex-row md:items-center md:p-10">
-            <div className="order-2 flex-1 md:order-1">
-              <IconRing icon={ShieldCheck} />
-              <h3 className="mt-8 font-display text-2xl text-ivory sm:text-[1.75rem]">
-                안전이 먼저입니다
-              </h3>
-              <p className="mt-4 max-w-md leading-relaxed text-muted">
-                성인 본인확인은 필수입니다. 신뢰가 쌓이기 전까지는 마스크를 쓴
-                실시간 화상으로 익명을 지키고, 양쪽 방장이 준비됐다고 판단할 때만 얼굴을
-                공개합니다.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-2.5">
-                <SafetyChip>성인 본인확인</SafetyChip>
-                <SafetyChip>마스크 화상</SafetyChip>
-                <SafetyChip>방장 합의 공개</SafetyChip>
-              </div>
-            </div>
+          {/* 4. 마무리 */}
+          <p className="mt-9 text-[1.0625rem] leading-[1.85] text-muted sm:mt-12 sm:text-lg">
+            집에서 즐기는 프라이빗 나이트라이프,
+            <br />
+            부킹의 설렘은 그대로, 비용은{" "}
+            <span className="text-champagne">10분의&nbsp;1</span>로.
+          </p>
 
-            {/* 마스크 모티프 */}
-            <div className="order-1 aspect-square w-full shrink-0 md:order-2 md:w-56">
-              <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[var(--radius-control)] border border-champagne-dim/30 bg-[radial-gradient(120%_120%_at_30%_20%,rgba(216,190,134,0.16),transparent_60%)]">
-                <VenetianMask
-                  className="size-24 text-champagne/70"
-                  strokeWidth={1}
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-champagne/[0.06] opacity-0 backdrop-blur-[1px] transition-opacity duration-500 group-hover:opacity-100">
-                  <ScanFace className="size-14 text-champagne" strokeWidth={1.25} />
-                </div>
-              </div>
-            </div>
-          </article>
+          <p className="mt-10 font-display text-[1.625rem] leading-[1.4] text-ivory sm:mt-14 sm:text-[2.25rem] sm:leading-[1.3]">
+            오늘 밤, 클럽에 가지 말고{" "}
+            <span className="italic text-champagne">클럽을 켜세요.</span>
+          </p>
+
+          <p className="label-caps mt-7 sm:mt-8">CLUB ON — 온라인 부킹 라운지</p>
         </div>
       </Container>
     </section>
-  );
-}
-
-function IconRing({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <span
-      aria-hidden
-      className="flex size-12 items-center justify-center rounded-full border border-champagne-dim/60 text-champagne"
-    >
-      <Icon className="size-5" />
-    </span>
-  );
-}
-
-function WaiterChip({
-  icon: Icon,
-  label,
-  active = false,
-}: {
-  icon: LucideIcon;
-  label: string;
-  active?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-[10px] border border-line bg-surface px-4 py-2.5">
-      <span
-        className={
-          active
-            ? "text-[0.8125rem] text-champagne"
-            : "text-[0.8125rem] text-muted"
-        }
-      >
-        {label}
-      </span>
-      <Icon
-        className={active ? "size-4 text-champagne" : "size-4 text-faint"}
-      />
-    </div>
-  );
-}
-
-function SafetyChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-line px-3.5 py-1.5 text-[0.6875rem] uppercase tracking-[0.14em] text-muted">
-      {children}
-    </span>
   );
 }
 
@@ -279,8 +178,8 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
   },
   {
     icon: Sparkles,
-    title: "AI 웨이터가 매칭",
-    body: "관심사, 언어, 대화 에너지를 바탕으로 어울리는 다른 테이블을 찾아 소개합니다.",
+    title: "AI 라운지 매니저가 매칭",
+    body: "관심사, 언어, 대화 에너지를 바탕으로 어울리는 다른 라운지를 찾아 소개합니다.",
   },
   {
     icon: Handshake,
@@ -343,8 +242,8 @@ function HowItWorks() {
 
 const WAITER_LINES = [
   "안녕하세요. 오늘 저녁은 편안한 대화, 활기찬 분위기, 여행 이야기 중 어느 쪽이 좋으실까요?",
-  "비슷한 결의 테이블을 찾았습니다. 소개해 드릴까요?",
-  "양쪽 테이블 모두 수락하셨습니다. 10초 뒤 합석 룸이 열립니다.",
+  "말씀하신 조건과 가장 잘 맞는 라운지를 찾았습니다. 소개해 드릴까요?",
+  "양쪽 라운지 모두 수락하셨습니다. 10초 뒤 합석 룸이 열립니다.",
 ];
 
 function Waiter() {
@@ -353,11 +252,11 @@ function Waiter() {
       <Container className="grid items-center gap-14 py-20 sm:py-28 lg:grid-cols-2">
         <div>
           <SectionHeading
-            eyebrow="AI 웨이터"
-            title="테이블을 안내하는 호스트"
-            description="AI 웨이터는 테이블의 취향을 확인하고, 어울리는 테이블을 소개하고, 대화가 끊기면 이야깃거리를 건넵니다. 외모를 평가하거나 순위를 매기지 않으며, 수락을 재촉하지 않습니다."
+            eyebrow="AI 라운지 매니저"
+            title="잘 맞는 라운지를 찾아 연결합니다"
+            description="AI 라운지 매니저는 라운지의 취향과 원하는 상대의 조건을 확인하고, 그 조건에 가장 잘 맞는 라운지를 찾아 왜 어울리는지와 함께 소개합니다. 외모를 평가하거나 순위를 매기지 않으며, 수락을 재촉하지 않습니다."
           />
-          <ul className="mt-8 space-y-3 text-[0.9375rem] text-muted">
+          <ul className="mt-8 space-y-3 text-[0.9375rem] break-keep text-muted">
             {[
               "외모 평가·순위 매기기를 하지 않습니다",
               "다른 회원의 비공개 프로필 정보를 알려주지 않습니다",
@@ -377,7 +276,7 @@ function Waiter() {
         <Card hairline>
           <CardBody className="space-y-4">
             <div className="flex items-center gap-2">
-              <span className="label-caps">Waiter</span>
+              <span className="label-caps">Lounge Manager</span>
               <Badge tone="silver">대화 예시</Badge>
             </div>
             {WAITER_LINES.map((line) => (
@@ -564,7 +463,7 @@ function SectionHeading({
   description?: string;
 }) {
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl break-keep">
       <p className="label-caps">{eyebrow}</p>
       <h2 className="mt-4 font-display text-3xl leading-tight text-ivory sm:text-[2.5rem]">
         {title}

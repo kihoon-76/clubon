@@ -35,7 +35,7 @@ const DEMO_COMPANION_IDS = [
 
 /* ------------------------------------------------------------ 라운지 개설 */
 
-/** 웨이터를 골라 내 라운지를 열고 입장합니다. */
+/** 라운지 매니저를 골라 내 라운지를 열고 입장합니다. */
 export async function startWithWaiter(formData: FormData): Promise<void> {
   const { user, profile } = await requireOnboardedSession();
 
@@ -221,7 +221,7 @@ export async function rematch(tableId: string): Promise<void> {
 /**
  * 내 라운지 쪽의 수락/거절을 기록합니다. 양측이 모두 수락하면 룸을 개설합니다.
  *
- * 상대가 시드 데모 라운지라면, 실제 응답자가 없으므로 웨이터가 대신
+ * 상대가 시드 데모 라운지라면, 실제 응답자가 없으므로 라운지 매니저가 대신
  * 수락 처리합니다(데모 전용 · UI에 명시).
  */
 export async function respondToProposal(

@@ -24,7 +24,7 @@ export default async function ClosedPage() {
   if (status.isOpen) redirect("/lobby");
 
   return (
-    <Container className="flex min-h-[70vh] flex-col justify-center py-16 sm:py-20">
+    <Container className="flex min-h-[70dvh] flex-col justify-center py-16 sm:py-20">
       <div className="max-w-xl">
         <span
           aria-hidden

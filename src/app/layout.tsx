@@ -29,6 +29,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#0b0b0c",
   colorScheme: "dark",
+  // 모바일 웹앱 기준. 확대는 접근성을 위해 막지 않습니다.
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

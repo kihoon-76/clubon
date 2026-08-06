@@ -470,7 +470,7 @@ export class DevMemoryAdapter implements DataAdapter {
     const s = store();
     const nowIso = new Date().toISOString();
 
-    // 이미 활성 라운지가 있으면 웨이터만 갱신해 재사용.
+    // 이미 활성 라운지가 있으면 라운지 매니저만 갱신해 재사용.
     const existing = await this.getActiveTableForUser(input.userId);
     if (existing) {
       const t = s.tables.get(existing.id)!;

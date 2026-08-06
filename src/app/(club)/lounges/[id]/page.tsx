@@ -60,7 +60,7 @@ export default async function LoungePage({
 
   return (
     <Container className="py-14 sm:py-16">
-      {/* 담당 웨이터 */}
+      {/* 담당 라운지 매니저 */}
       {waiter ? (
         <div className="flex items-center gap-4 rounded-[var(--radius-card)] border border-champagne-dim/30 bg-ink p-5">
           <WaiterAvatar waiter={waiter} className="w-16 shrink-0" />
@@ -70,7 +70,7 @@ export default async function LoungePage({
               <Badge tone="gold">{waiter.epithet}</Badge>
             </div>
             <p className="mt-1 text-sm text-muted">
-              {waiter.name} 웨이터가 오늘 저녁 {profile?.nickname ?? "회원"}님의
+              {waiter.name} 매니저가 오늘 저녁 {profile?.nickname ?? "회원"}님의
               자리를 안내합니다.
             </p>
           </div>
@@ -138,7 +138,7 @@ export default async function LoungePage({
             <div>
               <Badge tone="gold">매치 제안 도착</Badge>
               <p className="mt-2 text-sm text-muted">
-                웨이터가 상대 라운지를 찾았습니다. 수락 여부를 알려주세요.
+                라운지 매니저가 상대 라운지를 찾았습니다. 수락 여부를 알려주세요.
               </p>
             </div>
             <ButtonLink href={`/match/${livePropose.id}`}>
@@ -153,7 +153,7 @@ export default async function LoungePage({
             어떤 분과 만나고 싶으세요?
           </h2>
           <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted">
-            원하는 상대의 스타일을 알려주시면, {waiter?.name ?? "웨이터"}가
+            원하는 상대의 스타일을 알려주시면, {waiter?.name ?? "라운지 매니저"}가
             공통점이 가장 많은 라운지를 찾아 부킹해 드립니다.
           </p>
           <div className="mt-8">

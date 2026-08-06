@@ -17,7 +17,7 @@ export default async function EditProfilePage() {
         <p className="label-caps">프로필</p>
         <h1 className="mt-3 font-display text-4xl text-ivory">프로필 수정</h1>
         <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted">
-          웨이터가 자리를 안내할 때 참고하는 정보입니다. 저장하면 다음 매칭부터
+          라운지 매니저가 자리를 안내할 때 참고하는 정보입니다. 저장하면 다음 매칭부터
           반영됩니다.
         </p>
 

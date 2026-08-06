@@ -149,7 +149,7 @@ export function createSession(input: {
     waiter?.name ?? "라운지 매니저",
     `두 라운지가 합석했습니다. 오늘 자리는 ${
       waiter?.name ?? "라운지 매니저"
-    } 웨이터가 안내합니다. 얼굴 공개는 양쪽 라운지의 방장이 모두 수락할 때만 이루어지며, 그때 방 전체의 마스크가 함께 벗겨집니다.`,
+    } 매니저가 안내합니다. 얼굴 공개는 양쪽 라운지의 방장이 모두 수락할 때만 이루어지며, 그때 방 전체의 마스크가 함께 벗겨집니다.`,
   );
   pushSystemMessage(
     session.id,
@@ -792,7 +792,7 @@ export function simulateDemoActivity(sessionId: string, waiterId: string | null)
     createdAt: nowIso(),
   });
 
-  // 웨이터가 가끔 아이스브레이커를 던집니다.
+  // 라운지 매니저가 가끔 아이스브레이커를 던집니다.
   if (count > 0 && count % 5 === 0) {
     const waiter = waiterId ? getWaiter(waiterId) : undefined;
     pushSystemMessage(
