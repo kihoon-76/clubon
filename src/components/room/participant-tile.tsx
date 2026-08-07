@@ -45,7 +45,11 @@ export function ParticipantTile({
       <div className="relative aspect-4/3 bg-ink">
         <div className="absolute inset-0 flex items-center justify-center p-6">
           {p.isMe ? (
-            p.camOn ? (
+            // 공개된 뒤에는 내 얼굴도 화상 무대에 나오므로, 여기서 카메라를
+            // 한 번 더 잡지 않습니다(같은 장치 이중 점유 방지).
+            revealed ? (
+              <RevealedAvatar nickname={p.nickname} className="max-w-28" />
+            ) : p.camOn ? (
               <LocalCamera enabled={p.camOn} />
             ) : (
               <MaskAvatar mask={p.mask} className="max-w-32" />

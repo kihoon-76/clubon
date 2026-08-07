@@ -38,6 +38,7 @@ npm run dev                  # http://localhost:3000
 | `NEXT_PUBLIC_SUPABASE_URL` | – | Supabase 프로젝트 URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | – | Supabase anon 공개 키 |
 | `SUPABASE_SERVICE_ROLE_KEY` | – | **서버 전용.** 브라우저 번들에 절대 포함되지 않습니다 |
+| `DAILY_API_KEY` | 화상 사용 시 | **서버 전용.** Daily 방 생성·미팅 토큰 발급용. 없으면 화상 없이 채팅만 동작합니다 |
 | `CLUB_TIMEZONE` | – | 클럽 운영 시간 기준 타임존 (기본 `Asia/Seoul`) |
 
 > `DATABASE_URL`이 없으면 앱은 로컬 개발용 인메모리 어댑터로 동작합니다.
@@ -73,6 +74,7 @@ npm run dev                  # http://localhost:3000
 | `npm run start` | 프로덕션 서버 |
 | `npm run lint` | ESLint |
 | `npm run check:browser -- /경로 ...` | 헤드리스 Chromium으로 렌더링·콘솔 오류·모바일 오버플로 검증 및 스크린샷 |
+| `npm run daily:domain` | Daily 도메인 설정과 앱이 기대하는 값의 차이를 출력 (`-- --apply`로 반영) |
 
 `check:browser`는 최초 1회 다음이 필요합니다.
 

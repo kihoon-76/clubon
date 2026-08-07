@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:browser": "node scripts/browser-check.mjs"
+    "check:browser": "node scripts/browser-check.mjs",
+    "daily:domain": "node scripts/daily-domain.mjs"
   },
   "dependencies": {
+    "@daily-co/daily-js": "^0.91.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.0",
     "clsx": "^2.1.1",

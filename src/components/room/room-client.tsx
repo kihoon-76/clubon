@@ -9,6 +9,7 @@ import {
   toggleMedia,
 } from "@/app/(club)/room/[sessionId]/actions";
 import { ChatPanel } from "@/components/room/chat-panel";
+import { DailyStage } from "@/components/room/daily-stage";
 import { ParticipantTile } from "@/components/room/participant-tile";
 import { ReportDialog } from "@/components/room/report-dialog";
 import { RevealControl } from "@/components/room/reveal-control";
@@ -22,8 +23,8 @@ const POLL_INTERVAL_MS = 2500;
  * 라이브 마스크 대화방.
  *
  * 상태는 폴링으로 동기화합니다(Phase 2에서 Supabase Realtime으로 교체).
- * 실시간 화상 스트림 전송은 아직 연결되지 않았으며, 내 카메라 미리보기만
- * 로컬에서 표시됩니다.
+ * 음성·영상은 Daily Prebuilt가 담당하며, 얼굴 공개 전에는 프레임을 감춘 채
+ * 음성만 흐르고 화면에는 마스크 타일이 보입니다.
  */
 export function RoomClient({ initial }: { initial: RoomView }) {
   const [view, setView] = useState<RoomView>(initial);
@@ -72,8 +73,9 @@ export function RoomClient({ initial }: { initial: RoomView }) {
           </span>
           <MockBadge />
           <span className="text-xs text-faint">
-            실시간 영상 전송은 아직 연결되지 않았습니다. 내 카메라만 로컬에서
-            미리 보입니다.
+            {view.reveal.state === "REVEALED"
+              ? "얼굴이 공개된 상태입니다."
+              : "음성으로 대화하고, 얼굴은 방장 합의 후 함께 공개됩니다."}
           </span>
         </div>
 
@@ -88,6 +90,15 @@ export function RoomClient({ initial }: { initial: RoomView }) {
           <p className="rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted">
             세션이 종료되었습니다.
           </p>
+        ) : null}
+
+        {view.state !== "ended" && me.status !== "removed" ? (
+          <DailyStage
+            sessionId={view.sessionId}
+            revealed={me.revealed}
+            micOn={me.micOn && me.status !== "muted"}
+            camOn={me.camOn}
+          />
         ) : null}
 
         <RevealControl
