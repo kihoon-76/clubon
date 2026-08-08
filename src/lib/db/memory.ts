@@ -8,6 +8,8 @@ import type {
   MatchCandidate,
   MatchPreferenceInput,
   ProfileInput,
+  RecordPurchaseInput,
+  StartUsageResult,
 } from "./adapter";
 import type {
   AccountStatus,
@@ -17,7 +19,11 @@ import type {
   ConversationEnergy,
   Gender,
   Invitation,
+  LoungeSessionStatus,
+  LoungeUsage,
   OperatingHour,
+  PassWallet,
+  PaymentRecord,
   Profile,
   Table,
   TableMember,
@@ -47,6 +53,8 @@ interface Store {
   operatingHours: OperatingHour[];
   users: Map<string, User>;
   passwords: Map<string, string>;
+  /** userId → Google sub. 비밀번호와 마찬가지로 User 밖에 따로 둡니다. */
+  googleSubs: Map<string, string>;
   profiles: Map<string, Profile>;
   consents: Consent[];
   tables: Map<string, Table>;
@@ -56,6 +64,10 @@ interface Store {
   bookings: Booking[];
   inviteCodes: Set<string>;
   demoPasswordsReady: boolean;
+  wallets: Map<string, PassWallet>;
+  payments: Map<string, PaymentRecord>;
+  /** `${sessionId}|${userId}` → 이용 기록 */
+  usages: Map<string, LoungeUsage>;
 }
 
 interface DemoUser {
@@ -133,6 +145,24 @@ export const DEMO_ACCOUNTS = DEMO_USERS.map((d) => ({
 /** 시드로 만들어진 데모 라운지인지 — 상대측 자동 응답(데모) 판단에 사용합니다. */
 export function isSeededDemoLounge(tableId: string): boolean {
   return CANDIDATE_LOUNGES.some((c) => c.id === tableId);
+}
+
+/** 지갑이 없으면 0으로 채운 새 지갑을 만들어 돌려줍니다(참조를 그대로 반환). */
+function ensureWallet(userId: string): PassWallet {
+  const s = store();
+  let w = s.wallets.get(userId);
+  if (!w) {
+    w = {
+      userId,
+      remainingPasses: 0,
+      membershipType: "standard",
+      priorityMatchingCredits: 0,
+      totalPurchasedPasses: 0,
+      updatedAt: new Date().toISOString(),
+    };
+    s.wallets.set(userId, w);
+  }
+  return w;
 }
 
 function seed(): Store {
@@ -223,6 +253,22 @@ function seed(): Store {
     });
   }
 
+  // 데모 지갑 — 로그인 없이 둘러보는 미리보기 흐름이 결제 벽에 막히지 않도록
+  // 시드 회원에게만 이용권을 넣어 둡니다. 데모 계정과 같은 성격의 시드
+  // 데이터이며, DATABASE_URL이 연결된 실제 배포에는 존재하지 않습니다.
+  // (결제를 우회하는 코드 경로가 아니라, 잔액이 채워진 상태로 시작할 뿐입니다.)
+  const wallets = new Map<string, PassWallet>();
+  for (const d of DEMO_USERS) {
+    wallets.set(d.id, {
+      userId: d.id,
+      remainingPasses: 5,
+      membershipType: d.role === "admin" ? "vip" : "standard",
+      priorityMatchingCredits: d.role === "admin" ? 10 : 0,
+      totalPurchasedPasses: 5,
+      updatedAt: nowIso,
+    });
+  }
+
   return {
     club: {
       id: CLUB_ID,
@@ -236,6 +282,7 @@ function seed(): Store {
     operatingHours,
     users,
     passwords: new Map(),
+    googleSubs: new Map(),
     profiles,
     consents: [],
     tables,
@@ -245,6 +292,9 @@ function seed(): Store {
     bookings: [],
     inviteCodes,
     demoPasswordsReady: false,
+    wallets,
+    payments: new Map(),
+    usages: new Map(),
   };
 }
 
@@ -319,6 +369,35 @@ export class DevMemoryAdapter implements DataAdapter {
     return u ? { ...u } : null;
   }
 
+  async getUserByEmail(email: string): Promise<User | null> {
+    const normalized = email.trim().toLowerCase();
+    const user = [...store().users.values()].find(
+      (u) => u.email.toLowerCase() === normalized,
+    );
+    return user ? { ...user } : null;
+  }
+
+  async getUserByGoogleSub(sub: string): Promise<User | null> {
+    const s = store();
+    for (const [userId, stored] of s.googleSubs) {
+      if (stored === sub) {
+        const user = s.users.get(userId);
+        return user ? { ...user } : null;
+      }
+    }
+    return null;
+  }
+
+  async linkGoogleAccount(userId: string, sub: string): Promise<void> {
+    store().googleSubs.set(userId, sub);
+  }
+
+  async updateUserEmail(userId: string, email: string): Promise<void> {
+    const u = store().users.get(userId);
+    if (!u) return;
+    u.email = email.trim().toLowerCase();
+  }
+
   async getCredentialsByEmail(email: string): Promise<Credentials | null> {
     const s = await withDemoPasswords();
     const normalized = email.trim().toLowerCase();
@@ -344,7 +423,10 @@ export class DevMemoryAdapter implements DataAdapter {
       createdAt: nowIso,
     };
     s.users.set(user.id, user);
-    s.passwords.set(user.id, input.passwordHash);
+    // 비밀번호 없는 가입(Google 로그인)은 해시를 남기지 않습니다.
+    // 이후 이메일/비밀번호 로그인 시도는 해시가 없어 자동으로 실패합니다.
+    if (input.passwordHash) s.passwords.set(user.id, input.passwordHash);
+    if (input.googleSub) s.googleSubs.set(user.id, input.googleSub);
     return { ...user };
   }
 
@@ -818,6 +900,152 @@ export class DevMemoryAdapter implements DataAdapter {
     }
   }
 
+  /* --------------------------------------------------- 이용권 지갑 · 결제 */
+
+  async getWallet(userId: string): Promise<PassWallet> {
+    return { ...ensureWallet(userId) };
+  }
+
+  async recordPurchase(
+    input: RecordPurchaseInput,
+  ): Promise<{ applied: boolean }> {
+    const s = store();
+    // 멱등: 같은 주문이 다시 들어오면 잔액을 건드리지 않습니다.
+    if (s.payments.has(input.paymentId)) return { applied: false };
+
+    const nowIso = new Date().toISOString();
+    s.payments.set(input.paymentId, {
+      paymentId: input.paymentId,
+      userId: input.userId,
+      productId: input.productId,
+      planCode: input.planCode,
+      amount: input.amount,
+      currency: input.currency,
+      purchasedPasses: input.purchasedPasses,
+      paymentStatus: "paid",
+      createdAt: nowIso,
+      refundedAt: null,
+    });
+
+    const w = ensureWallet(input.userId);
+    w.remainingPasses += input.purchasedPasses;
+    w.totalPurchasedPasses += input.purchasedPasses;
+    w.priorityMatchingCredits += input.priorityMatchingCredits;
+    // 등급은 올리기만 합니다 — 추가 구매로 VIP가 풀리면 안 됩니다.
+    if (input.membershipType === "vip") w.membershipType = "vip";
+    w.updatedAt = nowIso;
+
+    return { applied: true };
+  }
+
+  async refundPayment(
+    paymentId: string,
+  ): Promise<{ applied: boolean; reclaimed: number }> {
+    const s = store();
+    const payment = s.payments.get(paymentId);
+    if (!payment || payment.paymentStatus === "refunded") {
+      return { applied: false, reclaimed: 0 };
+    }
+
+    const nowIso = new Date().toISOString();
+    payment.paymentStatus = "refunded";
+    payment.refundedAt = nowIso;
+
+    // 이미 써 버린 이용권은 되돌릴 수 없으므로 남은 만큼만 회수합니다.
+    const w = ensureWallet(payment.userId);
+    const reclaimed = Math.min(w.remainingPasses, payment.purchasedPasses);
+    w.remainingPasses -= reclaimed;
+    w.updatedAt = nowIso;
+
+    return { applied: true, reclaimed };
+  }
+
+  async getPayment(paymentId: string): Promise<PaymentRecord | null> {
+    const p = store().payments.get(paymentId);
+    return p ? { ...p } : null;
+  }
+
+  async listPaymentsForUser(
+    userId: string,
+    limit = 50,
+  ): Promise<PaymentRecord[]> {
+    return [...store().payments.values()]
+      .filter((p) => p.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit)
+      .map((p) => ({ ...p }));
+  }
+
+  async adjustPasses(userId: string, delta: number): Promise<PassWallet> {
+    const w = ensureWallet(userId);
+    w.remainingPasses = Math.max(0, w.remainingPasses + delta);
+    if (delta > 0) w.totalPurchasedPasses += delta;
+    w.updatedAt = new Date().toISOString();
+    return { ...w };
+  }
+
+  /* ------------------------------------------------------- 라운지 이용 기록 */
+
+  async startLoungeUsage(input: {
+    sessionId: string;
+    payerUserId: string;
+    roomId: string;
+    minutes: number;
+  }): Promise<StartUsageResult> {
+    const s = store();
+
+    // 멱등: 방 하나당 1행. 다른 참가자가 들어오거나 새로고침해도 그대로입니다.
+    const existing = s.usages.get(input.sessionId);
+    if (existing) return { ok: true, usage: { ...existing }, charged: false };
+
+    // 차감은 방을 연 라운지의 방장에게서만 일어납니다.
+    const w = ensureWallet(input.payerUserId);
+    if (w.remainingPasses < 1) return { ok: false, reason: "no_passes" };
+
+    const startedAt = new Date();
+    const usage: LoungeUsage = {
+      sessionId: input.sessionId,
+      payerUserId: input.payerUserId,
+      roomId: input.roomId,
+      startedAt: startedAt.toISOString(),
+      expiresAt: new Date(
+        startedAt.getTime() + input.minutes * 60_000,
+      ).toISOString(),
+      endedAt: null,
+      deductedPasses: 1,
+      sessionStatus: "active",
+    };
+
+    w.remainingPasses -= 1;
+    w.updatedAt = usage.startedAt;
+    s.usages.set(input.sessionId, usage);
+
+    return { ok: true, usage: { ...usage }, charged: true };
+  }
+
+  async getLoungeUsage(sessionId: string): Promise<LoungeUsage | null> {
+    const u = store().usages.get(sessionId);
+    return u ? { ...u } : null;
+  }
+
+  async endLoungeUsage(
+    sessionId: string,
+    status: LoungeSessionStatus,
+  ): Promise<void> {
+    const u = store().usages.get(sessionId);
+    if (!u || u.sessionStatus !== "active") return;
+    u.sessionStatus = status;
+    u.endedAt = new Date().toISOString();
+  }
+
+  async listUsagesForUser(userId: string, limit = 50): Promise<LoungeUsage[]> {
+    return [...store().usages.values()]
+      .filter((u) => u.payerUserId === userId)
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+      .slice(0, limit)
+      .map((u) => ({ ...u }));
+  }
+
   /* -------------------------------------------------------------- 관리자 */
 
   async listUsers(limit = 100): Promise<User[]> {
@@ -825,6 +1053,27 @@ export class DevMemoryAdapter implements DataAdapter {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, limit)
       .map((u) => ({ ...u }));
+  }
+
+  async listPayments(limit = 200): Promise<PaymentRecord[]> {
+    return [...store().payments.values()]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit)
+      .map((p) => ({ ...p }));
+  }
+
+  async listUsages(limit = 200): Promise<LoungeUsage[]> {
+    return [...store().usages.values()]
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+      .slice(0, limit)
+      .map((u) => ({ ...u }));
+  }
+
+  async listWallets(limit = 200): Promise<PassWallet[]> {
+    return [...store().wallets.values()]
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, limit)
+      .map((w) => ({ ...w }));
   }
 
   async setUserStatus(userId: string, status: AccountStatus): Promise<void> {

@@ -10,6 +10,8 @@ import type {
   MatchCandidate,
   MatchPreferenceInput,
   ProfileInput,
+  RecordPurchaseInput,
+  StartUsageResult,
 } from "./adapter";
 import type {
   AccountStatus,
@@ -17,7 +19,11 @@ import type {
   Club,
   Consent,
   ConversationEnergy,
+  LoungeSessionStatus,
+  LoungeUsage,
   OperatingHour,
+  PassWallet,
+  PaymentRecord,
   Profile,
   Table,
   TableMember,
@@ -180,6 +186,45 @@ function mapUser(r: Row): User {
   };
 }
 
+function mapWallet(r: Row): PassWallet {
+  return {
+    userId: r.user_id as string,
+    remainingPasses: Number(r.remaining_passes),
+    membershipType: r.membership_type as PassWallet["membershipType"],
+    priorityMatchingCredits: Number(r.priority_matching_credits),
+    totalPurchasedPasses: Number(r.total_purchased_passes),
+    updatedAt: iso(r.updated_at),
+  };
+}
+
+function mapPayment(r: Row): PaymentRecord {
+  return {
+    paymentId: r.payment_id as string,
+    userId: r.user_id as string,
+    productId: r.product_id as string,
+    planCode: r.plan_code as string,
+    amount: Number(r.amount),
+    currency: r.currency as string,
+    purchasedPasses: Number(r.purchased_passes),
+    paymentStatus: r.payment_status as PaymentRecord["paymentStatus"],
+    createdAt: iso(r.created_at),
+    refundedAt: isoOrNull(r.refunded_at),
+  };
+}
+
+function mapUsage(r: Row): LoungeUsage {
+  return {
+    sessionId: r.session_id as string,
+    payerUserId: r.user_id as string,
+    roomId: r.room_id as string,
+    startedAt: iso(r.started_at),
+    expiresAt: iso(r.expires_at),
+    endedAt: isoOrNull(r.ended_at),
+    deductedPasses: Number(r.deducted_passes),
+    sessionStatus: r.session_status as LoungeUsage["sessionStatus"],
+  };
+}
+
 function mapConsent(r: Row): Consent {
   return {
     userId: r.user_id as string,
@@ -225,6 +270,32 @@ export class PostgresAdapter implements DataAdapter {
     return rows.length ? mapUser(rows[0]) : null;
   }
 
+  async getUserByEmail(email: string): Promise<User | null> {
+    const rows = await this.sql`
+      select * from public.users where lower(email) = ${email.trim().toLowerCase()} limit 1`;
+    return rows.length ? mapUser(rows[0]) : null;
+  }
+
+  async getUserByGoogleSub(sub: string): Promise<User | null> {
+    const rows = await this.sql`
+      select * from public.users where google_sub = ${sub} limit 1`;
+    return rows.length ? mapUser(rows[0]) : null;
+  }
+
+  async linkGoogleAccount(userId: string, sub: string): Promise<void> {
+    await this.sql`
+      update public.users
+      set google_sub = ${sub}, updated_at = now()
+      where id = ${userId}`;
+  }
+
+  async updateUserEmail(userId: string, email: string): Promise<void> {
+    await this.sql`
+      update public.users
+      set email = ${email.trim().toLowerCase()}, updated_at = now()
+      where id = ${userId}`;
+  }
+
   async getCredentialsByEmail(email: string): Promise<Credentials | null> {
     const rows = await this.sql`
       select * from public.users where lower(email) = ${email.trim().toLowerCase()} limit 1`;
@@ -237,8 +308,12 @@ export class PostgresAdapter implements DataAdapter {
 
   async createUser(input: CreateUserInput): Promise<User> {
     const rows = await this.sql`
-      insert into public.users (email, password_hash)
-      values (${input.email.trim().toLowerCase()}, ${input.passwordHash})
+      insert into public.users (email, password_hash, google_sub)
+      values (
+        ${input.email.trim().toLowerCase()},
+        ${input.passwordHash},
+        ${input.googleSub ?? null}
+      )
       returning *`;
     return mapUser(rows[0]);
   }
@@ -663,12 +738,241 @@ export class PostgresAdapter implements DataAdapter {
       where id in (${rows[0].requester_table_id as string}, ${rows[0].matched_table_id as string})`;
   }
 
+  /* --------------------------------------------------- 이용권 지갑 · 결제 */
+
+  async getWallet(userId: string): Promise<PassWallet> {
+    const rows = await this.sql`
+      insert into public.pass_wallets (user_id) values (${userId})
+      on conflict (user_id) do update set user_id = excluded.user_id
+      returning *`;
+    return mapWallet(rows[0]);
+  }
+
+  /**
+   * 결제 기록과 이용권 지급을 **한 트랜잭션**으로 처리합니다.
+   *
+   * 멱등의 핵심은 `on conflict (payment_id) do nothing`입니다. 웹훅이 동시에
+   * 두 번 도착해도 삽입에 성공한 쪽만 반환 행을 받고, 나머지는 빈 결과라
+   * 지갑을 건드리지 않습니다.
+   */
+  async recordPurchase(
+    input: RecordPurchaseInput,
+  ): Promise<{ applied: boolean }> {
+    return this.sql.begin(async (tx) => {
+      const inserted = await tx`
+        insert into public.payments (
+          payment_id, user_id, product_id, plan_code,
+          amount, currency, purchased_passes, payment_status
+        ) values (
+          ${input.paymentId}, ${input.userId}, ${input.productId}, ${input.planCode},
+          ${input.amount}, ${input.currency}, ${input.purchasedPasses}, 'paid'
+        )
+        on conflict (payment_id) do nothing
+        returning payment_id`;
+
+      if (inserted.length === 0) return { applied: false };
+
+      await tx`
+        insert into public.pass_wallets (
+          user_id, remaining_passes, membership_type,
+          priority_matching_credits, total_purchased_passes, updated_at
+        ) values (
+          ${input.userId}, ${input.purchasedPasses}, ${input.membershipType}::public.membership_type,
+          ${input.priorityMatchingCredits}, ${input.purchasedPasses}, now()
+        )
+        on conflict (user_id) do update set
+          remaining_passes =
+            public.pass_wallets.remaining_passes + ${input.purchasedPasses},
+          total_purchased_passes =
+            public.pass_wallets.total_purchased_passes + ${input.purchasedPasses},
+          priority_matching_credits =
+            public.pass_wallets.priority_matching_credits + ${input.priorityMatchingCredits},
+          -- 등급은 올리기만 합니다. 추가 구매로 VIP가 풀리면 안 됩니다.
+          membership_type = case
+            when ${input.membershipType} = 'vip' then 'vip'::public.membership_type
+            else public.pass_wallets.membership_type
+          end,
+          updated_at = now()`;
+
+      return { applied: true };
+    });
+  }
+
+  async refundPayment(
+    paymentId: string,
+  ): Promise<{ applied: boolean; reclaimed: number }> {
+    return this.sql.begin(async (tx) => {
+      // 아직 환불되지 않은 결제만 잡습니다(멱등).
+      const marked = await tx`
+        update public.payments
+        set payment_status = 'refunded', refunded_at = now()
+        where payment_id = ${paymentId} and payment_status <> 'refunded'
+        returning user_id, purchased_passes`;
+
+      if (marked.length === 0) return { applied: false, reclaimed: 0 };
+
+      const userId = marked[0].user_id as string;
+      const purchased = Number(marked[0].purchased_passes);
+      if (purchased === 0) return { applied: true, reclaimed: 0 };
+
+      // 이미 써 버린 이용권은 되돌릴 수 없으므로 **남은 만큼만** 회수합니다.
+      // 잔액을 잠근 뒤 실제 회수량을 계산해, 음수로 내려가지 않게 합니다.
+      const wallet = await tx`
+        select remaining_passes from public.pass_wallets
+        where user_id = ${userId} for update`;
+
+      const remaining = Number(wallet[0]?.remaining_passes ?? 0);
+      const reclaimed = Math.min(remaining, purchased);
+      if (reclaimed === 0) return { applied: true, reclaimed: 0 };
+
+      await tx`
+        update public.pass_wallets
+        set remaining_passes = remaining_passes - ${reclaimed}, updated_at = now()
+        where user_id = ${userId}`;
+
+      return { applied: true, reclaimed };
+    });
+  }
+
+  async getPayment(paymentId: string): Promise<PaymentRecord | null> {
+    const rows = await this.sql`
+      select * from public.payments where payment_id = ${paymentId} limit 1`;
+    return rows.length ? mapPayment(rows[0]) : null;
+  }
+
+  async listPaymentsForUser(
+    userId: string,
+    limit = 50,
+  ): Promise<PaymentRecord[]> {
+    const rows = await this.sql`
+      select * from public.payments
+      where user_id = ${userId}
+      order by created_at desc limit ${limit}`;
+    return rows.map(mapPayment);
+  }
+
+  async adjustPasses(userId: string, delta: number): Promise<PassWallet> {
+    const rows = await this.sql`
+      insert into public.pass_wallets (user_id, remaining_passes, total_purchased_passes, updated_at)
+      values (${userId}, ${Math.max(0, delta)}, ${Math.max(0, delta)}, now())
+      on conflict (user_id) do update set
+        remaining_passes = greatest(0, public.pass_wallets.remaining_passes + ${delta}),
+        total_purchased_passes =
+          public.pass_wallets.total_purchased_passes + ${Math.max(0, delta)},
+        updated_at = now()
+      returning *`;
+    return mapWallet(rows[0]);
+  }
+
+  /* ------------------------------------------------------- 라운지 이용 기록 */
+
+  /**
+   * 이용권 차감 + 이용 기록 생성을 한 트랜잭션으로 처리합니다.
+   *
+   * 지갑 행을 `for update`로 잠가 같은 회원의 동시 요청을 직렬화합니다.
+   * 이미 기록이 있으면(재접속) 잔액을 건드리지 않고 그대로 돌려줍니다.
+   */
+  async startLoungeUsage(input: {
+    sessionId: string;
+    payerUserId: string;
+    roomId: string;
+    minutes: number;
+  }): Promise<StartUsageResult> {
+    return this.sql.begin(async (tx) => {
+      await tx`
+        insert into public.pass_wallets (user_id) values (${input.payerUserId})
+        on conflict (user_id) do nothing`;
+
+      // 부담자의 지갑을 **먼저** 잠급니다.
+      //
+      // 순서가 중요합니다. 존재 확인을 잠금보다 먼저 하면, 한 방에 여러 명이
+      // 동시에 입장할 때 두 트랜잭션이 모두 "기록 없음"을 보고 진행해 뒤쪽이
+      // 기본키 충돌로 실패합니다(입장 자체가 에러가 됩니다). 잠금을 먼저 잡으면
+      // 뒤쪽 트랜잭션은 앞쪽이 커밋한 기록을 보고 조용히 무료 입장 처리됩니다.
+      const wallet = await tx`
+        select remaining_passes from public.pass_wallets
+        where user_id = ${input.payerUserId} for update`;
+
+      // 잠금을 얻은 **뒤에** 읽어야 앞선 트랜잭션이 커밋한 행이 보입니다.
+      // (READ COMMITTED에서 각 문장은 실행 시점의 스냅샷을 봅니다.)
+      const existing = await tx`
+        select * from public.lounge_usages
+        where session_id = ${input.sessionId}`;
+      if (existing.length > 0) {
+        return { ok: true, usage: mapUsage(existing[0]), charged: false };
+      }
+
+      if (Number(wallet[0]?.remaining_passes ?? 0) < 1) {
+        return { ok: false, reason: "no_passes" as const };
+      }
+
+      await tx`
+        update public.pass_wallets
+        set remaining_passes = remaining_passes - 1, updated_at = now()
+        where user_id = ${input.payerUserId}`;
+
+      const inserted = await tx`
+        insert into public.lounge_usages (
+          session_id, user_id, room_id, started_at, expires_at, deducted_passes, session_status
+        ) values (
+          ${input.sessionId}, ${input.payerUserId}, ${input.roomId},
+          now(), now() + (${input.minutes} * interval '1 minute'), 1, 'active'
+        )
+        returning *`;
+
+      return { ok: true, usage: mapUsage(inserted[0]), charged: true };
+    });
+  }
+
+  async getLoungeUsage(sessionId: string): Promise<LoungeUsage | null> {
+    const rows = await this.sql`
+      select * from public.lounge_usages
+      where session_id = ${sessionId} limit 1`;
+    return rows.length ? mapUsage(rows[0]) : null;
+  }
+
+  async endLoungeUsage(
+    sessionId: string,
+    status: LoungeSessionStatus,
+  ): Promise<void> {
+    await this.sql`
+      update public.lounge_usages
+      set session_status = ${status}::public.lounge_session_status, ended_at = now()
+      where session_id = ${sessionId} and session_status = 'active'`;
+  }
+
+  async listUsagesForUser(userId: string, limit = 50): Promise<LoungeUsage[]> {
+    const rows = await this.sql`
+      select * from public.lounge_usages
+      where user_id = ${userId}
+      order by started_at desc limit ${limit}`;
+    return rows.map(mapUsage);
+  }
+
   /* -------------------------------------------------------------- 관리자 */
 
   async listUsers(limit = 100): Promise<User[]> {
     const rows = await this.sql`
       select * from public.users order by created_at desc limit ${limit}`;
     return rows.map(mapUser);
+  }
+
+  async listPayments(limit = 200): Promise<PaymentRecord[]> {
+    const rows = await this.sql`
+      select * from public.payments order by created_at desc limit ${limit}`;
+    return rows.map(mapPayment);
+  }
+
+  async listUsages(limit = 200): Promise<LoungeUsage[]> {
+    const rows = await this.sql`
+      select * from public.lounge_usages order by started_at desc limit ${limit}`;
+    return rows.map(mapUsage);
+  }
+
+  async listWallets(limit = 200): Promise<PassWallet[]> {
+    const rows = await this.sql`
+      select * from public.pass_wallets order by updated_at desc limit ${limit}`;
+    return rows.map(mapWallet);
   }
 
   async setUserStatus(userId: string, status: AccountStatus): Promise<void> {

@@ -173,3 +173,71 @@ export interface Invitation {
   revokedAt: string | null;
   createdAt: string;
 }
+
+/* ------------------------------------------------------------ 이용권 결제 */
+
+export type PaymentStatus = "pending" | "paid" | "refunded" | "failed";
+export type LoungeSessionStatus = "active" | "ended" | "expired";
+
+/**
+ * 회원별 이용권 지갑.
+ *
+ * 잔여 이용권은 이 한 행이 진실의 원천입니다. 지급(결제 웹훅)과 차감(영상
+ * 세션 시작)은 각각 멱등 키를 갖고 이 행을 갱신합니다.
+ */
+export interface PassWallet {
+  userId: string;
+  /** 남은 30분 라운지 이용권 */
+  remainingPasses: number;
+  /** 등급 — BLACK VIP 구매 시 vip로 올라갑니다. */
+  membershipType: "standard" | "vip";
+  /** 우선 매칭 크레딧 */
+  priorityMatchingCredits: number;
+  /** 누적 구매 이용권(환불로 회수된 분은 제외하지 않는 총 구매량) */
+  totalPurchasedPasses: number;
+  updatedAt: string;
+}
+
+/**
+ * 결제 내역 1건.
+ *
+ * `paymentId`는 Creem이 발급한 주문 식별자를 그대로 씁니다. 웹훅이 중복
+ * 도착해도 이 값이 기본키라 이용권이 두 번 지급되지 않습니다.
+ */
+export interface PaymentRecord {
+  paymentId: string;
+  userId: string;
+  /** Creem 상품 ID */
+  productId: string;
+  /** 카탈로그의 상품 코드 (one_time·gold·extend_30 등) */
+  planCode: string;
+  /** 실제 결제 금액(최소 화폐 단위 정수). Creem이 알려준 값입니다. */
+  amount: number;
+  currency: string;
+  /** 이 결제로 지급된 이용권 수 (추가 과금 상품이면 0) */
+  purchasedPasses: number;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+  refundedAt: string | null;
+}
+
+/**
+ * 라운지 이용 기록 = 이용권을 쓴 흔적. **영상방 하나당 1행**입니다.
+ *
+ * 영상방은 세션당 1개이고 그 안의 사람들이 다 함께 이야기하므로, 이용권도
+ * 참가자 수와 무관하게 방 하나당 1회만 빠집니다. `sessionId`가 유일 키라
+ * 새로고침·재접속은 물론 **다른 참가자가 들어와도** 추가 차감이 없습니다.
+ */
+export interface LoungeUsage {
+  sessionId: string;
+  /** 이용권을 부담한 회원 — 매칭을 요청해 이 방을 연 라운지의 방장 */
+  payerUserId: string;
+  /** 화상 공급자(Daily) 쪽 방 이름 */
+  roomId: string;
+  startedAt: string;
+  /** 서버가 정한 만료 시각. 클라이언트 타이머는 이 값을 기준으로만 계산합니다. */
+  expiresAt: string;
+  endedAt: string | null;
+  deductedPasses: number;
+  sessionStatus: LoungeSessionStatus;
+}
