@@ -64,6 +64,16 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: ["/og.png"],
   },
+  // iOS는 매니페스트의 display를 읽지 않아, 홈 화면에서 전체 화면으로 열리려면
+  // 이 메타가 필요합니다.
+  appleWebApp: {
+    capable: true,
+    title: "ClubOn",
+    // black-translucent은 상태바가 콘텐츠 위를 덮어 헤더가 가려집니다.
+    // 어두운 앱이라 black으로 두면 자리를 확보하면서 이질감도 없습니다.
+    statusBarStyle: "black",
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
