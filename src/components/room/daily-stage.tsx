@@ -2,11 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { DailyCall } from "@daily-co/daily-js";
-import { Loader2, VideoOff } from "lucide-react";
+import { Loader2, Ticket, VideoOff } from "lucide-react";
+
+import { ButtonLink } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
 
-type Status = "connecting" | "live" | "unconfigured" | "error";
+type Status =
+  | "connecting"
+  | "live"
+  | "unconfigured"
+  | "error"
+  /** 잔여 이용권이 없어 서버가 입장을 막았습니다. */
+  | "no_passes"
+  /** 30분이 지나 서버가 새 토큰 발급을 거부했습니다. */
+  | "expired";
 
 /** globals.css의 클럽 팔레트. Prebuilt는 CSS 변수를 못 읽어 값으로 넘깁니다. */
 const DAILY_THEME = {
@@ -46,6 +56,8 @@ export function DailyStage({
   const mountRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
   const [status, setStatus] = useState<Status>("connecting");
+  // 이용권을 부담하는 사람(방을 연 라운지의 방장)인지 — 안내 문구가 갈립니다.
+  const [isPayer, setPayer] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,11 +67,23 @@ export function DailyStage({
       const res = await fetch(`/api/rooms/${sessionId}/video`, {
         cache: "no-store",
       });
+
+      // 402 = 이용권 문제. 오류가 아니라 안내해야 할 상태입니다.
+      if (res.status === 402) {
+        const blocked = (await res.json()) as {
+          blocked?: string;
+          iAmPayer?: boolean;
+        };
+        if (cancelled) return;
+        setPayer(Boolean(blocked.iAmPayer));
+        setStatus(blocked.blocked === "expired" ? "expired" : "no_passes");
+        return;
+      }
       if (!res.ok) throw new Error(`join info ${res.status}`);
 
       const info = (await res.json()) as
         | { configured: false }
-        | { configured: true; roomUrl: string; token: string };
+        | { configured: true; roomUrl: string; token: string; expiresAt: string };
 
       if (cancelled) return;
       if (!info.configured) {
@@ -132,7 +156,11 @@ export function DailyStage({
 
   // 화상이 아예 없는 상태(미설정·실패)에서 큰 빈 상자를 띄우면 마스크 타일만
   // 밀려나므로, 이때는 한 줄 안내로 줄입니다.
-  const stageless = status === "unconfigured" || status === "error";
+  const stageless =
+    status === "unconfigured" ||
+    status === "error" ||
+    status === "no_passes" ||
+    status === "expired";
 
   return (
     <>
@@ -156,7 +184,37 @@ export function DailyStage({
         ) : null}
       </div>
 
-      {stageless ? (
+      {status === "no_passes" ? (
+        <div className="rounded-[var(--radius-card)] border border-champagne-dim/50 bg-champagne/5 p-4">
+          <p className="flex items-center gap-2 text-sm break-keep text-ivory">
+            <Ticket aria-hidden className="size-4 shrink-0 text-champagne" />
+            {isPayer
+              ? "남은 이용권이 없어 이 방의 영상을 열 수 없습니다."
+              : "방을 연 회원의 이용권이 없어 영상이 열리지 않았습니다."}
+          </p>
+          <p className="mt-2 text-xs leading-relaxed break-keep text-muted">
+            {isPayer
+              ? "영상은 방 하나당 이용권 1회만 필요하며, 같은 방의 다른 참가자는 무료로 참여합니다. 채팅은 그대로 이어집니다."
+              : "이 방의 이용권은 방을 연 회원이 부담합니다. 채팅은 그대로 이어집니다."}
+          </p>
+          {isPayer ? (
+            <div className="mt-4">
+              <ButtonLink href="/membership" size="sm">
+                이용권 구매
+              </ButtonLink>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {status === "expired" ? (
+        <p className="flex items-center gap-2 rounded-[var(--radius-control)] border border-warn/50 bg-warn-dim/40 px-4 py-3 text-xs text-ivory">
+          <VideoOff aria-hidden className="size-4 shrink-0 text-warn" />
+          이 라운지의 30분이 끝났습니다.
+        </p>
+      ) : null}
+
+      {status === "unconfigured" || status === "error" ? (
         <p className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-xs text-muted">
           <VideoOff aria-hidden className="size-4 shrink-0 text-faint" />
           {status === "unconfigured"

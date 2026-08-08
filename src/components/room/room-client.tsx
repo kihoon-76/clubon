@@ -12,6 +12,7 @@ import { ChatPanel } from "@/components/room/chat-panel";
 import { DailyStage } from "@/components/room/daily-stage";
 import { ParticipantTile } from "@/components/room/participant-tile";
 import { ReportDialog } from "@/components/room/report-dialog";
+import { SessionTimer } from "@/components/room/session-timer";
 import { RevealControl } from "@/components/room/reveal-control";
 import { Badge, MockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,9 @@ export function RoomClient({ initial }: { initial: RoomView }) {
     null,
   );
   const [pending, startTransition] = useTransition();
+  // 30분이 끝나면 화상 프레임을 언마운트해 실제로 연결을 끊습니다.
+  const [timeUp, setTimeUp] = useState(false);
+  const handleExpire = useCallback(() => setTimeUp(true), []);
 
   const refresh = useCallback(async () => {
     try {
@@ -92,7 +96,13 @@ export function RoomClient({ initial }: { initial: RoomView }) {
           </p>
         ) : null}
 
-        {view.state !== "ended" && me.status !== "removed" ? (
+        <SessionTimer
+          usage={view.usage}
+          remainingPasses={view.remainingPasses}
+          onExpire={handleExpire}
+        />
+
+        {view.state !== "ended" && me.status !== "removed" && !timeUp ? (
           <DailyStage
             sessionId={view.sessionId}
             revealed={me.revealed}

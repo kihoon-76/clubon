@@ -12,6 +12,7 @@ const NAV = [
   { href: "/admin/reports", label: "신고" },
   { href: "/admin/moderation", label: "모더레이션" },
   { href: "/admin/sessions", label: "세션" },
+  { href: "/admin/payments", label: "결제" },
   { href: "/admin/users", label: "회원" },
 ];
 

@@ -2,6 +2,7 @@ import "server-only";
 
 import { getDb } from "@/lib/db";
 import * as room from "@/lib/runtime/store";
+import type { LoungeSessionStatus } from "@/lib/db/types";
 import type { MaskId, RevealState, SessionState } from "@/lib/runtime/types";
 
 /**
@@ -69,6 +70,31 @@ export interface RoomView {
   isHost: boolean;
   reveal: RoomRevealView;
   waiterName: string | null;
+  /**
+   * 내 30분 이용권 사용 현황.
+   *
+   * 남은 시간은 **서버가 정한 expiresAt**만을 기준으로 계산합니다. 클라이언트
+   * 타이머는 표시용일 뿐이라, 새로고침하거나 다른 기기로 붙어도 시간이
+   * 처음부터 다시 흐르지 않습니다. 아직 영상에 입장하지 않았으면 null입니다.
+   */
+  usage: RoomUsageView | null;
+  /** 내 잔여 이용권 — 만료 시 연장 안내 화면이 참조합니다. */
+  remainingPasses: number;
+  /**
+   * 이 방의 이용권을 부담하는(또는 부담한) 회원이 나인지.
+   *
+   * 영상방 하나당 이용권 1회이므로, 잔액이 없어 영상이 열리지 않을 때
+   * 안내 문구가 부담자와 나머지 참가자에게 서로 다르게 나가야 합니다.
+   */
+  iAmRoomPayer: boolean;
+}
+
+export interface RoomUsageView {
+  startedAt: string;
+  expiresAt: string;
+  sessionStatus: LoungeSessionStatus;
+  /** 이 방의 이용권을 부담한 회원이 나인지 */
+  paidByMe: boolean;
 }
 
 /**
@@ -123,6 +149,24 @@ export async function buildRoomView(
 
   const myTable = await db.getTable(meRaw.tableId);
   const iAmHost = isHostOf(viewerId);
+
+  // 이용권 현황은 조회만 합니다 — 차감은 영상 입장(/api/rooms/[id]/video)에서만.
+  const [rawUsage, wallet] = await Promise.all([
+    db.getLoungeUsage(sessionId),
+    db.getWallet(viewerId),
+  ]);
+
+  // 룸 폴링이 만료를 쓸어 담습니다. 별도 크론 없이도 기록이 실제 상태와
+  // 어긋나지 않고, 만료 이후에는 영상 토큰도 재발급되지 않습니다.
+  let usage = rawUsage;
+  if (
+    usage &&
+    usage.sessionStatus === "active" &&
+    Date.parse(usage.expiresAt) <= Date.now()
+  ) {
+    await db.endLoungeUsage(sessionId, "expired");
+    usage = { ...usage, sessionStatus: "expired" };
+  }
   const requestPending = agreement.state === "REVEAL_REQUESTED";
   const iRequested = agreement.requesterTableId === meRaw.tableId;
 
@@ -157,5 +201,15 @@ export async function buildRoomView(
         null,
     },
     waiterName: null,
+    usage: usage
+      ? {
+          startedAt: usage.startedAt,
+          expiresAt: usage.expiresAt,
+          sessionStatus: usage.sessionStatus,
+          paidByMe: usage.payerUserId === viewerId,
+        }
+      : null,
+    remainingPasses: wallet.remainingPasses,
+    iAmRoomPayer: room.roomOwnerId(sessionId) === viewerId,
   };
 }

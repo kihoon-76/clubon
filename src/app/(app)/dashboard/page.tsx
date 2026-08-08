@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
+import { WalletPanel } from "@/components/payments/wallet-panel";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
@@ -60,6 +61,12 @@ export default async function DashboardPage({
   const sessions = listSessionsForUser(user.id);
   const blockedCount = getBlockedIds(user.id).length;
 
+  const [wallet, payments, usages] = await Promise.all([
+    db.getWallet(user.id),
+    db.listPaymentsForUser(user.id, 20),
+    db.listUsagesForUser(user.id, 20),
+  ]);
+
   return (
     <Container className="py-14 sm:py-16">
       <p className="label-caps">내 대시보드</p>
@@ -76,6 +83,30 @@ export default async function DashboardPage({
           피드백을 보내주셔서 감사합니다.
         </p>
       ) : null}
+
+      {sp.purchase === "processing" ? (
+        <p
+          role="status"
+          className="mt-6 flex items-start gap-2 rounded-[var(--radius-control)] border border-champagne-dim/50 bg-champagne/5 px-4 py-3 text-sm leading-relaxed break-keep text-ivory"
+        >
+          <Clock aria-hidden className="mt-0.5 size-4 shrink-0 text-champagne" />
+          결제를 확인하고 있습니다. 결제사 확인이 끝나면 이용권이 자동으로
+          지갑에 들어옵니다. 잠시 후 이 페이지를 새로고침해 주세요.
+        </p>
+      ) : null}
+
+      {sp.purchase === "cancelled" ? (
+        <p
+          role="status"
+          className="mt-6 flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted"
+        >
+          결제를 취소했습니다. 이용권은 차감되지 않았습니다.
+        </p>
+      ) : null}
+
+      <div className="mt-10">
+        <WalletPanel wallet={wallet} payments={payments} usages={usages} />
+      </div>
 
       <div className="mt-10 grid gap-5 lg:grid-cols-2">
         {/* 클럽 상태 · 입장 */}

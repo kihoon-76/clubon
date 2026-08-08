@@ -166,6 +166,18 @@ export function getSession(id: string): VideoSession | null {
   return s ? { ...s } : null;
 }
 
+/**
+ * 이 방의 이용권을 부담하는 회원 — 매칭을 요청해 방을 연 라운지(A)의 방장.
+ *
+ * 영상방은 방 하나당 이용권 1회이므로 "누가 내는가"가 명확해야 합니다.
+ * A 라운지에 방장이 없으면(퇴장 등) B 라운지 방장이 이어받습니다.
+ */
+export function roomOwnerId(sessionId: string): string | null {
+  const session = rt().sessions.get(sessionId);
+  if (!session) return null;
+  return session.hostAUserId ?? session.hostBUserId ?? null;
+}
+
 export function getParticipants(sessionId: string): Participant[] {
   return rt()
     .participants.filter((p) => p.sessionId === sessionId)
