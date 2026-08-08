@@ -57,15 +57,21 @@ export function readSessionToken(token: string | undefined): string | null {
   return userId;
 }
 
+/**
+ * 세션 쿠키 속성. 라우트 핸들러에서 응답 객체에 직접 심을 때도 같은 값을
+ * 써야 하므로(Google 로그인 콜백) 한곳에 모아 둡니다.
+ */
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: MAX_AGE_SECONDS,
+} as const;
+
 export async function setSessionCookie(userId: string): Promise<void> {
   const store = await cookies();
-  store.set(SESSION_COOKIE, createSessionToken(userId), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: MAX_AGE_SECONDS,
-  });
+  store.set(SESSION_COOKIE, createSessionToken(userId), SESSION_COOKIE_OPTIONS);
 }
 
 export async function clearSessionCookie(): Promise<void> {

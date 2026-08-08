@@ -5,8 +5,8 @@ import { z } from "zod";
 
 import { clearSessionCookie, setSessionCookie } from "@/lib/auth/cookie";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { nextStepFor, safeNext } from "@/lib/auth/redirect";
 import { getDb } from "@/lib/db";
-import type { User } from "@/lib/db/types";
 
 export interface AuthFormState {
   error?: string;
@@ -19,21 +19,6 @@ const credentialsSchema = z.object({
     .min(8, "비밀번호는 8자 이상이어야 합니다.")
     .max(200, "비밀번호가 너무 깁니다."),
 });
-
-/** 안전한 내부 경로만 허용합니다(오픈 리디렉트 방지). */
-function safeNext(next: unknown): string | null {
-  if (typeof next !== "string") return null;
-  if (!next.startsWith("/") || next.startsWith("//")) return null;
-  return next;
-}
-
-/** 로그인 후 다음 단계 — 온보딩 미완료 시 해당 단계로 보냅니다. */
-function nextStepFor(user: User, profileExists: boolean): string {
-  if (!user.adultConfirmedAt) return "/onboarding/adult";
-  if (!user.consentCompletedAt) return "/onboarding/consent";
-  if (!profileExists) return "/onboarding/profile";
-  return "/lobby";
-}
 
 export async function login(
   _prev: AuthFormState,

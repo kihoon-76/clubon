@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 
+import { GoogleButton } from "@/components/auth/google-button";
 import { SignupForm } from "@/components/auth/signup-form";
 import { Card, CardBody } from "@/components/ui/card";
 import { isAuthenticated } from "@/lib/session";
@@ -25,8 +26,9 @@ export default async function SignupPage() {
       </div>
 
       <Card hairline className="mt-8">
-        <CardBody>
+        <CardBody className="space-y-6">
           <SignupForm />
+          <GoogleButton label="Google로 가입하기" />
         </CardBody>
       </Card>
 
