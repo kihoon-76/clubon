@@ -1,4 +1,10 @@
+// 배지는 서버·클라이언트 양쪽에서 쓰입니다. `MockBadge`가 문구를 찾아야 하는데
+// 클라이언트 컴포넌트(영상방) 안에서도 그려지므로, 파일 전체를 클라이언트로
+// 두고 `useT()`를 씁니다 — 서버 컴포넌트에서 그리는 것도 그대로 됩니다.
+"use client";
+
 import type { ComponentPropsWithoutRef } from "react";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type Tone = "neutral" | "gold" | "silver" | "success" | "warn" | "danger";
@@ -34,13 +40,11 @@ export function Badge({
  * 기획 요구사항: "모의 기능은 명확히 라벨링할 것".
  */
 export function MockBadge({ className }: { className?: string }) {
+  const t = useT();
+
   return (
-    <Badge
-      tone="warn"
-      className={className}
-      title="이 기능은 데모용 모의 구현입니다. 실제 외부 서비스는 아직 연결되지 않았습니다."
-    >
-      모의 기능
+    <Badge tone="warn" className={className} title={t("common.mockTitle")}>
+      {t("common.mock")}
     </Badge>
   );
 }

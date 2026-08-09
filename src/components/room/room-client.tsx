@@ -16,9 +16,19 @@ import { SessionTimer } from "@/components/room/session-timer";
 import { RevealControl } from "@/components/room/reveal-control";
 import { Badge, MockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 import type { RoomParticipantView, RoomView } from "@/lib/runtime/view";
 
 const POLL_INTERVAL_MS = 2500;
+
+/** 연장 결제가 실패했을 때 룸으로 되돌아오며 붙는 코드. */
+const EXTEND_ERROR_CODES = new Set([
+  "no_usage",
+  "closed",
+  "unavailable",
+  "not_configured",
+  "creem_error",
+]);
 
 /**
  * 라이브 마스크 대화방.
@@ -27,15 +37,37 @@ const POLL_INTERVAL_MS = 2500;
  * 음성·영상은 Daily Prebuilt가 담당하며, 얼굴 공개 전에는 프레임을 감춘 채
  * 음성만 흐르고 화면에는 마스크 타일이 보입니다.
  */
-export function RoomClient({ initial }: { initial: RoomView }) {
+export function RoomClient({
+  initial,
+  extendPending = false,
+  extendError = null,
+}: {
+  initial: RoomView;
+  /** 연장 결제를 마치고 돌아온 직후인지 (웹훅 확인 전) */
+  extendPending?: boolean;
+  /** 연장 결제를 시작하지 못한 사유 코드 */
+  extendError?: string | null;
+}) {
+  const t = useT();
   const [view, setView] = useState<RoomView>(initial);
   const [reportTarget, setReportTarget] = useState<RoomParticipantView | null>(
     null,
   );
   const [pending, startTransition] = useTransition();
-  // 30분이 끝나면 화상 프레임을 언마운트해 실제로 연결을 끊습니다.
-  const [timeUp, setTimeUp] = useState(false);
-  const handleExpire = useCallback(() => setTimeUp(true), []);
+
+  // 시간이 끝나면 화상 프레임을 언마운트해 실제로 연결을 끊습니다.
+  //
+  // 끊긴 상태를 boolean이 아니라 **끝난 만료 시각**으로 기억합니다. 연장
+  // 결제가 반영되면 만료 시각이 뒤로 밀리고, 그 순간 이 값이 더 이상 현재
+  // 만료 시각과 같지 않으므로 화상이 저절로 다시 붙습니다.
+  const [expiredAt, setExpiredAt] = useState<string | null>(null);
+  const handleExpire = useCallback((at: string) => setExpiredAt(at), []);
+
+  const expiresAt = view.usage?.expiresAt ?? null;
+  const timeUp = expiredAt !== null && expiredAt === expiresAt;
+  // 같은 기준으로 "결제 확인 중" 안내도 거둡니다 — 처음 받은 만료 시각과
+  // 달라졌다면 연장이 실제로 적용된 것입니다.
+  const extendApplied = expiresAt !== (initial.usage?.expiresAt ?? null);
 
   const refresh = useCallback(async () => {
     try {
@@ -65,40 +97,60 @@ export function RoomClient({ initial }: { initial: RoomView }) {
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={view.state === "live" ? "success" : "warn"}>
             {view.state === "live"
-              ? "대화 중"
+              ? t("room.stateLive")
               : view.state === "paused"
-                ? "일시 정지"
+                ? t("room.statePaused")
                 : view.state === "locked"
-                  ? "잠금"
-                  : "종료됨"}
+                  ? t("room.stateLocked")
+                  : t("room.stateEnded")}
           </Badge>
           <span className="text-sm text-muted">
-            참가자 {view.participants.filter((p) => p.present).length}명
+            {t("room.participantCount", {
+              count: view.participants.filter((p) => p.present).length,
+            })}
           </span>
           <MockBadge />
-          <span className="text-xs text-faint">
+          <span className="text-xs break-keep text-faint">
             {view.reveal.state === "REVEALED"
-              ? "얼굴이 공개된 상태입니다."
-              : "음성으로 대화하고, 얼굴은 방장 합의 후 함께 공개됩니다."}
+              ? t("room.revealedNote")
+              : t("room.maskedNote")}
           </span>
         </div>
 
         {view.state === "paused" ? (
-          <p className="rounded-[var(--radius-control)] border border-warn/40 bg-warn-dim/40 px-4 py-3 text-sm text-ivory">
-            참가자가 최소 인원(2명) 아래로 줄어 대화가 일시 정지되었습니다.
-            인원이 회복되면 자동으로 재개됩니다.
+          <p className="rounded-[var(--radius-control)] border border-warn/40 bg-warn-dim/40 px-4 py-3 text-sm break-keep text-ivory">
+            {t("room.pausedNote")}
           </p>
         ) : null}
 
         {view.state === "ended" ? (
           <p className="rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted">
-            세션이 종료되었습니다.
+            {t("room.endedNote")}
+          </p>
+        ) : null}
+
+        {extendError ? (
+          <p className="rounded-[var(--radius-control)] border border-danger/40 bg-danger-dim/40 px-4 py-3 text-sm break-keep text-ivory">
+            {EXTEND_ERROR_CODES.has(extendError)
+              ? t(`room.extendErrors.${extendError}`)
+              : t("room.extendFailed")}
+          </p>
+        ) : null}
+
+        {extendPending && !extendApplied ? (
+          <p
+            role="status"
+            className="rounded-[var(--radius-control)] border border-line bg-surface-raised px-4 py-3 text-sm break-keep text-muted"
+          >
+            {t("room.extendChecking")}
           </p>
         ) : null}
 
         <SessionTimer
+          sessionId={view.sessionId}
           usage={view.usage}
-          remainingPasses={view.remainingPasses}
+          remainingMatches={view.remainingMatches}
+          extensions={view.extensions}
           onExpire={handleExpire}
         />
 
@@ -149,11 +201,11 @@ export function RoomClient({ initial }: { initial: RoomView }) {
           >
             {me.micOn ? (
               <>
-                <Mic aria-hidden className="size-4" /> 마이크 끄기
+                <Mic aria-hidden className="size-4" /> {t("room.micOff")}
               </>
             ) : (
               <>
-                <MicOff aria-hidden className="size-4" /> 마이크 켜기
+                <MicOff aria-hidden className="size-4" /> {t("room.micOn")}
               </>
             )}
           </Button>
@@ -171,11 +223,11 @@ export function RoomClient({ initial }: { initial: RoomView }) {
           >
             {me.camOn ? (
               <>
-                <Camera aria-hidden className="size-4" /> 카메라 끄기
+                <Camera aria-hidden className="size-4" /> {t("room.camOff")}
               </>
             ) : (
               <>
-                <CameraOff aria-hidden className="size-4" /> 카메라 켜기
+                <CameraOff aria-hidden className="size-4" /> {t("room.camOn")}
               </>
             )}
           </Button>
@@ -185,21 +237,21 @@ export function RoomClient({ initial }: { initial: RoomView }) {
               <form action={endRoom.bind(null, view.sessionId)}>
                 <Button type="submit" variant="danger">
                   <PhoneOff aria-hidden className="size-4" />
-                  세션 종료
+                  {t("room.endSession")}
                 </Button>
               </form>
             ) : null}
             <form action={leaveRoom.bind(null, view.sessionId)}>
               <Button type="submit" variant="ghost">
                 <DoorOpen aria-hidden className="size-4" />
-                나가기
+                {t("room.leave")}
               </Button>
             </form>
           </div>
 
           {me.status === "muted" ? (
-            <p className="w-full text-xs text-danger">
-              모더레이션 조치로 마이크가 잠겨 있습니다. 관리자 검토 후 해제됩니다.
+            <p className="w-full text-xs break-keep text-danger">
+              {t("room.mutedNote")}
             </p>
           ) : null}
         </div>

@@ -57,13 +57,29 @@ export interface Participant {
   leftAt: string | null;
 }
 
+/**
+ * 방 안의 메시지.
+ *
+ * 회원이 친 말은 `body`에 그대로 담기지만, 시스템·매니저가 남기는 안내는
+ * **문장이 아니라 사전 키**(`bodyKey` + `bodyVars`)로 담깁니다. 한 방에
+ * 서로 다른 언어를 쓰는 사람이 함께 있을 수 있어, 저장 시점에 한 언어로
+ * 굳히면 나머지는 읽지 못하는 안내를 보게 됩니다. 문장은 뷰를 조립할 때
+ * 보는 사람의 언어로 만듭니다(`buildRoomView`).
+ */
 export interface ChatMessage {
   id: string;
   sessionId: string;
   senderId: string | null;
-  senderName: string;
+  /** 회원이 보낸 메시지의 발신자 이름. 시스템·매니저 메시지는 null입니다. */
+  senderName: string | null;
+  /** 시스템·매니저 메시지의 발신자 이름 키 */
+  senderKey: string | null;
   kind: "user" | "system" | "waiter";
+  /** 회원이 친 말. 시스템·매니저 메시지는 빈 문자열입니다. */
   body: string;
+  /** 시스템·매니저 안내의 사전 키 */
+  bodyKey: string | null;
+  bodyVars: Record<string, string | number> | null;
   moderationStatus: ModerationStatus;
   /** blocked 메시지는 발신자에게만 사유와 함께 보입니다. */
   moderationReason: string | null;

@@ -142,21 +142,14 @@ export function createSession(input: {
     });
   });
 
-  const waiter = input.waiterId ? getWaiter(input.waiterId) : undefined;
   pushSystemMessage(
     session.id,
     "waiter",
-    waiter?.name ?? "라운지 매니저",
-    `두 라운지가 합석했습니다. 오늘 자리는 ${
-      waiter?.name ?? "라운지 매니저"
-    } 매니저가 안내합니다. 얼굴 공개는 양쪽 라운지의 방장이 모두 수락할 때만 이루어지며, 그때 방 전체의 마스크가 함께 벗겨집니다.`,
+    waiterNameKey(input.waiterId),
+    "roomChat.opened",
+    { waiterKey: waiterNameKey(input.waiterId) },
   );
-  pushSystemMessage(
-    session.id,
-    "system",
-    "시스템",
-    "다른 참가자의 영상·음성·개인정보를 캡처, 녹화, 촬영하거나 공유하는 행위는 금지됩니다.",
-  );
+  pushSystemMessage(session.id, "system", SYSTEM_KEY, "roomChat.noRecording");
 
   return { ...session };
 }
@@ -167,9 +160,9 @@ export function getSession(id: string): VideoSession | null {
 }
 
 /**
- * 이 방의 이용권을 부담하는 회원 — 매칭을 요청해 방을 연 라운지(A)의 방장.
+ * 이 방을 연 회원 — 매칭을 요청한 라운지(A)의 방장.
  *
- * 영상방은 방 하나당 이용권 1회이므로 "누가 내는가"가 명확해야 합니다.
+ * 방 시간은 모두가 함께 쓰므로 "누가 연 자리인가"가 명확해야 합니다.
  * A 라운지에 방장이 없으면(퇴장 등) B 라운지 방장이 이어받습니다.
  */
 export function roomOwnerId(sessionId: string): string | null {
@@ -234,11 +227,14 @@ export function leaveSession(sessionId: string, userId: string): void {
 
   // 방장이 나가면 그 방장이 맺은 공개 합의도 함께 효력을 잃습니다.
   revokeRevealOnHostLeave(sessionId, userId);
-  pushSystemMessage(sessionId, "system", "시스템", `${p.nickname}님이 나갔습니다.`);
+  pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.left", {
+    nickname: p.nickname,
+  });
   reconcileSessionState(sessionId);
 }
 
-export function endSession(sessionId: string, reason: string): void {
+/** `reasonKey`는 종료 사유의 사전 키입니다(`roomChat.*`). */
+export function endSession(sessionId: string, reasonKey: string): void {
   const r = rt();
   const s = r.sessions.get(sessionId);
   if (!s || s.state === "ended") return;
@@ -252,7 +248,9 @@ export function endSession(sessionId: string, reason: string): void {
     agreement.state = "REMASKED";
     agreement.updatedAt = s.endedAt!;
   }
-  pushSystemMessage(sessionId, "system", "시스템", `세션이 종료되었습니다. (${reason})`);
+  pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.ended", {
+    reasonKey,
+  });
 }
 
 /**
@@ -273,34 +271,50 @@ function reconcileSessionState(sessionId: string): void {
   if (active < MIN_ROOM_PARTICIPANTS && s.state === "live") {
     s.state = "paused";
     s.pausedSince = nowIso();
-    pushSystemMessage(
-      sessionId,
-      "system",
-      "시스템",
-      `참가자가 최소 인원(${MIN_ROOM_PARTICIPANTS}명) 아래로 줄어 대화를 일시 정지했습니다.`,
-    );
+    pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.paused", {
+      min: MIN_ROOM_PARTICIPANTS,
+    });
   } else if (active >= MIN_ROOM_PARTICIPANTS && s.state === "paused") {
     s.state = "live";
     s.pausedSince = null;
-    pushSystemMessage(sessionId, "system", "시스템", "인원이 회복되어 대화를 재개합니다.");
+    pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.resumed");
   }
 }
 
 /* -------------------------------------------------------------------- 채팅 */
 
+/** 시스템 안내의 발신자 이름 키. */
+const SYSTEM_KEY = "roomChat.system";
+
+/** 매니저 이름 키 — 매니저가 지정되지 않았으면 총칭으로 떨어집니다. */
+function waiterNameKey(waiterId: string | null | undefined): string {
+  return waiterId && getWaiter(waiterId)
+    ? `waiters.${waiterId}.name`
+    : "waiters.fallbackName";
+}
+
+/**
+ * 시스템·매니저 안내를 남깁니다.
+ *
+ * 문장이 아니라 **사전 키**를 넘깁니다 — 이유는 `ChatMessage` 주석 참고.
+ */
 function pushSystemMessage(
   sessionId: string,
   kind: "system" | "waiter",
-  senderName: string,
-  body: string,
+  senderKey: string,
+  bodyKey: string,
+  bodyVars?: Record<string, string | number>,
 ): void {
   rt().messages.push({
     id: globalThis.crypto.randomUUID(),
     sessionId,
     senderId: null,
-    senderName,
+    senderName: null,
+    senderKey,
     kind,
-    body,
+    body: "",
+    bodyKey,
+    bodyVars: bodyVars ?? null,
     moderationStatus: "allowed",
     moderationReason: null,
     createdAt: nowIso(),
@@ -309,7 +323,8 @@ function pushSystemMessage(
 
 export interface PostMessageResult {
   status: "allowed" | "flagged" | "blocked";
-  reason: string | null;
+  /** 발신자에게 보여줄 사유의 사전 키 */
+  reasonKey: string | null;
 }
 
 /** 텍스트 모더레이션을 통과시키고 메시지를 저장합니다. */
@@ -323,11 +338,13 @@ export function postMessage(
     (x) => x.sessionId === sessionId && x.userId === userId,
   );
   if (!p || p.leftAt || p.status === "removed") {
-    return { status: "blocked", reason: "이 룸에 참여하고 있지 않습니다." };
+    return { status: "blocked", reasonKey: "moderation.notParticipant" };
   }
 
   const body = rawBody.trim().slice(0, 1000);
-  if (!body) return { status: "blocked", reason: "빈 메시지는 보낼 수 없습니다." };
+  if (!body) {
+    return { status: "blocked", reasonKey: "moderation.emptyMessage" };
+  }
 
   const verdict = checkText(body);
 
@@ -336,10 +353,13 @@ export function postMessage(
     sessionId,
     senderId: userId,
     senderName: p.nickname,
+    senderKey: null,
     kind: "user",
     body,
+    bodyKey: null,
+    bodyVars: null,
     moderationStatus: verdict.status,
-    moderationReason: verdict.reason,
+    moderationReason: verdict.reasonKey,
     createdAt: nowIso(),
   });
 
@@ -350,12 +370,12 @@ export function postMessage(
       context: "chat",
       category: verdict.category,
       severity: verdict.severity,
-      detail: verdict.reason ?? "규칙 위반",
+      detail: verdict.reasonKey ?? "moderation.blockedFallback",
       blocked: verdict.status === "blocked",
     });
   }
 
-  return { status: verdict.status, reason: verdict.reason };
+  return { status: verdict.status, reasonKey: verdict.reasonKey };
 }
 
 /**
@@ -412,33 +432,31 @@ function applyModerationStrike(input: {
   if (input.blocked) p.strikes += 1;
   p.lastStrikeAt = nowIso();
 
-  let action = "기록만";
+  let actionKey = "roomChat.actionLogOnly";
   let next: ParticipantStatus = p.status;
 
   if (input.severity === "critical") {
     next = "muted";
-    action = "관리자 검토 대기 · 음소거";
+    actionKey = "roomChat.actionReviewMute";
   } else if (p.strikes >= 3) {
     next = "muted";
-    action = "음소거";
+    actionKey = "roomChat.actionMute";
   } else if (p.strikes === 2) {
     next = "restricted";
-    action = "영상 블러 처리";
+    actionKey = "roomChat.actionBlur";
   } else if (p.strikes === 1) {
     next = "warned";
-    action = "경고";
+    actionKey = "roomChat.actionWarn";
   }
 
   if (next !== p.status) {
     p.status = next;
     if (next === "restricted") p.videoState = "blurred";
     if (next === "muted") p.micOn = false;
-    pushSystemMessage(
-      input.sessionId,
-      "system",
-      "시스템",
-      `${p.nickname}님에게 커뮤니티 기준에 따른 조치가 적용되었습니다: ${action}`,
-    );
+    pushSystemMessage(input.sessionId, "system", SYSTEM_KEY, "roomChat.action", {
+      nickname: p.nickname,
+      actionKey,
+    });
   }
 
   r.moderationEvents.push({
@@ -449,7 +467,7 @@ function applyModerationStrike(input: {
     contextRef: null,
     category: input.category,
     severity: input.severity,
-    actionTaken: action,
+    actionTaken: actionKey,
     source: "rule",
     detail: input.detail,
     createdAt: nowIso(),
@@ -522,12 +540,9 @@ export function requestReveal(sessionId: string, requesterId: string): void {
   if (existing) Object.assign(existing, next);
   else rt().reveals.push({ sessionId, ...next });
 
-  pushSystemMessage(
-    sessionId,
-    "system",
-    "시스템",
-    `${requester.nickname} 방장이 얼굴 공개를 제안했습니다. 상대 라운지 방장이 수락하면 방 전체의 마스크가 벗겨집니다.`,
-  );
+  pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.revealProposed", {
+    nickname: requester.nickname,
+  });
 }
 
 /** 반대쪽 라운지 방장이 응답합니다. 수락하면 방 전체가 동시에 공개됩니다. */
@@ -549,23 +564,13 @@ export function respondReveal(
   agreement.updatedAt = nowIso();
   if (!accept) {
     agreement.state = "REVEAL_CANCELLED";
-    pushSystemMessage(
-      sessionId,
-      "system",
-      "시스템",
-      "상대 라운지 방장이 이번에는 얼굴 공개를 원하지 않았습니다. 모두 마스크를 유지합니다.",
-    );
+    pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.revealDeclined");
     return;
   }
 
   // 서버가 양쪽 방장의 동의를 확정한 뒤 방 전체를 동시에 공개합니다.
   agreement.state = "REVEALED";
-  pushSystemMessage(
-    sessionId,
-    "system",
-    "시스템",
-    "양쪽 라운지 방장이 모두 수락해 이 방 참가자 전원의 마스크가 벗겨졌습니다. 어느 방장이든 언제든지 다시 마스크를 씌울 수 있습니다.",
-  );
+  pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.revealed");
 }
 
 /** 어느 방장이든 되돌리면 방 전체가 즉시 마스크로 복귀합니다. */
@@ -576,12 +581,7 @@ export function remask(sessionId: string, userId: string): void {
 
   agreement.state = "REMASKED";
   agreement.updatedAt = nowIso();
-  pushSystemMessage(
-    sessionId,
-    "system",
-    "시스템",
-    "방장이 마스크를 다시 씌웠습니다. 참가자 전원이 마스크 상태로 돌아갑니다.",
-  );
+  pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.remasked");
 }
 
 /** 공개를 결정한 방장이 자리를 뜨면 합의는 효력을 잃고 전원 마스크로 돌아갑니다. */
@@ -595,12 +595,7 @@ function revokeRevealOnHostLeave(sessionId: string, userId: string): void {
   agreement.updatedAt = nowIso();
 
   if (wasRevealed) {
-    pushSystemMessage(
-      sessionId,
-      "system",
-      "시스템",
-      "공개를 결정한 방장이 나가 참가자 전원이 다시 마스크를 착용했습니다.",
-    );
+    pushSystemMessage(sessionId, "system", SYSTEM_KEY, "roomChat.hostLeftRemask");
   }
 }
 
@@ -743,14 +738,15 @@ export function listSessionsForUser(userId: string): VideoSession[] {
 
 /* --------------------------------------------------- 데모 참가자 시뮬레이션 */
 
-const SIM_LINES = [
-  "안녕하세요! 반가워요 :)",
-  "다들 오늘 어떤 하루 보내셨어요?",
-  "저는 요즘 퇴근하고 산책하는 게 낙이에요.",
-  "이 라운지 분위기 좋네요.",
-  "최근에 본 것 중에 추천할 만한 거 있으세요?",
-  "여행 얘기 나오면 밤새울 수 있어요.",
-  "음악 취향이 비슷한 것 같아 반갑네요.",
+/** 데모 참가자의 대사 — 문구는 사전(`roomChat.sim*`)에 있습니다. */
+const SIM_LINE_KEYS = [
+  "roomChat.sim1",
+  "roomChat.sim2",
+  "roomChat.sim3",
+  "roomChat.sim4",
+  "roomChat.sim5",
+  "roomChat.sim6",
+  "roomChat.sim7",
 ];
 
 /**
@@ -790,15 +786,16 @@ export function simulateDemoActivity(sessionId: string, waiterId: string | null)
 
   const count = r.messages.filter((m) => m.sessionId === sessionId).length;
   const speaker = sims[count % sims.length];
-  const line = SIM_LINES[count % SIM_LINES.length];
-
   r.messages.push({
     id: globalThis.crypto.randomUUID(),
     sessionId,
     senderId: speaker.userId,
     senderName: speaker.nickname,
+    senderKey: null,
     kind: "user",
-    body: line,
+    body: "",
+    bodyKey: SIM_LINE_KEYS[count % SIM_LINE_KEYS.length],
+    bodyVars: null,
     moderationStatus: "allowed",
     moderationReason: null,
     createdAt: nowIso(),
@@ -806,19 +803,18 @@ export function simulateDemoActivity(sessionId: string, waiterId: string | null)
 
   // 라운지 매니저가 가끔 아이스브레이커를 던집니다.
   if (count > 0 && count % 5 === 0) {
-    const waiter = waiterId ? getWaiter(waiterId) : undefined;
     pushSystemMessage(
       sessionId,
       "waiter",
-      waiter?.name ?? "라운지 매니저",
-      ICEBREAKERS[(count / 5) % ICEBREAKERS.length],
+      waiterNameKey(waiterId),
+      ICEBREAKER_KEYS[(count / 5) % ICEBREAKER_KEYS.length],
     );
   }
 }
 
-const ICEBREAKERS = [
-  "가장 최근에 '이건 진짜 좋았다' 싶었던 순간은 언제였나요?",
-  "다음에 꼭 다시 가고 싶은 도시가 있다면 어디인가요?",
-  "요즘 반복해서 듣는 곡 하나만 알려주세요.",
-  "완벽한 주말 하루를 마음대로 짠다면 어떤 하루일까요?",
+const ICEBREAKER_KEYS = [
+  "roomChat.ice1",
+  "roomChat.ice2",
+  "roomChat.ice3",
+  "roomChat.ice4",
 ];

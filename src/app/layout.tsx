@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
+import { LocaleProvider } from "@/lib/i18n/client";
+import { getLocale, getT } from "@/lib/i18n/server";
+
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
@@ -32,38 +35,50 @@ function siteUrl(): string {
   return "http://localhost:3000";
 }
 
-const TITLE = "ClubOn — 어디에 있든, 프라이빗 소셜 클럽";
-const DESCRIPTION =
-  "프로필을 넘기는 대신 대화로 만나는 성인 전용 온라인 소셜 클럽. 그룹으로 입장하고, 마스크를 쓴 채 이야기하고, 양쪽 라운지의 방장이 모두 수락할 때만 얼굴을 공개합니다.";
+/**
+ * 공유 카드와 검색 결과도 읽는 사람의 언어로 나갑니다.
+ *
+ * 링크를 붙여 넣는 사람과 그 링크를 보는 사람이 늘 같은 언어를 쓰지는
+ * 않지만, 적어도 붙여 넣은 사람이 읽은 문장이 그대로 실립니다.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  const title = t("site.title");
+  const description = t("site.description");
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl()),
-  title: { default: TITLE, template: "%s · ClubOn" },
-  description: DESCRIPTION,
-  applicationName: "ClubOn",
-  openGraph: {
-    type: "website",
-    siteName: "ClubOn",
-    title: TITLE,
-    description: DESCRIPTION,
-    url: "/",
-    locale: "ko_KR",
-    images: [
-      {
-        // 1200×630 — 카카오톡 큰 썸네일과 대부분의 SNS가 쓰는 표준 비율.
-        url: "/og.png",
-        width: 1200,
-        height: 630,
-        alt: "ClubOn — 오늘 밤, 클럽을 켜세요",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-    images: ["/og.png"],
-  },
+  return {
+    metadataBase: new URL(siteUrl()),
+    title: { default: title, template: "%s · ClubOn" },
+    description,
+    applicationName: "ClubOn",
+    openGraph: {
+      type: "website",
+      siteName: "ClubOn",
+      title,
+      description,
+      url: "/",
+      locale: t("site.ogLocale"),
+      images: [
+        {
+          // 1200×630 — 카카오톡 큰 썸네일과 대부분의 SNS가 쓰는 표준 비율.
+          url: "/og.png",
+          width: 1200,
+          height: 630,
+          alt: t("site.ogAlt"),
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/og.png"],
+    },
+    ...STATIC_METADATA,
+  };
+}
+
+const STATIC_METADATA = {
   // iOS는 매니페스트의 display를 읽지 않아, 홈 화면에서 전체 화면으로 열리려면
   // 이 메타가 필요합니다.
   appleWebApp: {
@@ -74,7 +89,7 @@ export const metadata: Metadata = {
     statusBarStyle: "black",
   },
   formatDetection: { telephone: false },
-};
+} satisfies Metadata;
 
 export const viewport: Viewport = {
   themeColor: "#0b0b0c",
@@ -84,15 +99,21 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // `lang`은 스크린리더의 발음과 브라우저 번역 제안을 좌우하므로, 고른 언어를
+  // 여기에 그대로 실어야 합니다.
+  const locale = await getLocale();
+
   return (
     <html
-      lang="ko"
+      lang={locale}
       className={`${cormorant.variable} ${notoSansKr.variable} h-full`}
     >
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

@@ -5,8 +5,10 @@ import { useActionState } from "react";
 import { login, type AuthFormState } from "@/app/(auth)/actions";
 import { Field, FormError, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useT } from "@/lib/i18n/client";
 
 export function LoginForm({ next }: { next?: string }) {
+  const t = useT();
   const [state, formAction] = useActionState<AuthFormState, FormData>(login, {});
 
   return (
@@ -14,18 +16,18 @@ export function LoginForm({ next }: { next?: string }) {
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <FormError message={state.error} />
 
-      <Field label="이메일" htmlFor="email">
+      <Field label={t("auth.email")} htmlFor="email">
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           required
-          placeholder="you@example.com"
+          placeholder={t("auth.emailPlaceholder")}
         />
       </Field>
 
-      <Field label="비밀번호" htmlFor="password">
+      <Field label={t("auth.password")} htmlFor="password">
         <Input
           id="password"
           name="password"
@@ -33,12 +35,15 @@ export function LoginForm({ next }: { next?: string }) {
           autoComplete="current-password"
           required
           minLength={8}
-          placeholder="8자 이상"
+          placeholder={t("auth.passwordPlaceholder")}
         />
       </Field>
 
-      <SubmitButton className="w-full gold-glow" pendingLabel="입장 중…">
-        입장하기
+      <SubmitButton
+        className="w-full gold-glow"
+        pendingLabel={t("auth.loginPending")}
+      >
+        {t("auth.loginSubmit")}
       </SubmitButton>
     </form>
   );

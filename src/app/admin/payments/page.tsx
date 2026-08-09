@@ -3,9 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { adjustPasses } from "@/app/admin/payments/actions";
 import { getDb } from "@/lib/db";
 import type { PaymentRecord } from "@/lib/db/types";
-import { PASS_PLANS, formatUsd, getPurchasable } from "@/lib/payments/catalog";
+import {
+  CREDIT_PRODUCTS,
+  EXTENSION_ADDONS,
+  formatUsd,
+  getPurchasable,
+  productName,
+} from "@/lib/payments/catalog";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata = { title: "결제 · 이용권" };
+export const metadata = { title: "결제 · 방 매치" };
 
 /** 최소 화폐 단위 정수 → 표시용. 통화가 섞여 있으면 합산하지 않습니다. */
 function sumAmount(payments: PaymentRecord[]): number {
@@ -29,6 +36,7 @@ function formatDateTime(iso: string): string {
 }
 
 export default async function AdminPaymentsPage() {
+  const t = await getT();
   const db = getDb();
   const [payments, wallets, usages, users] = await Promise.all([
     db.listPayments(500),
@@ -43,15 +51,29 @@ export default async function AdminPaymentsPage() {
   const refunded = payments.filter((p) => p.paymentStatus === "refunded");
 
   // 상품별 판매량 · 매출 · 구매 비율
-  const byPlan = PASS_PLANS.map((plan) => {
-    const rows = paid.filter((p) => p.planCode === plan.code);
+  const byProduct = CREDIT_PRODUCTS.map((product) => {
+    const rows = paid.filter((p) => p.planCode === product.code);
     return {
-      plan,
+      product,
       count: rows.length,
       revenue: sumAmount(rows),
       share: paid.length === 0 ? 0 : (rows.length / paid.length) * 100,
     };
   });
+
+  // 시간 연장은 매치 횟수를 늘리지 않고 방 시간을 늘립니다. 판매량을 횟수와
+  // 섞으면 "판매 매치"가 실제와 어긋나므로 따로 셉니다.
+  const byExtension = EXTENSION_ADDONS.map((addon) => {
+    const rows = paid.filter((p) => p.planCode === addon.code);
+    return {
+      addon,
+      count: rows.length,
+      revenue: sumAmount(rows),
+      minutes: rows.length * addon.extendMinutes,
+    };
+  });
+  const extensionRevenue = byExtension.reduce((a, x) => a + x.revenue, 0);
+  const extendedMinutes = usages.reduce((a, u) => a + u.extendedMinutes, 0);
 
   // 일별 · 월별 매출 (결제 완료 건만)
   const daily = new Map<string, number>();
@@ -66,12 +88,17 @@ export default async function AdminPaymentsPage() {
   const dailyRows = [...daily.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 14);
   const monthlyRows = [...monthly.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
 
-  const totalDeducted = usages.reduce((acc, u) => acc + u.deductedPasses, 0);
+  // 쓴 횟수는 지갑에서 셉니다 — 차감 기록은 (방, 사람) 단위라 방 목록만으로는
+  // 알 수 없고, "산 만큼 - 남은 만큼"이 정확히 쓴 양입니다.
+  const totalUsed = wallets.reduce(
+    (acc, w) => acc + Math.max(0, w.totalPurchasedMatches - w.remainingMatches),
+    0,
+  );
 
   return (
     <AdminPage
-      title="결제 · 이용권"
-      description="이용권 판매와 사용 현황입니다. 금액은 결제사가 확인한 실제 결제액이며, 수동 조정은 결제 내역에 남지 않고 지갑만 변경합니다."
+      title="결제 · 방 매치"
+      description="입장료·추가 매치 판매와 사용 현황입니다. 금액은 결제사가 확인한 실제 결제액이며, 수동 조정은 결제 내역에 남지 않고 지갑만 변경합니다."
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
@@ -85,14 +112,14 @@ export default async function AdminPaymentsPage() {
           hint={`${refunded.length}건`}
         />
         <StatTile
-          label="판매 이용권"
-          value={paid.reduce((a, p) => a + p.purchasedPasses, 0)}
+          label="판매 매치"
+          value={paid.reduce((a, p) => a + p.purchasedMatches, 0)}
           hint="결제로 지급된 총 횟수"
         />
         <StatTile
-          label="사용 이용권"
-          value={totalDeducted}
-          hint={`라운지 입장 ${usages.length}건`}
+          label="사용 매치"
+          value={totalUsed}
+          hint={`열린 방 ${usages.length}개`}
         />
       </div>
 
@@ -104,18 +131,61 @@ export default async function AdminPaymentsPage() {
             headers={["상품", "가격", "판매 건수", "매출", "구매 비율"]}
             empty="아직 결제 건이 없습니다."
           >
-            {byPlan.map(({ plan, count, revenue, share }) => (
-              <tr key={plan.code}>
+            {byProduct.map(({ product, count, revenue, share }) => (
+              <tr key={product.code}>
                 <Td>
-                  <span className="text-ivory">{plan.name}</span>
-                  <span className="text-faint"> · 이용권 {plan.passes}회</span>
+                  <span className="text-ivory">
+                    {productName(t, product.code)}
+                  </span>
+                  <span className="text-faint"> · 매치 {product.matches}회</span>
                 </Td>
-                <Td>{formatUsd(plan.priceCents)}</Td>
+                <Td>{formatUsd(product.priceCents)}</Td>
                 <Td>{count}건</Td>
                 <Td className="text-champagne">{formatUsd(revenue)}</Td>
                 <Td>{share.toFixed(1)}%</Td>
               </tr>
             ))}
+          </DataTable>
+        </div>
+      </section>
+
+      {/* 시간 연장 판매 */}
+      <section className="mt-10">
+        <h2 className="font-display text-xl text-ivory">시간 연장 판매</h2>
+        <p className="mt-2 text-sm break-keep text-muted">
+          매치 횟수를 쓰지 않고 방의 만료 시각만 뒤로 미는 상품입니다. 판매한 분
+          수와 실제로 늘어난 분 수가 다르면(닫힌 방에 결제가 도착한 경우) 서버
+          로그에 환불 필요로 남아 있습니다.
+        </p>
+        <div className="mt-4">
+          <DataTable
+            headers={["상품", "가격", "판매 건수", "매출", "판매한 시간"]}
+            empty="아직 연장 결제가 없습니다."
+          >
+            {byExtension.map(({ addon, count, revenue, minutes }) => (
+              <tr key={addon.code}>
+                <Td>
+                  <span className="text-ivory">
+                    {productName(t, addon.code)}
+                  </span>
+                  <span className="text-faint">
+                    {" "}
+                    · {addon.inRoomBuyer === "guest" ? "참가자 선물" : "방장"}
+                  </span>
+                </Td>
+                <Td>{formatUsd(addon.priceCents)}</Td>
+                <Td>{count}건</Td>
+                <Td className="text-champagne">{formatUsd(revenue)}</Td>
+                <Td>{minutes}분</Td>
+              </tr>
+            ))}
+            <tr>
+              <Td className="text-faint">합계</Td>
+              <Td>—</Td>
+              <Td>{byExtension.reduce((a, x) => a + x.count, 0)}건</Td>
+              <Td className="text-champagne">{formatUsd(extensionRevenue)}</Td>
+              <Td className="text-ivory">적용 {extendedMinutes}분</Td>
+            </tr>
           </DataTable>
         </div>
       </section>
@@ -162,7 +232,12 @@ export default async function AdminPaymentsPage() {
               <tr key={p.paymentId}>
                 <Td className="font-mono text-xs text-faint">{p.paymentId}</Td>
                 <Td>{nicknameOf.get(p.userId) ?? p.userId.slice(0, 8)}</Td>
-                <Td>{getPurchasable(p.planCode)?.name ?? p.planCode}</Td>
+                <Td>
+                  {(() => {
+                    const item = getPurchasable(p.planCode);
+                    return item ? productName(t, item.code) : p.planCode;
+                  })()}
+                </Td>
                 <Td>{formatUsd(p.amount)}</Td>
                 <Td>{p.refundedAt ? formatDateTime(p.refundedAt) : "—"}</Td>
               </tr>
@@ -173,36 +248,31 @@ export default async function AdminPaymentsPage() {
 
       {/* 회원별 지갑 · 수동 조정 */}
       <section className="mt-10">
-        <h2 className="font-display text-xl text-ivory">회원별 잔여 이용권</h2>
+        <h2 className="font-display text-xl text-ivory">회원별 잔여 매치</h2>
         <p className="mt-2 text-sm text-muted">
           수동 지급·회수는 즉시 반영되며 서버 로그에 남습니다. 회수는 잔액
           아래로 내려가지 않습니다.
         </p>
         <div className="mt-4">
           <DataTable
-            headers={["회원", "등급", "잔여", "누적 구매", "우선 매칭", "수동 조정"]}
+            headers={["회원", "잔여", "누적 구매", "쓴 횟수", "수동 조정"]}
             empty="지갑이 만들어진 회원이 없습니다."
           >
             {wallets.map((w) => (
               <tr key={w.userId}>
                 <Td>{nicknameOf.get(w.userId) ?? w.userId.slice(0, 8)}</Td>
+                <Td className="text-ivory">{w.remainingMatches}회</Td>
+                <Td>{w.totalPurchasedMatches}회</Td>
                 <Td>
-                  {w.membershipType === "vip" ? (
-                    <Badge tone="gold">VIP</Badge>
-                  ) : (
-                    <span className="text-faint">일반</span>
-                  )}
+                  {Math.max(0, w.totalPurchasedMatches - w.remainingMatches)}회
                 </Td>
-                <Td className="text-ivory">{w.remainingPasses}회</Td>
-                <Td>{w.totalPurchasedPasses}회</Td>
-                <Td>{w.priorityMatchingCredits}회</Td>
                 <Td>
                   <form action={adjustPasses} className="flex items-center gap-2">
                     <input type="hidden" name="userId" value={w.userId} />
                     <label
                       htmlFor={`delta-${w.userId}`}
                       className="sr-only"
-                    >{`${nicknameOf.get(w.userId) ?? w.userId} 이용권 조정 수량`}</label>
+                    >{`${nicknameOf.get(w.userId) ?? w.userId} 매치 횟수 조정 수량`}</label>
                     <input
                       id={`delta-${w.userId}`}
                       name="delta"
@@ -228,25 +298,25 @@ export default async function AdminPaymentsPage() {
 
       {/* 차감 기록 */}
       <section className="mt-10">
-        <h2 className="font-display text-xl text-ivory">이용권 차감 기록</h2>
+        <h2 className="font-display text-xl text-ivory">열린 방 기록</h2>
         <p className="mt-2 text-sm text-muted">
-          영상방 하나당 1회이며, 방을 연 라운지의 방장에게서 차감됩니다.
-          같은 방의 다른 참가자는 무료로 참여합니다.
+          방 하나당 1행입니다. 매치 횟수는 방에 들어온 참가자 각자에게서 1회씩
+          빠지므로, 이 표의 행 수와 사용된 횟수는 일치하지 않습니다.
         </p>
         <div className="mt-4">
           <DataTable
-            headers={["부담한 회원", "세션", "차감", "시작", "만료", "상태"]}
-            empty="차감 기록이 없습니다."
+            headers={["연 회원", "세션", "연장", "시작", "만료", "상태"]}
+            empty="열린 방이 없습니다."
           >
             {usages.map((u) => (
               <tr key={u.sessionId}>
                 <Td>
-                  {nicknameOf.get(u.payerUserId) ?? u.payerUserId.slice(0, 8)}
+                  {nicknameOf.get(u.ownerUserId) ?? u.ownerUserId.slice(0, 8)}
                 </Td>
                 <Td className="font-mono text-xs text-faint">
                   {u.sessionId.slice(0, 8)}
                 </Td>
-                <Td>{u.deductedPasses}회</Td>
+                <Td>{u.extendedMinutes > 0 ? `${u.extendedMinutes}분` : "—"}</Td>
                 <Td>{formatDateTime(u.startedAt)}</Td>
                 <Td>{formatDateTime(u.expiresAt)}</Td>
                 <Td>

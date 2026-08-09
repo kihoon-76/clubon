@@ -5,17 +5,18 @@ import { Ban, Crown, Eye, Flag, Mic, MicOff } from "lucide-react";
 
 import { blockParticipant } from "@/app/(club)/room/[sessionId]/actions";
 import { LocalCamera } from "@/components/room/local-camera";
-import { MASK_LABEL, MaskAvatar, RevealedAvatar } from "@/components/room/mask-avatar";
+import { MaskAvatar, RevealedAvatar, maskLabel } from "@/components/room/mask-avatar";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/i18n/client";
 import type { RoomParticipantView } from "@/lib/runtime/view";
 import { cn } from "@/lib/utils";
 
-const STATUS_LABEL: Record<RoomParticipantView["status"], string | null> = {
+const STATUS_KEY: Record<RoomParticipantView["status"], string | null> = {
   ok: null,
-  warned: "경고",
-  restricted: "영상 제한",
-  muted: "음소거 조치",
-  removed: "퇴장 조치",
+  warned: "room.statusWarned",
+  restricted: "room.statusRestricted",
+  muted: "room.statusMuted",
+  removed: "room.statusRemoved",
 };
 
 export function ParticipantTile({
@@ -27,11 +28,12 @@ export function ParticipantTile({
   participant: RoomParticipantView;
   onReport: (target: RoomParticipantView) => void;
 }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const p = participant;
   // 공개 여부는 방장끼리의 합의로 방 전체에 한꺼번에 적용됩니다(뷰에서 계산).
   const revealed = p.revealed;
-  const statusLabel = STATUS_LABEL[p.status];
+  const statusKey = STATUS_KEY[p.status];
 
   return (
     <li
@@ -52,13 +54,14 @@ export function ParticipantTile({
             ) : p.camOn ? (
               <LocalCamera enabled={p.camOn} />
             ) : (
-              <MaskAvatar mask={p.mask} className="max-w-32" />
+              <MaskAvatar mask={p.mask} t={t} className="max-w-32" />
             )
           ) : revealed ? (
             <RevealedAvatar nickname={p.nickname} className="max-w-28" />
           ) : (
             <MaskAvatar
               mask={p.mask}
+              t={t}
               className="max-w-32"
               dimmed={p.videoState === "blurred" || !p.camOn}
             />
@@ -74,26 +77,26 @@ export function ParticipantTile({
         </span>
 
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          {p.isMe ? <Badge tone="gold">나</Badge> : null}
+          {p.isMe ? <Badge tone="gold">{t("room.me")}</Badge> : null}
           {p.isRoomHost ? (
             <Badge tone="gold">
               <Crown aria-hidden className="size-3" />
-              방장
+              {t("room.host")}
             </Badge>
           ) : null}
           {revealed ? (
             <Badge tone="success">
               <Eye aria-hidden className="size-3" />
-              공개됨
+              {t("room.revealedBadge")}
             </Badge>
           ) : null}
-          {statusLabel ? <Badge tone="danger">{statusLabel}</Badge> : null}
-          {p.simulated ? <Badge tone="warn">데모</Badge> : null}
+          {statusKey ? <Badge tone="danger">{t(statusKey)}</Badge> : null}
+          {p.simulated ? <Badge tone="warn">{t("room.demo")}</Badge> : null}
         </div>
 
         {p.videoState === "blurred" ? (
-          <p className="absolute inset-x-3 top-1/2 -translate-y-1/2 rounded-[var(--radius-control)] bg-ink/80 px-3 py-2 text-center text-xs text-ivory">
-            모더레이션 조치로 영상이 흐리게 표시됩니다.
+          <p className="absolute inset-x-3 top-1/2 -translate-y-1/2 rounded-[var(--radius-control)] bg-ink/80 px-3 py-2 text-center text-xs break-keep text-ivory">
+            {t("room.blurredNote")}
           </p>
         ) : null}
       </div>
@@ -104,23 +107,29 @@ export function ParticipantTile({
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm text-ivory">{p.nickname}</span>
             <span className="shrink-0 text-[0.6875rem] text-faint">
-              {MASK_LABEL[p.mask]}
+              {maskLabel(t, p.mask)}
             </span>
           </span>
           {p.micOn ? (
-            <Mic aria-label="마이크 켜짐" className="size-4 shrink-0 text-success" />
+            <Mic
+              aria-label={t("room.micIsOn")}
+              className="size-4 shrink-0 text-success"
+            />
           ) : (
-            <MicOff aria-label="마이크 꺼짐" className="size-4 shrink-0 text-faint" />
+            <MicOff
+              aria-label={t("room.micIsOff")}
+              className="size-4 shrink-0 text-faint"
+            />
           )}
         </div>
 
         {p.isMe ? null : p.blockedByMe ? (
-          <p className="text-xs text-faint">차단한 참가자입니다.</p>
+          <p className="text-xs text-faint">{t("room.blockedNote")}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             <TileButton pending={pending} onClick={() => onReport(p)} tone="danger">
               <Flag aria-hidden className="size-3.5" />
-              신고
+              {t("room.report")}
             </TileButton>
             <TileButton
               pending={pending}
@@ -132,7 +141,7 @@ export function ParticipantTile({
               }
             >
               <Ban aria-hidden className="size-3.5" />
-              차단
+              {t("room.block")}
             </TileButton>
           </div>
         )}

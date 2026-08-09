@@ -1,10 +1,14 @@
 import type { Club, OperatingHour } from "@/lib/db/types";
+import type { Translate } from "@/lib/i18n/types";
 
 import { formatClubTime, getClubStatus } from "./hours";
 
 /**
  * 화면 표시에 필요한 클럽 상태 요약. 게이트 판정과 UI 문구를 한 곳에서
  * 만들어 로비·마감·헤더가 동일한 문구를 공유하도록 합니다.
+ *
+ * 시각(`opensAtText`·`closesAtText`)은 클럽의 표준시로 계산한 값이고, 그 값을
+ * 감싸는 문장만 읽는 사람의 언어로 만듭니다.
  */
 export interface ClubStatusView {
   isOpen: boolean;
@@ -20,13 +24,14 @@ export function describeClubStatus(
   club: Club,
   hours: OperatingHour[],
   now: Date,
+  t: Translate,
 ): ClubStatusView {
   // 미리보기 편의: 기본적으로 운영시간 제한을 해제해 항상 영업 중으로 표시합니다.
   // 실제 운영시간 게이트를 적용하려면 CLUBON_ENFORCE_HOURS=1 로 실행하세요.
   if (process.env.CLUBON_ENFORCE_HOURS !== "1") {
     return {
       isOpen: true,
-      short: "상시 오픈",
+      short: t("club.alwaysOpen"),
       opensAtText: null,
       closesAtText: null,
     };
@@ -39,7 +44,7 @@ export function describeClubStatus(
     const closes = formatClubTime(status.closesAt, tz, now);
     return {
       isOpen: true,
-      short: `${closes}까지`,
+      short: t("club.until", { time: closes }),
       opensAtText: null,
       closesAtText: closes,
     };
@@ -49,7 +54,7 @@ export function describeClubStatus(
     const opens = formatClubTime(status.opensAt, tz, now);
     return {
       isOpen: false,
-      short: `${opens} 오픈`,
+      short: t("club.opensAt", { time: opens }),
       opensAtText: opens,
       closesAtText: null,
     };
@@ -57,7 +62,7 @@ export function describeClubStatus(
 
   return {
     isOpen: status.isOpen,
-    short: status.isOpen ? "영업 중" : "운영시간 미정",
+    short: status.isOpen ? t("club.open") : t("club.hoursUnknown"),
     opensAtText: null,
     closesAtText: null,
   };

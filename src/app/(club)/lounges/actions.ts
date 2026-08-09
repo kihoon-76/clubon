@@ -35,22 +35,21 @@ const DEMO_COMPANION_IDS = [
 
 /* ------------------------------------------------------------ 라운지 개설 */
 
-/** 라운지 매니저를 골라 내 라운지를 열고 입장합니다. */
+/**
+ * 매니저 소개 화면에서 고른 매니저를 들고 입장 신청으로 넘어갑니다.
+ *
+ * 여기서 라운지를 바로 열지 않는 이유는, 자리를 열려면 **지역**이 함께
+ * 있어야 하기 때문입니다. 매칭이 지역으로 갈리므로 지역 없는 라운지는
+ * 아무와도 이어지지 않습니다. 고른 매니저만 넘기고 나머지는 입장 신청
+ * 화면에서 받습니다.
+ */
 export async function startWithWaiter(formData: FormData): Promise<void> {
-  const { user, profile } = await requireOnboardedSession();
+  await requireOnboardedSession("/entry");
 
-  const waiterId = String(formData.get("waiterId") ?? "");
-  const waiter = getWaiter(waiterId);
+  const waiter = getWaiter(String(formData.get("waiterId") ?? ""));
   if (!waiter) redirect("/waiters");
 
-  const db = getDb();
-  const table = await db.createLounge({
-    userId: user.id,
-    waiterId: waiter.id,
-    name: `${profile?.nickname ?? "회원"}님의 라운지`,
-  });
-
-  redirect(`/lounges/${table.id}`);
+  redirect(`/entry?waiter=${encodeURIComponent(waiter.id)}`);
 }
 
 /* ------------------------------------------------------------ 초대 · 합류 */

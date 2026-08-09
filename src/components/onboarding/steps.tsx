@@ -1,21 +1,23 @@
 import { Check } from "lucide-react";
 
+import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
-  { key: "adult", label: "성인 확인" },
-  { key: "consent", label: "동의" },
-  { key: "profile", label: "프로필" },
+  { key: "adult", labelKey: "onboarding.stepAdult" },
+  { key: "consent", labelKey: "onboarding.stepConsent" },
+  { key: "profile", labelKey: "onboarding.stepProfile" },
 ] as const;
 
 export type OnboardingStep = (typeof STEPS)[number]["key"];
 
 /** 온보딩 3단계 진행 표시. 색상 외에 체크 아이콘·텍스트로도 상태를 전달합니다. */
-export function OnboardingSteps({ current }: { current: OnboardingStep }) {
+export async function OnboardingSteps({ current }: { current: OnboardingStep }) {
+  const t = await getT();
   const currentIndex = STEPS.findIndex((s) => s.key === current);
 
   return (
-    <ol className="flex items-center gap-2" aria-label="입장 준비 단계">
+    <ol className="flex items-center gap-2" aria-label={t("onboarding.stepsLabel")}>
       {STEPS.map((step, i) => {
         const done = i < currentIndex;
         const active = i === currentIndex;
@@ -38,8 +40,10 @@ export function OnboardingSteps({ current }: { current: OnboardingStep }) {
                 active ? "text-ivory" : "text-faint",
               )}
             >
-              {step.label}
-              {done ? <span className="sr-only"> (완료)</span> : null}
+              {t(step.labelKey)}
+              {done ? (
+                <span className="sr-only"> ({t("onboarding.stepDone")})</span>
+              ) : null}
             </span>
             {i < STEPS.length - 1 ? (
               <span aria-hidden className="h-px flex-1 bg-line" />

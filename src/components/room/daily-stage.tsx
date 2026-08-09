@@ -5,6 +5,8 @@ import type { DailyCall } from "@daily-co/daily-js";
 import { Loader2, Ticket, VideoOff } from "lucide-react";
 
 import { ButtonLink } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
+import { LOUNGE_MINUTES } from "@/lib/payments/catalog";
 
 import { cn } from "@/lib/utils";
 
@@ -13,8 +15,8 @@ type Status =
   | "live"
   | "unconfigured"
   | "error"
-  /** 잔여 이용권이 없어 서버가 입장을 막았습니다. */
-  | "no_passes"
+  /** 남은 매치 횟수가 없어 서버가 입장을 막았습니다. */
+  | "no_matches"
   /** 30분이 지나 서버가 새 토큰 발급을 거부했습니다. */
   | "expired";
 
@@ -53,11 +55,10 @@ export function DailyStage({
   micOn: boolean;
   camOn: boolean;
 }) {
+  const t = useT();
   const mountRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
   const [status, setStatus] = useState<Status>("connecting");
-  // 이용권을 부담하는 사람(방을 연 라운지의 방장)인지 — 안내 문구가 갈립니다.
-  const [isPayer, setPayer] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,15 +69,11 @@ export function DailyStage({
         cache: "no-store",
       });
 
-      // 402 = 이용권 문제. 오류가 아니라 안내해야 할 상태입니다.
+      // 402 = 매치 횟수·시간 문제. 오류가 아니라 안내해야 할 상태입니다.
       if (res.status === 402) {
-        const blocked = (await res.json()) as {
-          blocked?: string;
-          iAmPayer?: boolean;
-        };
+        const blocked = (await res.json()) as { blocked?: string };
         if (cancelled) return;
-        setPayer(Boolean(blocked.iAmPayer));
-        setStatus(blocked.blocked === "expired" ? "expired" : "no_passes");
+        setStatus(blocked.blocked === "expired" ? "expired" : "no_matches");
         return;
       }
       if (!res.ok) throw new Error(`join info ${res.status}`);
@@ -159,7 +156,7 @@ export function DailyStage({
   const stageless =
     status === "unconfigured" ||
     status === "error" ||
-    status === "no_passes" ||
+    status === "no_matches" ||
     status === "expired";
 
   return (
@@ -179,47 +176,41 @@ export function DailyStage({
         {revealed && status === "connecting" ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-xs text-faint">
             <Loader2 aria-hidden className="size-5 animate-spin text-champagne" />
-            화상 연결 중…
+            {t("room.videoConnecting")}
           </div>
         ) : null}
       </div>
 
-      {status === "no_passes" ? (
+      {status === "no_matches" ? (
         <div className="rounded-[var(--radius-card)] border border-champagne-dim/50 bg-champagne/5 p-4">
           <p className="flex items-center gap-2 text-sm break-keep text-ivory">
             <Ticket aria-hidden className="size-4 shrink-0 text-champagne" />
-            {isPayer
-              ? "남은 이용권이 없어 이 방의 영상을 열 수 없습니다."
-              : "방을 연 회원의 이용권이 없어 영상이 열리지 않았습니다."}
+            {t("room.videoNoMatches")}
           </p>
           <p className="mt-2 text-xs leading-relaxed break-keep text-muted">
-            {isPayer
-              ? "영상은 방 하나당 이용권 1회만 필요하며, 같은 방의 다른 참가자는 무료로 참여합니다. 채팅은 그대로 이어집니다."
-              : "이 방의 이용권은 방을 연 회원이 부담합니다. 채팅은 그대로 이어집니다."}
+            {t("room.videoNoMatchesBody")}
           </p>
-          {isPayer ? (
-            <div className="mt-4">
-              <ButtonLink href="/membership" size="sm">
-                이용권 구매
-              </ButtonLink>
-            </div>
-          ) : null}
+          <div className="mt-4">
+            <ButtonLink href="/entry" size="sm">
+              {t("room.videoTopUp")}
+            </ButtonLink>
+          </div>
         </div>
       ) : null}
 
       {status === "expired" ? (
-        <p className="flex items-center gap-2 rounded-[var(--radius-control)] border border-warn/50 bg-warn-dim/40 px-4 py-3 text-xs text-ivory">
+        <p className="flex items-center gap-2 rounded-[var(--radius-control)] border border-warn/50 bg-warn-dim/40 px-4 py-3 text-xs break-keep text-ivory">
           <VideoOff aria-hidden className="size-4 shrink-0 text-warn" />
-          이 라운지의 30분이 끝났습니다.
+          {t("room.videoExpired", { minutes: LOUNGE_MINUTES })}
         </p>
       ) : null}
 
       {status === "unconfigured" || status === "error" ? (
-        <p className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-xs text-muted">
+        <p className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-xs break-keep text-muted">
           <VideoOff aria-hidden className="size-4 shrink-0 text-faint" />
           {status === "unconfigured"
-            ? "화상 서버가 설정되지 않아 음성·영상 없이 채팅으로만 진행합니다."
-            : "화상 연결에 실패했습니다. 채팅과 마스크 대화는 그대로 이어집니다."}
+            ? t("room.videoUnconfigured")
+            : t("room.videoError")}
         </p>
       ) : null}
     </>

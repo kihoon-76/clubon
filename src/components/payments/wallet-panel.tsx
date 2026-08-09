@@ -1,33 +1,47 @@
 import Link from "next/link";
-import { Crown, Ticket, Zap } from "lucide-react";
+import { Crown, Ticket } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import type { LoungeUsage, PassWallet, PaymentRecord } from "@/lib/db/types";
-import { formatUsd, getPurchasable } from "@/lib/payments/catalog";
+import { getLocale, getT } from "@/lib/i18n/server";
+import type { Locale } from "@/lib/i18n/locales";
+import {
+  LOUNGE_MINUTES,
+  formatUsd,
+  getPurchasable,
+  productName,
+} from "@/lib/payments/catalog";
 
 /**
- * 마이페이지의 이용권 지갑 · 구매 내역 · 이용 내역.
+ * 마이페이지의 방 매치 지갑 · 구매 내역 · 이용 내역.
  *
  * 잔액과 내역은 모두 서버에서 조회한 값이며, 화면에서 계산하지 않습니다.
  */
 
-const PAYMENT_STATUS_LABEL: Record<string, { label: string; tone: "success" | "warn" | "danger" | "neutral" }> = {
-  paid: { label: "결제 완료", tone: "success" },
-  pending: { label: "확인 중", tone: "warn" },
-  refunded: { label: "환불됨", tone: "neutral" },
-  failed: { label: "실패", tone: "danger" },
+const PAYMENT_TONE: Record<string, "success" | "warn" | "danger" | "neutral"> = {
+  paid: "success",
+  pending: "warn",
+  refunded: "neutral",
+  failed: "danger",
 };
 
-const USAGE_STATUS_LABEL: Record<string, string> = {
-  active: "진행 중",
-  ended: "종료",
-  expired: "시간 만료",
+const PAYMENT_STATUS_KEY: Record<string, string> = {
+  paid: "wallet.statusPaid",
+  pending: "wallet.statusPending",
+  refunded: "wallet.statusRefunded",
+  failed: "wallet.statusFailed",
 };
 
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", {
+const USAGE_STATUS_KEY: Record<string, string> = {
+  active: "wallet.usageActive",
+  ended: "wallet.usageEnded",
+  expired: "wallet.usageExpired",
+};
+
+function formatDateTime(iso: string, locale: Locale): string {
+  return new Date(iso).toLocaleString(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -36,7 +50,7 @@ function formatDateTime(iso: string): string {
   });
 }
 
-export function WalletPanel({
+export async function WalletPanel({
   wallet,
   payments,
   usages,
@@ -45,92 +59,62 @@ export function WalletPanel({
   payments: PaymentRecord[];
   usages: LoungeUsage[];
 }) {
-  const isVip = wallet.membershipType === "vip";
+  const [t, locale] = await Promise.all([getT(), getLocale()]);
+  const empty = wallet.remainingMatches === 0;
 
   return (
     <div className="space-y-6">
-      <Card hairline={isVip}>
+      <Card hairline={!empty}>
         <CardBody>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <CardTitle>내 이용권</CardTitle>
-              {isVip ? (
-                <Badge tone="gold">
-                  <Crown aria-hidden className="size-3" />
-                  BLACK VIP
-                </Badge>
-              ) : null}
-            </div>
-            <ButtonLink href="/membership" size="sm">
-              이용권 구매
+            <CardTitle>{t("wallet.title")}</CardTitle>
+            <ButtonLink href="/entry" size="sm">
+              {empty ? t("wallet.buyEntry") : t("wallet.requestEntry")}
             </ButtonLink>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <Stat
               icon={<Ticket aria-hidden className="size-4 text-champagne" />}
-              label="남은 이용권"
-              value={`${wallet.remainingPasses}회`}
-              hint="30분 라운지 기준"
-            />
-            <Stat
-              icon={<Zap aria-hidden className="size-4 text-champagne" />}
-              label="우선 매칭"
-              value={`${wallet.priorityMatchingCredits}회`}
-              hint={isVip ? "VIP 혜택" : "BLACK VIP 구매 시 제공"}
+              label={t("wallet.remaining")}
+              value={t("wallet.times", { count: wallet.remainingMatches })}
+              hint={t("wallet.remainingHint", { minutes: LOUNGE_MINUTES })}
             />
             <Stat
               icon={<Crown aria-hidden className="size-4 text-champagne" />}
-              label="누적 구매"
-              value={`${wallet.totalPurchasedPasses}회`}
-              hint="환불 회수분 포함 총 구매량"
+              label={t("wallet.purchased")}
+              value={t("wallet.times", { count: wallet.totalPurchasedMatches })}
+              hint={t("wallet.purchasedHint")}
             />
           </div>
 
-          {isVip ? (
-            <ul className="mt-6 grid gap-2 text-sm text-muted sm:grid-cols-2">
-              {[
-                "VIP 프로필 배지",
-                "우선 매칭",
-                "조건 지정 매칭",
-                "VIP 전용 라운지 입장",
-              ].map((benefit) => (
-                <li key={benefit} className="flex gap-2">
-                  <span aria-hidden className="text-champagne">
-                    ·
-                  </span>
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-6 text-sm leading-relaxed break-keep text-faint">
-              BLACK VIP를 구매하면 VIP 배지, 우선 매칭 10회, 조건 지정 매칭, VIP
-              전용 라운지 입장이 함께 열립니다.{" "}
-              <Link
-                href="/membership"
-                className="text-champagne underline-offset-4 hover:underline"
-              >
-                자세히 보기
-              </Link>
-            </p>
-          )}
+          <p className="mt-6 text-sm leading-relaxed break-keep text-faint">
+            {t("wallet.spendNote")}{" "}
+            <Link
+              href="/membership"
+              className="text-champagne underline-offset-4 hover:underline"
+            >
+              {t("wallet.pricingLink")}
+            </Link>
+          </p>
         </CardBody>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardBody>
-            <CardTitle>구매 내역</CardTitle>
+            <CardTitle>{t("wallet.payments")}</CardTitle>
             {payments.length === 0 ? (
-              <p className="mt-4 text-sm text-faint">아직 구매 내역이 없습니다.</p>
+              <p className="mt-4 text-sm text-faint">
+                {t("wallet.paymentsEmpty")}
+              </p>
             ) : (
               <ul className="mt-4 divide-y divide-line/70">
                 {payments.map((p) => {
                   const item = getPurchasable(p.planCode);
-                  const status =
-                    PAYMENT_STATUS_LABEL[p.paymentStatus] ??
-                    PAYMENT_STATUS_LABEL.pending;
+                  const tone = PAYMENT_TONE[p.paymentStatus] ?? "warn";
+                  const statusKey =
+                    PAYMENT_STATUS_KEY[p.paymentStatus] ?? "wallet.statusPending";
                   return (
                     <li
                       key={p.paymentId}
@@ -138,18 +122,22 @@ export function WalletPanel({
                     >
                       <div className="min-w-0">
                         <p className="text-sm text-ivory">
-                          {item?.name ?? p.planCode}
-                          {p.purchasedPasses > 0 ? (
+                          {item ? productName(t, item.code) : p.planCode}
+                          {p.purchasedMatches > 0 ? (
                             <span className="text-faint">
-                              {" "}
-                              · 이용권 {p.purchasedPasses}회
+                              {" · "}
+                              {t("wallet.matchesGiven", {
+                                count: p.purchasedMatches,
+                              })}
                             </span>
                           ) : null}
                         </p>
                         <p className="mt-0.5 text-xs text-faint">
-                          {formatDateTime(p.createdAt)}
+                          {formatDateTime(p.createdAt, locale)}
                           {p.refundedAt
-                            ? ` · 환불 ${formatDateTime(p.refundedAt)}`
+                            ? ` · ${t("wallet.refundedAt", {
+                                at: formatDateTime(p.refundedAt, locale),
+                              })}`
                             : ""}
                         </p>
                       </div>
@@ -157,7 +145,7 @@ export function WalletPanel({
                         <span className="text-sm text-champagne">
                           {formatUsd(p.amount)}
                         </span>
-                        <Badge tone={status.tone}>{status.label}</Badge>
+                        <Badge tone={tone}>{t(statusKey)}</Badge>
                       </div>
                     </li>
                   );
@@ -169,15 +157,12 @@ export function WalletPanel({
 
         <Card>
           <CardBody>
-            <CardTitle>라운지 이용 내역</CardTitle>
-            <p className="mt-1.5 text-xs text-faint">
-              내가 이용권을 부담해 연 라운지입니다. 초대받아 참여한 자리는
-              차감되지 않습니다.
+            <CardTitle>{t("wallet.seats")}</CardTitle>
+            <p className="mt-1.5 text-xs break-keep text-faint">
+              {t("wallet.seatsHint")}
             </p>
             {usages.length === 0 ? (
-              <p className="mt-4 text-sm text-faint">
-                아직 이용한 라운지가 없습니다.
-              </p>
+              <p className="mt-4 text-sm text-faint">{t("wallet.seatsEmpty")}</p>
             ) : (
               <ul className="mt-4 divide-y divide-line/70">
                 {usages.map((u) => (
@@ -187,18 +172,22 @@ export function WalletPanel({
                   >
                     <div className="min-w-0">
                       <p className="text-sm text-ivory">
-                        30분 라운지
-                        <span className="text-faint">
-                          {" "}
-                          · 이용권 {u.deductedPasses}회 차감
-                        </span>
+                        {t("wallet.seat", { minutes: LOUNGE_MINUTES })}
+                        {u.extendedMinutes > 0 ? (
+                          <span className="text-faint">
+                            {" · "}
+                            {t("wallet.extendedBy", {
+                              minutes: u.extendedMinutes,
+                            })}
+                          </span>
+                        ) : null}
                       </p>
                       <p className="mt-0.5 text-xs text-faint">
-                        {formatDateTime(u.startedAt)}
+                        {formatDateTime(u.startedAt, locale)}
                       </p>
                     </div>
                     <Badge tone={u.sessionStatus === "active" ? "success" : "neutral"}>
-                      {USAGE_STATUS_LABEL[u.sessionStatus] ?? u.sessionStatus}
+                      {t(USAGE_STATUS_KEY[u.sessionStatus] ?? u.sessionStatus)}
                     </Badge>
                   </li>
                 ))}

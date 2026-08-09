@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
-import { getPlan, getPurchasable } from "@/lib/payments/catalog";
+import {
+  getCreditProduct,
+  getExtensionAddon,
+  getPurchasable,
+} from "@/lib/payments/catalog";
 import {
   SIGNATURE_HEADER,
   isWebhookConfigured,
@@ -15,7 +19,7 @@ import {
  * Creem 웹훅 수신 — **결제 성공의 유일한 판정 지점**입니다.
  *
  * 브라우저가 성공 URL로 돌아온 것만으로는 아무것도 지급하지 않습니다. 주소창은
- * 누구나 입력할 수 있기 때문입니다. 이용권은 서명이 확인된 이 요청에서만
+ * 누구나 입력할 수 있기 때문입니다. 매치 횟수는 서명이 확인된 이 요청에서만
  * 늘어납니다.
  *
  * 멱등성: 지급은 Creem 주문 ID를 기본키로 하는 payments 테이블이 보장합니다.
@@ -88,31 +92,51 @@ async function handleCheckoutCompleted(
     return NextResponse.json({ received: true, handled: false });
   }
 
-  // 지급 수량은 클라이언트가 아니라 서버 카탈로그가 정합니다.
-  const plan = getPlan(checkout.planCode);
+  // 지급 횟수와 연장 분 수는 클라이언트가 아니라 서버 카탈로그가 정합니다.
+  const credit = getCreditProduct(checkout.planCode);
+  const extension = getExtensionAddon(checkout.planCode);
 
-  if (!plan) {
-    // 추가 과금 상품은 아직 이행 로직이 없어 체크아웃 자체를 막아 두었습니다.
-    // 그래도 결제가 들어왔다면(예: Creem 대시보드에서 직접 발행한 링크)
-    // 지급 없이 기록만 남기고, 운영자가 관리자 화면에서 확인해 처리합니다.
+  // 시간 연장은 "어느 방을" 늘릴지가 있어야 이행됩니다. 세션 id는 체크아웃을
+  // 만들 때 우리가 실어 보낸 metadata에서만 읽습니다.
+  const extend =
+    extension && checkout.sessionId
+      ? { sessionId: checkout.sessionId, minutes: extension.extendMinutes }
+      : null;
+
+  if (!credit && !extend) {
+    // 우리가 이행할 수 없는 결제입니다(예: Creem 대시보드에서 직접 발행한
+    // 링크, 또는 세션 id가 빠진 연장 결제). 지급 없이 기록만 남기고,
+    // 운영자가 관리자 화면에서 확인해 처리합니다.
     console.warn(
-      `[payments] 이행 로직이 없는 상품 결제 — 수동 확인 필요 (order ${checkout.paymentId}, plan ${checkout.planCode})`,
+      `[payments] 이행할 수 없는 결제 — 수동 확인 필요 (order ${checkout.paymentId}, plan ${checkout.planCode})`,
     );
   }
 
-  const { applied } = await getDb().recordPurchase({
+  const { applied, extend: extended } = await getDb().recordPurchase({
     paymentId: checkout.paymentId,
     userId: checkout.userId,
     productId: checkout.productId,
     planCode: checkout.planCode,
     amount: checkout.amount,
     currency: checkout.currency,
-    purchasedPasses: plan?.passes ?? 0,
-    priorityMatchingCredits: plan?.priorityMatchingCredits ?? 0,
-    membershipType: plan?.membership ?? "standard",
+    purchasedMatches: credit?.matches ?? 0,
+    extend,
   });
 
-  return NextResponse.json({ received: true, handled: true, applied });
+  // 이미 닫힌 방은 늘릴 수 없습니다. 웹훅을 실패로 돌리면 Creem이 영원히
+  // 재시도하므로, 받아 놓고 운영자가 환불하도록 로그로 남깁니다.
+  if (extended && !extended.ok) {
+    console.error(
+      `[payments] 연장을 적용하지 못했습니다 — 환불 필요 (order ${checkout.paymentId}, session ${checkout.sessionId}, 사유 ${extended.reason})`,
+    );
+  }
+
+  return NextResponse.json({
+    received: true,
+    handled: true,
+    applied,
+    extended: extended?.ok ?? null,
+  });
 }
 
 async function handleRefund(
@@ -126,7 +150,7 @@ async function handleRefund(
   const { applied, reclaimed } = await getDb().refundPayment(paymentId);
   if (applied) {
     console.info(
-      `[payments] 환불 처리 — order ${paymentId}, 이용권 ${reclaimed}회 회수`,
+      `[payments] 환불 처리 — order ${paymentId}, 방 매치 ${reclaimed}회 회수`,
     );
   }
   return NextResponse.json({ received: true, handled: true, applied, reclaimed });

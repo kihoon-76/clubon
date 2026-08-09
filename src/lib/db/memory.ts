@@ -7,8 +7,10 @@ import type {
   JoinResult,
   MatchCandidate,
   MatchPreferenceInput,
+  ExtendOutcome,
   ProfileInput,
   RecordPurchaseInput,
+  RecordPurchaseResult,
   StartUsageResult,
 } from "./adapter";
 import type {
@@ -66,8 +68,10 @@ interface Store {
   demoPasswordsReady: boolean;
   wallets: Map<string, PassWallet>;
   payments: Map<string, PaymentRecord>;
-  /** `${sessionId}|${userId}` → 이용 기록 */
+  /** sessionId → 방의 시간 기록 (방 하나당 1행) */
   usages: Map<string, LoungeUsage>;
+  /** `${sessionId}:${userId}` — 매치 횟수를 쓴 사람. 사람마다 1회입니다. */
+  matchUses: Set<string>;
 }
 
 interface DemoUser {
@@ -154,15 +158,37 @@ function ensureWallet(userId: string): PassWallet {
   if (!w) {
     w = {
       userId,
-      remainingPasses: 0,
-      membershipType: "standard",
-      priorityMatchingCredits: 0,
-      totalPurchasedPasses: 0,
+      remainingMatches: 0,
+      totalPurchasedMatches: 0,
       updatedAt: new Date().toISOString(),
     };
     s.wallets.set(userId, w);
   }
   return w;
+}
+
+/**
+ * 방의 만료 시각을 늘립니다(Postgres 어댑터의 `extendUsage`와 같은 규칙).
+ *
+ * 기준은 "남은 시간이 있으면 그 뒤, 없으면 지금부터"입니다. 결제 승인이 늦게
+ * 도착해 그사이 만료된 경우에도 산 시간을 온전히 받습니다. 호스트가 직접 끝낸
+ * 방(`ended`)만은 되살리지 않습니다.
+ */
+function extendUsage(extend: {
+  sessionId: string;
+  minutes: number;
+}): ExtendOutcome {
+  const usage = store().usages.get(extend.sessionId);
+  if (!usage) return { ok: false, reason: "not_found" };
+  if (usage.sessionStatus === "ended") return { ok: false, reason: "closed" };
+
+  const base = Math.max(Date.parse(usage.expiresAt), Date.now());
+  usage.expiresAt = new Date(base + extend.minutes * 60_000).toISOString();
+  usage.extendedMinutes += extend.minutes;
+  usage.sessionStatus = "active";
+  usage.endedAt = null;
+
+  return { ok: true, expiresAt: usage.expiresAt };
 }
 
 function seed(): Store {
@@ -178,6 +204,7 @@ function seed(): Store {
       status: "active",
       adultConfirmedAt: nowIso,
       birthYear: 1994,
+      gender: d.gender,
       onboardingCompletedAt: nowIso,
       consentCompletedAt: nowIso,
       createdAt: nowIso,
@@ -225,6 +252,9 @@ function seed(): Store {
       maxSize: 4,
       inviteCode: c.inviteCode,
       waiterId: null,
+      // 데모 라운지에는 지역을 두지 않습니다. 아래 findBestMatch가 시드
+      // 라운지만 지역 필터에서 빼 주므로, 어느 지역을 골라도 데모가 돕니다.
+      regionCode: null,
       createdAt: nowIso,
       updatedAt: nowIso,
       waitingSince: nowIso,
@@ -261,10 +291,8 @@ function seed(): Store {
   for (const d of DEMO_USERS) {
     wallets.set(d.id, {
       userId: d.id,
-      remainingPasses: 5,
-      membershipType: d.role === "admin" ? "vip" : "standard",
-      priorityMatchingCredits: d.role === "admin" ? 10 : 0,
-      totalPurchasedPasses: 5,
+      remainingMatches: 5,
+      totalPurchasedMatches: 5,
       updatedAt: nowIso,
     });
   }
@@ -295,6 +323,7 @@ function seed(): Store {
     wallets,
     payments: new Map(),
     usages: new Map(),
+    matchUses: new Set(),
   };
 }
 
@@ -408,6 +437,11 @@ export class DevMemoryAdapter implements DataAdapter {
     return { user: { ...user }, passwordHash: s.passwords.get(user.id) ?? null };
   }
 
+  async setGenderIfUnset(userId: string, gender: Gender): Promise<void> {
+    const u = store().users.get(userId);
+    if (u && u.gender === null) u.gender = gender;
+  }
+
   async createUser(input: CreateUserInput): Promise<User> {
     const s = store();
     const nowIso = new Date().toISOString();
@@ -418,6 +452,7 @@ export class DevMemoryAdapter implements DataAdapter {
       status: "active",
       adultConfirmedAt: null,
       birthYear: null,
+      gender: input.gender ?? null,
       onboardingCompletedAt: null,
       consentCompletedAt: null,
       createdAt: nowIso,
@@ -557,6 +592,7 @@ export class DevMemoryAdapter implements DataAdapter {
     if (existing) {
       const t = s.tables.get(existing.id)!;
       t.waiterId = input.waiterId;
+      t.regionCode = input.regionCode;
       t.updatedAt = nowIso;
       return { ...t };
     }
@@ -574,6 +610,7 @@ export class DevMemoryAdapter implements DataAdapter {
       maxSize: 4,
       inviteCode,
       waiterId: input.waiterId,
+      regionCode: input.regionCode,
       createdAt: nowIso,
       updatedAt: nowIso,
       waitingSince: null,
@@ -741,12 +778,21 @@ export class DevMemoryAdapter implements DataAdapter {
         .map((m) => m.userId),
     );
 
+    // 매칭은 같은 지역 안에서만 이뤄집니다.
+    const myRegion = s.tables.get(tableId)?.regionCode ?? null;
+    if (!myRegion) return null;
+
     let best: MatchCandidate | null = null;
 
     for (const table of s.tables.values()) {
       if (table.id === tableId) continue;
       if (table.state !== "WAITING" && table.state !== "READY") continue;
       if (table.closedAt) continue;
+      // 시드 데모 라운지는 지역 필터에서 뺍니다 — 어느 지역을 고르든 혼자서
+      // 전체 흐름을 확인할 수 있어야 하기 때문입니다(데모 전용).
+      if (!isSeededDemoLounge(table.id) && table.regionCode !== myRegion) {
+        continue;
+      }
 
       const profiles = await this.getProfilesForTable(table.id);
       if (profiles.length === 0) continue;
@@ -908,10 +954,12 @@ export class DevMemoryAdapter implements DataAdapter {
 
   async recordPurchase(
     input: RecordPurchaseInput,
-  ): Promise<{ applied: boolean }> {
+  ): Promise<RecordPurchaseResult> {
     const s = store();
-    // 멱등: 같은 주문이 다시 들어오면 잔액을 건드리지 않습니다.
-    if (s.payments.has(input.paymentId)) return { applied: false };
+    // 멱등: 같은 주문이 다시 들어오면 잔액도 시간도 건드리지 않습니다.
+    if (s.payments.has(input.paymentId)) {
+      return { applied: false, extend: null };
+    }
 
     const nowIso = new Date().toISOString();
     s.payments.set(input.paymentId, {
@@ -921,21 +969,21 @@ export class DevMemoryAdapter implements DataAdapter {
       planCode: input.planCode,
       amount: input.amount,
       currency: input.currency,
-      purchasedPasses: input.purchasedPasses,
+      purchasedMatches: input.purchasedMatches,
       paymentStatus: "paid",
       createdAt: nowIso,
       refundedAt: null,
     });
 
     const w = ensureWallet(input.userId);
-    w.remainingPasses += input.purchasedPasses;
-    w.totalPurchasedPasses += input.purchasedPasses;
-    w.priorityMatchingCredits += input.priorityMatchingCredits;
-    // 등급은 올리기만 합니다 — 추가 구매로 VIP가 풀리면 안 됩니다.
-    if (input.membershipType === "vip") w.membershipType = "vip";
+    w.remainingMatches += input.purchasedMatches;
+    w.totalPurchasedMatches += input.purchasedMatches;
     w.updatedAt = nowIso;
 
-    return { applied: true };
+    // 시간 연장 상품은 횟수 대신 이 방의 만료 시각을 늘립니다.
+    const extend = input.extend ? extendUsage(input.extend) : null;
+
+    return { applied: true, extend };
   }
 
   async refundPayment(
@@ -953,8 +1001,8 @@ export class DevMemoryAdapter implements DataAdapter {
 
     // 이미 써 버린 이용권은 되돌릴 수 없으므로 남은 만큼만 회수합니다.
     const w = ensureWallet(payment.userId);
-    const reclaimed = Math.min(w.remainingPasses, payment.purchasedPasses);
-    w.remainingPasses -= reclaimed;
+    const reclaimed = Math.min(w.remainingMatches, payment.purchasedMatches);
+    w.remainingMatches -= reclaimed;
     w.updatedAt = nowIso;
 
     return { applied: true, reclaimed };
@@ -976,51 +1024,64 @@ export class DevMemoryAdapter implements DataAdapter {
       .map((p) => ({ ...p }));
   }
 
-  async adjustPasses(userId: string, delta: number): Promise<PassWallet> {
+  async adjustMatches(userId: string, delta: number): Promise<PassWallet> {
     const w = ensureWallet(userId);
-    w.remainingPasses = Math.max(0, w.remainingPasses + delta);
-    if (delta > 0) w.totalPurchasedPasses += delta;
+    w.remainingMatches = Math.max(0, w.remainingMatches + delta);
+    if (delta > 0) w.totalPurchasedMatches += delta;
     w.updatedAt = new Date().toISOString();
     return { ...w };
   }
 
-  /* ------------------------------------------------------- 라운지 이용 기록 */
+  /* ------------------------------------------------------- 영상방 시간 기록 */
 
+  /**
+   * 방의 시간은 방 하나당 1행, 매치 횟수 차감은 사람마다 1회입니다
+   * (Postgres 어댑터와 같은 규칙).
+   */
   async startLoungeUsage(input: {
     sessionId: string;
-    payerUserId: string;
+    userId: string;
+    ownerUserId: string;
     roomId: string;
     minutes: number;
   }): Promise<StartUsageResult> {
     const s = store();
 
-    // 멱등: 방 하나당 1행. 다른 참가자가 들어오거나 새로고침해도 그대로입니다.
-    const existing = s.usages.get(input.sessionId);
-    if (existing) return { ok: true, usage: { ...existing }, charged: false };
+    // 멱등: 이 사람이 이 방에서 이미 썼다면 다시 빼지 않습니다(재접속).
+    const useKey = `${input.sessionId}:${input.userId}`;
+    const alreadyUsed = s.matchUses.has(useKey);
 
-    // 차감은 방을 연 라운지의 방장에게서만 일어납니다.
-    const w = ensureWallet(input.payerUserId);
-    if (w.remainingPasses < 1) return { ok: false, reason: "no_passes" };
+    const w = ensureWallet(input.userId);
+    if (!alreadyUsed && w.remainingMatches < 1) {
+      return { ok: false, reason: "no_matches" };
+    }
 
-    const startedAt = new Date();
-    const usage: LoungeUsage = {
-      sessionId: input.sessionId,
-      payerUserId: input.payerUserId,
-      roomId: input.roomId,
-      startedAt: startedAt.toISOString(),
-      expiresAt: new Date(
-        startedAt.getTime() + input.minutes * 60_000,
-      ).toISOString(),
-      endedAt: null,
-      deductedPasses: 1,
-      sessionStatus: "active",
-    };
+    if (!alreadyUsed) {
+      w.remainingMatches -= 1;
+      w.updatedAt = new Date().toISOString();
+      s.matchUses.add(useKey);
+    }
 
-    w.remainingPasses -= 1;
-    w.updatedAt = usage.startedAt;
-    s.usages.set(input.sessionId, usage);
+    // 방의 시간 기록은 먼저 들어온 사람이 만들고 나머지는 그대로 씁니다.
+    let usage = s.usages.get(input.sessionId);
+    if (!usage) {
+      const startedAt = new Date();
+      usage = {
+        sessionId: input.sessionId,
+        ownerUserId: input.ownerUserId,
+        roomId: input.roomId,
+        startedAt: startedAt.toISOString(),
+        expiresAt: new Date(
+          startedAt.getTime() + input.minutes * 60_000,
+        ).toISOString(),
+        endedAt: null,
+        extendedMinutes: 0,
+        sessionStatus: "active",
+      };
+      s.usages.set(input.sessionId, usage);
+    }
 
-    return { ok: true, usage: { ...usage }, charged: true };
+    return { ok: true, usage: { ...usage }, charged: !alreadyUsed };
   }
 
   async getLoungeUsage(sessionId: string): Promise<LoungeUsage | null> {
@@ -1028,19 +1089,25 @@ export class DevMemoryAdapter implements DataAdapter {
     return u ? { ...u } : null;
   }
 
+  /**
+   * `expired`는 진행 중인 방에만, `ended`는 이미 만료된 방에도 찍습니다.
+   * 시간이 끝난 뒤 호스트가 닫은 방이 뒤늦은 연장 결제로 되살아나지 않게
+   * 하려는 것입니다(Postgres 어댑터와 같은 규칙).
+   */
   async endLoungeUsage(
     sessionId: string,
     status: LoungeSessionStatus,
   ): Promise<void> {
     const u = store().usages.get(sessionId);
-    if (!u || u.sessionStatus !== "active") return;
+    if (!u || u.sessionStatus === "ended") return;
+    if (u.sessionStatus !== "active" && status !== "ended") return;
     u.sessionStatus = status;
     u.endedAt = new Date().toISOString();
   }
 
   async listUsagesForUser(userId: string, limit = 50): Promise<LoungeUsage[]> {
     return [...store().usages.values()]
-      .filter((u) => u.payerUserId === userId)
+      .filter((u) => u.ownerUserId === userId)
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
       .slice(0, limit)
       .map((u) => ({ ...u }));

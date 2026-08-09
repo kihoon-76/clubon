@@ -9,7 +9,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FormError, Select, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { REPORT_CATEGORIES } from "@/lib/moderation/report-categories";
+import { useT } from "@/lib/i18n/client";
+import {
+  REPORT_CATEGORIES,
+  reportCategoryLabel,
+} from "@/lib/moderation/report-categories";
 import type { RoomParticipantView } from "@/lib/runtime/view";
 
 /**
@@ -25,6 +29,7 @@ export function ReportDialog({
   target: RoomParticipantView | null;
   onClose: () => void;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
   const [state, formAction] = useActionState<ReportFormState, FormData>(
     reportParticipant,
@@ -56,36 +61,35 @@ export function ReportDialog({
 
           <div>
             <h2 id="report-title" className="font-display text-2xl">
-              {target.nickname}님 신고
+              {t("room.reportTitle", { nickname: target.nickname })}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              접수된 신고는 모더레이터가 검토합니다. 관련 대화 기록은 검토가
-              끝날 때까지 보존됩니다.
+            <p className="mt-2 text-sm leading-relaxed break-keep text-muted">
+              {t("room.reportIntro")}
             </p>
           </div>
 
           <FormError message={state.error} />
 
-          <Field label="사유" htmlFor="report-category">
+          <Field label={t("room.reportReason")} htmlFor="report-category">
             <Select id="report-category" name="category" required defaultValue="">
               <option value="" disabled>
-                사유를 선택하세요
+                {t("room.reportReasonPlaceholder")}
               </option>
               {REPORT_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {reportCategoryLabel(t, c)}
                 </option>
               ))}
             </Select>
           </Field>
 
-          <Field label="상세 설명 (선택)" htmlFor="report-description">
+          <Field label={t("room.reportDetail")} htmlFor="report-description">
             <Textarea
               id="report-description"
               name="description"
               rows={4}
               maxLength={1000}
-              placeholder="어떤 일이 있었는지 알려주시면 검토에 도움이 됩니다."
+              placeholder={t("room.reportDetailPlaceholder")}
             />
           </Field>
 
@@ -96,18 +100,21 @@ export function ReportDialog({
               defaultChecked
               className="mt-0.5 size-4 shrink-0 accent-[var(--color-champagne)]"
             />
-            <span className="text-sm leading-relaxed">
-              이 회원을 차단합니다. 차단하면 상대의 메시지가 보이지 않고, 공개
-              권한도 즉시 취소됩니다.
+            <span className="text-sm leading-relaxed break-keep">
+              {t("room.reportBlockToo")}
             </span>
           </label>
 
           <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" size="md" onClick={onClose}>
-              취소
+              {t("room.reportCancel")}
             </Button>
-            <SubmitButton size="md" variant="danger" pendingLabel="접수 중…">
-              신고 접수
+            <SubmitButton
+              size="md"
+              variant="danger"
+              pendingLabel={t("room.reportPending")}
+            >
+              {t("room.reportSubmit")}
             </SubmitButton>
           </div>
         </form>

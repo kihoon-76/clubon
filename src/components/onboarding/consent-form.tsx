@@ -3,10 +3,11 @@
 import { useActionState } from "react";
 
 import { saveConsents, type OnboardingFormState } from "@/app/(onboarding)/actions";
-import { CONSENT_ITEMS } from "@/lib/consent/items";
+import { CONSENT_ITEMS, consentBody, consentTitle } from "@/lib/consent/items";
 import { Badge } from "@/components/ui/badge";
 import { FormError } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useT } from "@/lib/i18n/client";
 
 export function ConsentForm({
   granted,
@@ -14,6 +15,7 @@ export function ConsentForm({
   /** 이미 동의한 항목 타입 — 재동의 시 기본값으로 채웁니다. */
   granted: string[];
 }) {
+  const t = useT();
   const [state, formAction] = useActionState<OnboardingFormState, FormData>(
     saveConsents,
     {},
@@ -36,13 +38,17 @@ export function ConsentForm({
               />
               <span className="min-w-0">
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-ivory">{item.title}</span>
+                  <span className="text-sm text-ivory">
+                    {consentTitle(t, item.type)}
+                  </span>
                   <Badge tone={item.required ? "gold" : "neutral"}>
-                    {item.required ? "필수" : "선택"}
+                    {item.required
+                      ? t("onboarding.required")
+                      : t("onboarding.optional")}
                   </Badge>
                 </span>
-                <span className="mt-1.5 block text-xs leading-relaxed text-muted">
-                  {item.body}
+                <span className="mt-1.5 block text-xs leading-relaxed break-keep text-muted">
+                  {consentBody(t, item.type)}
                 </span>
               </span>
             </label>
@@ -50,8 +56,11 @@ export function ConsentForm({
         ))}
       </ul>
 
-      <SubmitButton className="w-full" pendingLabel="저장 중…">
-        동의하고 프로필 설정하기
+      <SubmitButton
+        className="w-full"
+        pendingLabel={t("onboarding.consentPending")}
+      >
+        {t("onboarding.consentSubmit")}
       </SubmitButton>
     </form>
   );

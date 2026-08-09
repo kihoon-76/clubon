@@ -3,10 +3,8 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import {
-  ADDONS,
-  PASS_PLANS,
-  type Addon,
-  type PassPlan,
+  PURCHASABLES,
+  type Purchasable,
   getPurchasable,
 } from "@/lib/payments/catalog";
 
@@ -55,7 +53,7 @@ function apiKey(): string {
  * 것입니다. 임의의 ID를 지어내지 않고 null을 돌려주어, 화면에서 "준비 중"으로
  * 표시하고 결제를 시작하지 않습니다.
  */
-export function productIdFor(item: PassPlan | Addon): string | null {
+export function productIdFor(item: Purchasable): string | null {
   return process.env[item.productIdEnv]?.trim() || null;
 }
 
@@ -63,7 +61,7 @@ export function productIdFor(item: PassPlan | Addon): string | null {
 export function purchasableCodes(): Set<string> {
   const codes = new Set<string>();
   if (!isCreemConfigured()) return codes;
-  for (const item of [...PASS_PLANS, ...ADDONS]) {
+  for (const item of PURCHASABLES) {
     if (productIdFor(item)) codes.add(item.code);
   }
   return codes;
@@ -78,6 +76,13 @@ export interface CheckoutInput {
   userEmail: string;
   /** 결제 완료 후 돌아올 절대 URL */
   successUrl: string;
+  /**
+   * 시간 연장 상품이면 늘려 줄 방의 세션 id.
+   *
+   * 어느 방을 늘릴지도 브라우저가 아니라 **Creem이 되돌려준 metadata**로
+   * 판단합니다. 성공 URL의 쿼리스트링은 신뢰하지 않습니다.
+   */
+  sessionId?: string | null;
 }
 
 export type CheckoutResult =
@@ -117,6 +122,7 @@ export async function createCheckout(
       metadata: {
         userId: input.userId,
         planCode: item.code,
+        ...(input.sessionId ? { sessionId: input.sessionId } : {}),
       },
     }),
     cache: "no-store",
@@ -205,6 +211,8 @@ export interface CompletedCheckout {
   paymentId: string;
   userId: string | null;
   planCode: string | null;
+  /** 시간 연장 상품이면 늘려 줄 방의 세션 id */
+  sessionId: string | null;
   productId: string;
   /** 최소 화폐 단위 정수 */
   amount: number;
@@ -246,6 +254,7 @@ export function readCompletedCheckout(
     paymentId,
     userId: (pick(metadata, "userId") as string | undefined) ?? null,
     planCode: (pick(metadata, "planCode") as string | undefined) ?? null,
+    sessionId: (pick(metadata, "sessionId") as string | undefined) ?? null,
     productId: idOf(pick(object, "product")),
     amount: Number(amountRaw ?? 0),
     currency: typeof currencyRaw === "string" ? currencyRaw : "USD",

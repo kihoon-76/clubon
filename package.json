@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "check:browser": "node scripts/browser-check.mjs",
+    "check:i18n": "node scripts/i18n-check.mjs",
+    "check:i18n-scan": "node scripts/i18n-scan.mjs",
     "daily:domain": "node scripts/daily-domain.mjs"
   },
   "dependencies": {

@@ -21,9 +21,9 @@ export async function adjustPasses(formData: FormData): Promise<void> {
   // 한 번의 실수로 대량 지급이 일어나지 않도록 조정 폭을 제한합니다.
   const clamped = Math.max(-100, Math.min(100, delta));
 
-  const wallet = await getDb().adjustPasses(userId, clamped);
+  const wallet = await getDb().adjustMatches(userId, clamped);
   console.info(
-    `[admin] ${user.id}가 ${userId}의 이용권을 ${clamped > 0 ? "+" : ""}${clamped}회 조정 (잔여 ${wallet.remainingPasses})`,
+    `[admin] ${user.id}가 ${userId}의 방 매치를 ${clamped > 0 ? "+" : ""}${clamped}회 조정 (잔여 ${wallet.remainingMatches})`,
   );
 
   revalidatePath("/admin/payments");

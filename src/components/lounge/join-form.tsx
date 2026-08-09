@@ -5,8 +5,10 @@ import { useActionState } from "react";
 import { joinByCode, type LoungeFormState } from "@/app/(club)/lounges/actions";
 import { Field, FormError, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useT } from "@/lib/i18n/client";
 
 export function JoinForm() {
+  const t = useT();
   const [state, formAction] = useActionState<LoungeFormState, FormData>(
     joinByCode,
     {},
@@ -17,9 +19,9 @@ export function JoinForm() {
       <FormError message={state.error} />
 
       <Field
-        label="초대코드"
+        label={t("lounge.inviteCode")}
         htmlFor="code"
-        hint="라운지 호스트에게 받은 6자리 코드를 입력하세요."
+        hint={t("join.codeHint")}
       >
         <Input
           id="code"
@@ -28,13 +30,13 @@ export function JoinForm() {
           autoComplete="off"
           autoCapitalize="characters"
           maxLength={10}
-          placeholder="예: JAZZ42"
+          placeholder={t("join.codePlaceholder")}
           className="text-center font-mono text-lg tracking-[0.3em] uppercase"
         />
       </Field>
 
-      <SubmitButton className="w-full" pendingLabel="확인 중…">
-        라운지 합류하기
+      <SubmitButton className="w-full" pendingLabel={t("join.pending")}>
+        {t("join.submit")}
       </SubmitButton>
     </form>
   );

@@ -5,12 +5,13 @@ import { logout } from "@/app/(auth)/actions";
 import { Container } from "@/components/layout/container";
 import { DemoUserSwitcher } from "@/components/layout/demo-user-switcher";
 import { Wordmark } from "@/components/brand/wordmark";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * 클럽 내부 공용 헤더. 클럽 영업 상태와 회원 정보, 대시보드·관리자 진입점을
  * 제공합니다. 로그인 없이 둘러보는 중이면 데모 회원 전환기를 함께 노출합니다.
  */
-export function ClubHeader({
+export async function ClubHeader({
   userId,
   nickname,
   isOpen,
@@ -26,10 +27,12 @@ export function ClubHeader({
   /** 실제 로그인 세션으로 들어온 회원인지 */
   isAuthenticated?: boolean;
 }) {
+  const t = await getT();
+
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-ink/80 backdrop-blur-md">
       <Container className="flex min-h-16 flex-wrap items-center justify-between gap-3 py-2.5">
-        <Link href="/lobby" aria-label="클럽 로비로 이동" className="shrink-0">
+        <Link href="/lobby" aria-label={t("nav.toLobby")} className="shrink-0">
           <Wordmark />
         </Link>
 
@@ -47,19 +50,19 @@ export function ClubHeader({
               }
             />
             <span className={isOpen ? "text-success" : "text-muted"}>
-              {isOpen ? "영업 중" : "영업 종료"}
+              {isOpen ? t("nav.open") : t("nav.closed")}
             </span>
           </span>
 
           {isAuthenticated ? null : <DemoUserSwitcher currentUserId={userId} />}
 
           {isStaff ? (
-            <IconLink href="/admin" label="관리자 콘솔">
+            <IconLink href="/admin" label={t("nav.adminConsole")}>
               <ShieldCheck aria-hidden className="size-4" />
             </IconLink>
           ) : null}
 
-          <IconLink href="/dashboard" label="내 대시보드">
+          <IconLink href="/dashboard" label={t("nav.myDashboard")}>
             <LayoutDashboard aria-hidden className="size-4" />
             <span className="hidden text-sm text-ivory sm:inline">{nickname}</span>
           </IconLink>
@@ -68,8 +71,8 @@ export function ClubHeader({
             <form action={logout}>
               <button
                 type="submit"
-                aria-label="로그아웃"
-                title="로그아웃"
+                aria-label={t("nav.logout")}
+                title={t("nav.logout")}
                 className="flex size-9 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-champagne-dim hover:text-ivory"
               >
                 <LogOut aria-hidden className="size-4" />
@@ -80,7 +83,7 @@ export function ClubHeader({
               href="/login"
               className="flex h-9 items-center rounded-full border border-line px-3 text-xs text-muted transition-colors hover:border-champagne-dim hover:text-ivory"
             >
-              로그인
+              {t("nav.login")}
             </Link>
           )}
         </div>

@@ -45,30 +45,30 @@ export async function GET(
     );
   }
 
-  // ------------------------------------------------------------ 이용권 차감
+  // --------------------------------------------------------- 매치 횟수 차감
   //
-  // 영상방은 세션당 **하나**이고 그 안의 사람들이 다 함께 이야기합니다.
-  // 그래서 이용권도 참가자 수와 무관하게 **방 하나당 1회**만 빠지며, 부담자는
-  // 매칭을 요청해 이 방을 연 라운지의 방장입니다. 나머지 참가자는 무료입니다.
+  // 입장료를 낸 사람은 방 매치 5회를 받고, 방에 들어갈 때 **각자 1회**를
+  // 씁니다. 한 방에 네 명이 들어오면 네 사람에게서 한 번씩 빠집니다.
   //
   // 여기가 "영상 세션이 실제로 시작되는" 지점입니다. 매칭 대기나 라운지 구성
-  // 단계에서는 이 라우트가 불리지 않으므로 이용권이 빠지지 않습니다.
+  // 단계에서는 이 라우트가 불리지 않으므로 횟수가 빠지지 않습니다.
   //
-  // sessionId 기준 멱등이라 새로고침·재접속은 물론 **다른 참가자가 들어와도**
-  // 차감은 최초 1회뿐입니다.
-  const payerUserId = roomOwnerId(sessionId) ?? user.id;
-  const iAmPayer = payerUserId === user.id;
+  // (sessionId, userId) 기준 멱등이라 새로고침·재접속으로는 두 번 빠지지
+  // 않습니다. 방의 남은 시간은 먼저 들어온 사람이 연 시각을 함께 씁니다.
+  const ownerUserId = roomOwnerId(sessionId) ?? user.id;
+  const iAmRoomOwner = ownerUserId === user.id;
 
   const usage = await getDb().startLoungeUsage({
     sessionId,
-    payerUserId,
+    userId: user.id,
+    ownerUserId,
     roomId: roomNameFor(sessionId),
     minutes: LOUNGE_MINUTES,
   });
 
   if (!usage.ok) {
     return NextResponse.json(
-      { configured: true, blocked: "no_passes", iAmPayer },
+      { configured: true, blocked: "no_matches", iAmRoomOwner },
       { status: 402, headers: { "cache-control": "no-store" } },
     );
   }

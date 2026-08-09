@@ -6,12 +6,24 @@ import { saveProfile, type OnboardingFormState } from "@/app/(onboarding)/action
 import { Field, Fieldset, FormError, Input, PillOption, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { Profile } from "@/lib/db/types";
-import { AGE_BAND_OPTIONS, ENERGY_OPTIONS, INTEREST_OPTIONS } from "@/lib/match-options";
+import { useT } from "@/lib/i18n/client";
+import {
+  AGE_BAND_OPTIONS,
+  ENERGY_OPTIONS,
+  INTEREST_OPTIONS,
+  ageBandLabel,
+  energyLabel,
+  interestLabel,
+} from "@/lib/match-options";
 
-const GENDERS = [
-  { value: "female", label: "여성" },
-  { value: "male", label: "남성" },
-  { value: "other", label: "밝히지 않음" },
+/**
+ * 프로필의 성별에는 "밝히지 않음"이 있습니다 — 매칭 조건으로 쓰는
+ * `DesiredGender`와는 다른 집합이라 사전 키도 따로 둡니다.
+ */
+const GENDERS: { value: string; key: string }[] = [
+  { value: "female", key: "options.gender.female" },
+  { value: "male", key: "options.gender.male" },
+  { value: "other", key: "options.gender.other" },
 ];
 
 const LANGUAGES = ["한국어", "English", "日本語", "中文"];
@@ -19,11 +31,18 @@ const LANGUAGES = ["한국어", "English", "日本語", "中文"];
 /** 프로필 설정·수정 폼. 외모 점수는 수집하지 않습니다. */
 export function ProfileForm({
   profile,
-  submitLabel = "프로필 저장하고 입장하기",
+  lockedGender = null,
+  submitLabel,
 }: {
   profile?: Profile | null;
+  /**
+   * 가입할 때 이미 고른 성별. 있으면 다시 묻지 않고 보여 주기만 합니다 —
+   * 매칭의 기준이라 상대를 만난 뒤 뒤바꿀 수 있으면 안 됩니다.
+   */
+  lockedGender?: Profile["gender"] | null;
   submitLabel?: string;
 }) {
+  const t = useT();
   const [state, formAction] = useActionState<OnboardingFormState, FormData>(
     saveProfile,
     {},
@@ -34,9 +53,9 @@ export function ProfileForm({
       <FormError message={state.error} />
 
       <Field
-        label="닉네임"
+        label={t("profile.nickname")}
         htmlFor="nickname"
-        hint="클럽에서 표시될 이름입니다. 실명은 권장하지 않습니다."
+        hint={t("profile.nicknameHint")}
       >
         <Input
           id="nickname"
@@ -45,27 +64,38 @@ export function ProfileForm({
           minLength={2}
           maxLength={20}
           defaultValue={profile?.nickname ?? ""}
-          placeholder="2~20자"
+          placeholder={t("profile.nicknamePlaceholder")}
         />
       </Field>
 
-      <Fieldset legend="성별">
-        <div className="flex flex-wrap gap-2.5">
-          {GENDERS.map((g, i) => (
-            <PillOption
-              key={g.value}
-              type="radio"
-              name="gender"
-              value={g.value}
-              label={g.label}
-              required={i === 0}
-              defaultChecked={(profile?.gender ?? "other") === g.value}
-            />
-          ))}
-        </div>
+      <Fieldset legend={t("profile.gender")}>
+        {lockedGender ? (
+          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            <span className="rounded-full border border-champagne bg-champagne/10 px-4 py-2 text-champagne">
+              {t(`options.gender.${lockedGender}`)}
+            </span>
+            <span className="text-xs break-keep text-faint">
+              {t("profile.genderLocked")}
+            </span>
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2.5">
+            {GENDERS.map((g, i) => (
+              <PillOption
+                key={g.value}
+                type="radio"
+                name="gender"
+                value={g.value}
+                label={t(g.key)}
+                required={i === 0}
+                defaultChecked={(profile?.gender ?? "other") === g.value}
+              />
+            ))}
+          </div>
+        )}
       </Fieldset>
 
-      <Fieldset legend="연령대">
+      <Fieldset legend={t("profile.ageBand")}>
         <div className="flex flex-wrap gap-2.5">
           {AGE_BAND_OPTIONS.map((band, i) => (
             <PillOption
@@ -73,7 +103,7 @@ export function ProfileForm({
               type="radio"
               name="ageBand"
               value={band}
-              label={band}
+              label={ageBandLabel(t, band)}
               required={i === 0}
               defaultChecked={profile?.ageBand === band}
             />
@@ -81,7 +111,7 @@ export function ProfileForm({
         </div>
       </Fieldset>
 
-      <Fieldset legend="대화할 때 나는">
+      <Fieldset legend={t("profile.vibe")}>
         <div className="flex flex-wrap gap-2.5">
           {ENERGY_OPTIONS.map((o) => (
             <PillOption
@@ -89,14 +119,14 @@ export function ProfileForm({
               type="radio"
               name="groupVibe"
               value={o.value}
-              label={o.label}
+              label={energyLabel(t, o.value)}
               defaultChecked={(profile?.groupVibe ?? "balanced") === o.value}
             />
           ))}
         </div>
       </Fieldset>
 
-      <Fieldset legend="관심사 (1개 이상)">
+      <Fieldset legend={t("profile.interests")}>
         <div className="flex flex-wrap gap-2.5">
           {INTEREST_OPTIONS.map((o) => (
             <PillOption
@@ -104,14 +134,14 @@ export function ProfileForm({
               type="checkbox"
               name="interests"
               value={o}
-              label={o}
+              label={interestLabel(t, o)}
               defaultChecked={profile?.interests.includes(o)}
             />
           ))}
         </div>
       </Fieldset>
 
-      <Fieldset legend="사용 언어">
+      <Fieldset legend={t("profile.languages")}>
         <div className="flex flex-wrap gap-2.5">
           {LANGUAGES.map((l) => (
             <PillOption
@@ -126,29 +156,32 @@ export function ProfileForm({
         </div>
       </Fieldset>
 
-      <Field label="지역 (선택)" htmlFor="region">
+      <Field label={t("profile.region")} htmlFor="region">
         <Input
           id="region"
           name="region"
           maxLength={40}
           defaultValue={profile?.region ?? ""}
-          placeholder="예: 서울"
+          placeholder={t("profile.regionPlaceholder")}
         />
       </Field>
 
-      <Field label="한 줄 소개 (선택)" htmlFor="conversationStyle">
+      <Field label={t("profile.bio")} htmlFor="conversationStyle">
         <Textarea
           id="conversationStyle"
           name="conversationStyle"
           rows={3}
           maxLength={200}
           defaultValue={profile?.conversationStyle ?? ""}
-          placeholder="어떤 대화를 좋아하는지 짧게 적어주세요."
+          placeholder={t("profile.bioPlaceholder")}
         />
       </Field>
 
-      <SubmitButton className="w-full gold-glow" pendingLabel="저장 중…">
-        {submitLabel}
+      <SubmitButton
+        className="w-full gold-glow"
+        pendingLabel={t("profile.savePending")}
+      >
+        {submitLabel ?? t("profile.save")}
       </SubmitButton>
     </form>
   );

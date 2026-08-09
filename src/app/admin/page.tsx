@@ -68,7 +68,7 @@ export default async function AdminOverviewPage() {
             { href: "/admin/reports", label: "신고 검토" },
             { href: "/admin/moderation", label: "모더레이션 로그" },
             { href: "/admin/sessions", label: "세션 목록" },
-            { href: "/admin/payments", label: "결제 · 이용권" },
+            { href: "/admin/payments", label: "결제 · 방 매치" },
             { href: "/admin/users", label: "회원 관리" },
           ].map((l) => (
             <li key={l.href}>

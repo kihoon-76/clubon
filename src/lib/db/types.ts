@@ -6,6 +6,8 @@
  * 타임스탬프는 ISO 문자열로 통일합니다(서버·클라이언트 직렬화 안전).
  */
 
+import type { MatchReason } from "@/lib/match/score";
+
 export type UserRole = "user" | "moderator" | "admin";
 export type AccountStatus = "active" | "suspended" | "banned";
 export type ConversationEnergy = "relaxed" | "balanced" | "lively";
@@ -45,6 +47,13 @@ export interface User {
   status: AccountStatus;
   adultConfirmedAt: string | null;
   birthYear: number | null;
+  /**
+   * 가입할 때 선언한 성별. 진실의 원천이며 `Profile.gender`는 사본입니다.
+   *
+   * Google 로그인으로 처음 들어온 회원은 가입 폼을 거치지 않아 null이고,
+   * 프로필 단계에서 한 번 물어봅니다.
+   */
+  gender: Gender | null;
   onboardingCompletedAt: string | null;
   /** 동의 플로우를 마친 시각 (필수 항목 전체 동의) */
   consentCompletedAt: string | null;
@@ -111,6 +120,13 @@ export interface Table {
   inviteCode: string;
   /** 이 라운지를 안내하는 AI 라운지 매니저 (lib/waiters의 id) */
   waiterId: string | null;
+  /**
+   * 라운지 지역 코드 (`lib/regions`의 값). 매칭은 같은 지역 안에서만 이뤄집니다.
+   *
+   * 예전에 만들어진 라운지는 null일 수 있어, 지역이 없는 라운지는 매칭
+   * 후보에서 빠집니다.
+   */
+  regionCode: string | null;
   createdAt: string;
   updatedAt: string;
   waitingSince: string | null;
@@ -148,8 +164,13 @@ export interface Booking {
   matchedTableId: string;
   waiterId: string | null;
   score: number;
-  /** 공통점 근거 문구 */
-  reasons: string[];
+  /**
+   * 공통점 근거 — 문장이 아니라 사실입니다(`describeReason`이 옮깁니다).
+   *
+   * 구조가 바뀌기 전에 저장된 부킹에는 문장이 그대로 들어 있어 문자열도
+   * 허용합니다. 부킹은 만료되는 값이라 이 겸용은 오래 남지 않습니다.
+   */
+  reasons: (MatchReason | string)[];
   state: BookingState;
   /** 제안한 라운지의 응답 */
   requesterResponse: BookingResponse;
@@ -180,21 +201,17 @@ export type PaymentStatus = "pending" | "paid" | "refunded" | "failed";
 export type LoungeSessionStatus = "active" | "ended" | "expired";
 
 /**
- * 회원별 이용권 지갑.
+ * 회원별 매치 횟수 지갑.
  *
- * 잔여 이용권은 이 한 행이 진실의 원천입니다. 지급(결제 웹훅)과 차감(영상
- * 세션 시작)은 각각 멱등 키를 갖고 이 행을 갱신합니다.
+ * 남은 매치 횟수는 이 한 행이 진실의 원천입니다. 지급(결제 웹훅)과 차감(영상
+ * 방 입장)은 각각 멱등 키를 갖고 이 행을 갱신합니다.
  */
 export interface PassWallet {
   userId: string;
-  /** 남은 30분 라운지 이용권 */
-  remainingPasses: number;
-  /** 등급 — BLACK VIP 구매 시 vip로 올라갑니다. */
-  membershipType: "standard" | "vip";
-  /** 우선 매칭 크레딧 */
-  priorityMatchingCredits: number;
-  /** 누적 구매 이용권(환불로 회수된 분은 제외하지 않는 총 구매량) */
-  totalPurchasedPasses: number;
+  /** 남은 방 매치 횟수 — 입장료로 5회, 추가 구매로 1회씩 */
+  remainingMatches: number;
+  /** 누적 구매 매치 횟수(환불로 회수된 분은 제외하지 않는 총 구매량) */
+  totalPurchasedMatches: number;
   updatedAt: string;
 }
 
@@ -202,42 +219,46 @@ export interface PassWallet {
  * 결제 내역 1건.
  *
  * `paymentId`는 Creem이 발급한 주문 식별자를 그대로 씁니다. 웹훅이 중복
- * 도착해도 이 값이 기본키라 이용권이 두 번 지급되지 않습니다.
+ * 도착해도 이 값이 기본키라 매치 횟수가 두 번 지급되지 않습니다.
  */
 export interface PaymentRecord {
   paymentId: string;
   userId: string;
   /** Creem 상품 ID */
   productId: string;
-  /** 카탈로그의 상품 코드 (one_time·gold·extend_30 등) */
+  /** 카탈로그의 상품 코드 (entry_pass·match_1·extend_30 등) */
   planCode: string;
   /** 실제 결제 금액(최소 화폐 단위 정수). Creem이 알려준 값입니다. */
   amount: number;
   currency: string;
-  /** 이 결제로 지급된 이용권 수 (추가 과금 상품이면 0) */
-  purchasedPasses: number;
+  /** 이 결제로 지급된 매치 횟수 (시간 연장 상품이면 0) */
+  purchasedMatches: number;
   paymentStatus: PaymentStatus;
   createdAt: string;
   refundedAt: string | null;
 }
 
 /**
- * 라운지 이용 기록 = 이용권을 쓴 흔적. **영상방 하나당 1행**입니다.
+ * 영상방의 시간 기록. **방 하나당 1행**입니다.
  *
- * 영상방은 세션당 1개이고 그 안의 사람들이 다 함께 이야기하므로, 이용권도
- * 참가자 수와 무관하게 방 하나당 1회만 빠집니다. `sessionId`가 유일 키라
- * 새로고침·재접속은 물론 **다른 참가자가 들어와도** 추가 차감이 없습니다.
+ * 이 행은 "이 방이 언제 열려 언제까지인지"만 답합니다. 누가 자기 매치 횟수를
+ * 썼는지는 참가자별로 `session_match_uses`가 따로 들고 있습니다 — 입장료
+ * 모델에서는 방 하나에 여러 명이 각자 1회씩 쓰기 때문입니다.
  */
 export interface LoungeUsage {
   sessionId: string;
-  /** 이용권을 부담한 회원 — 매칭을 요청해 이 방을 연 라운지의 방장 */
-  payerUserId: string;
+  /** 이 방을 연 회원 — 매칭을 요청한 라운지의 방장. 연장 부담자 판정에 씁니다. */
+  ownerUserId: string;
   /** 화상 공급자(Daily) 쪽 방 이름 */
   roomId: string;
   startedAt: string;
   /** 서버가 정한 만료 시각. 클라이언트 타이머는 이 값을 기준으로만 계산합니다. */
   expiresAt: string;
   endedAt: string | null;
-  deductedPasses: number;
+  /**
+   * 결제로 늘어난 시간의 누계(분). 매치 횟수와 별개로 돈을 받은 시간이라,
+   * 무엇을 얼마나 제공했는지가 이 값에 남습니다.
+   */
+  extendedMinutes: number;
   sessionStatus: LoungeSessionStatus;
 }

@@ -5,10 +5,13 @@ import { Container } from "@/components/layout/container";
 import { ButtonLink } from "@/components/ui/button";
 import { getDb } from "@/lib/db";
 import { isSeededDemoLounge } from "@/lib/db/memory";
+import { getT } from "@/lib/i18n/server";
 import { requireOnboardedSession } from "@/lib/session";
 import { getWaiter } from "@/lib/waiters";
 
-export const metadata = { title: "매치 제안" };
+export async function generateMetadata() {
+  return { title: (await getT())("match.metaTitle") };
+}
 
 export default async function MatchProposalPage({
   params,
@@ -47,6 +50,7 @@ export default async function MatchProposalPage({
   const counterpartProfiles = await db.getProfilesForTable(counterpartId);
   const myProfiles = await db.getProfilesForTable(myTable.id);
   const waiter = booking.waiterId ? getWaiter(booking.waiterId) : undefined;
+  const t = await getT();
 
   const myResponse =
     side === "requester" ? booking.requesterResponse : booking.matchedResponse;
@@ -55,13 +59,12 @@ export default async function MatchProposalPage({
 
   return (
     <Container className="py-14 sm:py-16">
-      <p className="label-caps">라운지 매니저의 제안</p>
-      <h1 className="mt-3 font-display text-4xl leading-tight text-ivory sm:text-5xl">
-        합석해 보시겠어요?
+      <p className="label-caps">{t("match.eyebrow")}</p>
+      <h1 className="mt-3 font-display text-4xl leading-tight break-keep text-ivory sm:text-5xl">
+        {t("match.title")}
       </h1>
-      <p className="mt-3 max-w-2xl text-[0.9375rem] leading-relaxed text-muted">
-        양쪽 라운지가 모두 수락해야 자리가 열립니다. 한쪽이라도 넘기면 두 라운지
-        모두 대기 상태로 돌아갑니다.
+      <p className="mt-3 max-w-2xl text-[0.9375rem] leading-relaxed break-keep text-muted">
+        {t("match.intro")}
       </p>
 
       <div className="mt-10 max-w-2xl">
@@ -79,7 +82,7 @@ export default async function MatchProposalPage({
         {booking.state !== "PENDING" ? (
           <div className="mt-8">
             <ButtonLink href={`/lounges/${myTable.id}`} variant="secondary">
-              라운지로 돌아가 다시 찾기
+              {t("match.backToLounge")}
             </ButtonLink>
           </div>
         ) : null}

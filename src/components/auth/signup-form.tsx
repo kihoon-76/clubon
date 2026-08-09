@@ -5,8 +5,10 @@ import { useActionState } from "react";
 import { signup, type AuthFormState } from "@/app/(auth)/actions";
 import { Field, FormError, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useT } from "@/lib/i18n/client";
 
 export function SignupForm() {
+  const t = useT();
   const [state, formAction] = useActionState<AuthFormState, FormData>(
     signup,
     {},
@@ -16,7 +18,7 @@ export function SignupForm() {
     <form action={formAction} className="space-y-5">
       <FormError message={state.error} />
 
-      <Field label="이메일" htmlFor="email">
+      <Field label={t("auth.email")} htmlFor="email">
         <Input
           id="email"
           name="email"
@@ -28,9 +30,9 @@ export function SignupForm() {
       </Field>
 
       <Field
-        label="비밀번호"
+        label={t("auth.password")}
         htmlFor="password"
-        hint="8자 이상. 다른 서비스와 다른 비밀번호를 사용하세요."
+        hint={t("auth.passwordHint")}
       >
         <Input
           id="password"
@@ -42,7 +44,7 @@ export function SignupForm() {
         />
       </Field>
 
-      <Field label="비밀번호 확인" htmlFor="passwordConfirm">
+      <Field label={t("auth.passwordConfirm")} htmlFor="passwordConfirm">
         <Input
           id="passwordConfirm"
           name="passwordConfirm"
@@ -53,8 +55,42 @@ export function SignupForm() {
         />
       </Field>
 
-      <SubmitButton className="w-full gold-glow" pendingLabel="가입 중…">
-        가입하고 성인 확인하기
+      {/* 성별은 매칭이 갈리는 기준이라 가입할 때 받습니다. 나중에 바꿀 수
+          없으므로 그 사실을 미리 알립니다. */}
+      <fieldset>
+        <legend className="mb-2 block text-sm text-ivory">
+          {t("auth.gender")}
+        </legend>
+        <div className="flex gap-2.5">
+          {[
+            { value: "female", label: t("auth.female") },
+            { value: "male", label: t("auth.male") },
+          ].map((o, i) => (
+            <label
+              key={o.value}
+              className="flex-1 cursor-pointer select-none rounded-[var(--radius-control)] border border-line bg-surface-raised px-4 py-3 text-center text-sm text-muted transition-colors has-[:checked]:border-champagne has-[:checked]:bg-champagne/10 has-[:checked]:text-champagne hover:border-champagne-dim/70"
+            >
+              <input
+                type="radio"
+                name="gender"
+                value={o.value}
+                required={i === 0}
+                className="peer sr-only"
+              />
+              {o.label}
+            </label>
+          ))}
+        </div>
+        <p className="mt-2 text-xs leading-relaxed break-keep text-faint">
+          {t("auth.genderLocked")}
+        </p>
+      </fieldset>
+
+      <SubmitButton
+        className="w-full gold-glow"
+        pendingLabel={t("auth.signupPending")}
+      >
+        {t("auth.signupSubmit")}
       </SubmitButton>
     </form>
   );

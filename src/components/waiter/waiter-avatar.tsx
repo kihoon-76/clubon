@@ -1,4 +1,10 @@
-import type { Waiter, WaiterStyle } from "@/lib/waiters";
+import type { Translate } from "@/lib/i18n/types";
+import {
+  waiterName,
+  waiterOutfit,
+  type Waiter,
+  type WaiterStyle,
+} from "@/lib/waiters";
 import { cn } from "@/lib/utils";
 
 /**
@@ -135,13 +141,21 @@ function outfitFor(style: WaiterStyle): OutfitSpec {
 
 export function WaiterAvatar({
   waiter,
+  t,
   className,
 }: {
   waiter: Waiter;
+  /**
+   * 대체 텍스트에 매니저 이름과 복장이 들어갑니다. 둘 다 사전에 있으므로
+   * 문구 함수를 받습니다 — 이 컴포넌트는 서버·클라이언트 양쪽에서 쓰이는데,
+   * 어느 쪽이든 부르는 쪽에는 이미 `t`가 있습니다.
+   */
+  t: Translate;
   className?: string;
 }) {
   const gid = `wa-${waiter.id}`;
   const spec = outfitFor(waiter.style);
+  const name = waiterName(t, waiter);
 
   return (
     <div
@@ -155,7 +169,7 @@ export function WaiterAvatar({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={waiter.photoUrl}
-          alt={`라운지 매니저 ${waiter.name}`}
+          alt={t("waiterGallery.avatarAlt", { name })}
           width={400}
           height={400}
           loading="lazy"
@@ -166,7 +180,10 @@ export function WaiterAvatar({
         <svg
           viewBox="0 0 100 100"
           role="img"
-          aria-label={`라운지 매니저 ${waiter.name} — ${waiter.outfit}`}
+          aria-label={t("waiterGallery.avatarAltWithOutfit", {
+            name,
+            outfit: waiterOutfit(t, waiter),
+          })}
           className="size-full"
         >
           <defs>

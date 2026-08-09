@@ -4,10 +4,11 @@ import { addDemoCompanion } from "@/app/(club)/lounges/actions";
 import { Badge, MockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Profile, Table, TableMember } from "@/lib/db/types";
-import { ENERGY_LABEL } from "@/lib/match-options";
+import { getT } from "@/lib/i18n/server";
+import { energyLabel } from "@/lib/match-options";
 
 /** 라운지 멤버 목록 + 초대 안내 + (데모) 동반자 추가. */
-export function LoungeRoster({
+export async function LoungeRoster({
   table,
   members,
   profiles,
@@ -20,6 +21,7 @@ export function LoungeRoster({
   minSize: number;
   canAddDemoCompanion: boolean;
 }) {
+  const t = await getT();
   const hostId = table.hostUserId;
   const short = profiles.length < minSize;
 
@@ -28,10 +30,13 @@ export function LoungeRoster({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 font-display text-xl text-ivory">
           <Users aria-hidden className="size-4 text-champagne" />
-          라운지 멤버 {profiles.length}/{table.maxSize}
+          {t("lounge.members", {
+            count: profiles.length,
+            max: table.maxSize,
+          })}
         </h2>
         <span className="text-xs text-muted">
-          초대코드{" "}
+          {t("lounge.inviteCode")}{" "}
           <span className="font-mono tracking-[0.25em] text-ivory">
             {table.inviteCode}
           </span>
@@ -49,24 +54,20 @@ export function LoungeRoster({
             ) : null}
             {p.nickname}
             <span className="text-[0.6875rem] text-muted">
-              {ENERGY_LABEL[p.groupVibe]}
+              {energyLabel(t, p.groupVibe)}
             </span>
           </li>
         ))}
         {members.length === 0 ? (
-          <li className="text-sm text-faint">아직 멤버가 없습니다.</li>
+          <li className="text-sm text-faint">{t("lounge.noMembers")}</li>
         ) : null}
       </ul>
 
       {short ? (
         <div className="mt-5 rounded-[var(--radius-control)] border border-warn/40 bg-warn-dim/40 p-4">
-          <p className="text-sm leading-relaxed text-ivory">
-            합석은 두 라운지를 합쳐 최소 2명이 필요합니다. 이 라운지에{" "}
-            <strong className="text-champagne">
-              {minSize - profiles.length}명
-            </strong>
-            이 더 모여야 상대를 찾을 수 있어요. 위 초대코드를 친구에게
-            보내주세요.
+          <p className="text-sm leading-relaxed break-keep text-ivory">
+            {t("lounge.shortRule")}{" "}
+            {t("lounge.shortCount", { count: minSize - profiles.length })}
           </p>
 
           {canAddDemoCompanion ? (
@@ -76,18 +77,18 @@ export function LoungeRoster({
             >
               <Button type="submit" variant="secondary" size="sm">
                 <UserPlus aria-hidden className="size-4" />
-                데모 동반자 합류시키기
+                {t("lounge.addDemoCompanion")}
               </Button>
               <MockBadge />
-              <span className="text-xs text-faint">
-                혼자서도 전체 흐름을 볼 수 있도록 데모 회원을 넣어줍니다.
+              <span className="text-xs break-keep text-faint">
+                {t("lounge.demoCompanionHint")}
               </span>
             </form>
           ) : null}
         </div>
       ) : (
         <p className="mt-5">
-          <Badge tone="success">매칭 가능 인원 충족</Badge>
+          <Badge tone="success">{t("lounge.readyToMatch")}</Badge>
         </p>
       )}
     </section>

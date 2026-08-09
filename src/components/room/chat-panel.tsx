@@ -8,6 +8,7 @@ import {
   type ChatFormState,
 } from "@/app/(club)/room/[sessionId]/actions";
 import { Input } from "@/components/ui/field";
+import { useT } from "@/lib/i18n/client";
 import type { RoomMessageView } from "@/lib/runtime/view";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export function ChatPanel({
   /** 전송 직후 상태를 즉시 새로 고치기 위한 콜백 */
   onSent: () => void;
 }) {
+  const t = useT();
   const [state, formAction] = useActionState<ChatFormState, FormData>(
     sendMessage,
     { submissions: 0 },
@@ -47,10 +49,9 @@ export function ChatPanel({
   return (
     <div className="flex h-full min-h-0 flex-col rounded-[var(--radius-card)] border border-line bg-surface-raised">
       <div className="border-b border-line/70 px-5 py-4">
-        <h2 className="font-display text-lg text-ivory">대화</h2>
-        <p className="mt-1 text-[0.6875rem] leading-relaxed text-faint">
-          메시지는 자동 검사를 거칩니다. 자동 탐지는 모든 위반을 완벽하게
-          잡아내지 못할 수 있습니다.
+        <h2 className="font-display text-lg text-ivory">{t("room.chatTitle")}</h2>
+        <p className="mt-1 text-[0.6875rem] leading-relaxed break-keep text-faint">
+          {t("room.chatNotice")}
         </p>
       </div>
 
@@ -58,7 +59,7 @@ export function ChatPanel({
         ref={listRef}
         className="flex-1 space-y-3 overflow-y-auto px-5 py-4"
         aria-live="polite"
-        aria-label="대화 내용"
+        aria-label={t("room.chatLogLabel")}
       >
         {messages.map((m) => (
           <li key={m.id}>
@@ -92,8 +93,8 @@ export function ChatPanel({
                   <span className="flex items-center gap-1.5 text-[0.6875rem] text-danger">
                     <AlertTriangle aria-hidden className="size-3" />
                     {m.moderationStatus === "blocked"
-                      ? "전송되지 않음"
-                      : "검토 대상"}
+                      ? t("room.chatBlocked")
+                      : t("room.chatFlagged")}
                     {m.moderationReason ? ` · ${m.moderationReason}` : null}
                   </span>
                 ) : null}
@@ -125,13 +126,17 @@ export function ChatPanel({
           autoComplete="off"
           maxLength={1000}
           disabled={disabled}
-          placeholder={disabled ? "지금은 메시지를 보낼 수 없습니다" : "메시지 입력"}
-          aria-label="메시지 입력"
+          placeholder={
+            disabled
+              ? t("room.chatPlaceholderDisabled")
+              : t("room.chatPlaceholder")
+          }
+          aria-label={t("room.chatPlaceholder")}
         />
         <button
           type="submit"
           disabled={disabled}
-          aria-label="메시지 보내기"
+          aria-label={t("room.chatSend")}
           className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-champagne bg-champagne text-ink transition-colors hover:bg-champagne-soft disabled:opacity-45"
         >
           <Send aria-hidden className="size-4" />

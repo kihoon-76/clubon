@@ -13,7 +13,7 @@ import { WalletPanel } from "@/components/payments/wallet-panel";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
-import { CONSENT_ITEMS } from "@/lib/consent/items";
+import { CONSENT_ITEMS, consentTitle } from "@/lib/consent/items";
 import { getDb } from "@/lib/db";
 import { describeClubStatus } from "@/lib/club/status";
 import {
@@ -21,23 +21,14 @@ import {
   getFeedback,
   listSessionsForUser,
 } from "@/lib/runtime/store";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { requireOnboardedSession } from "@/lib/session";
 import { now } from "@/lib/time";
-import { ENERGY_LABEL } from "@/lib/match-options";
+import { ageBandLabel, energyLabel, interestLabel } from "@/lib/match-options";
 
-export const metadata = { title: "내 대시보드" };
-
-const TABLE_STATE_LABEL: Record<string, string> = {
-  FORMING: "구성 중",
-  READY: "매칭 준비 완료",
-  WAITING: "매칭 대기 중",
-  MATCH_PROPOSED: "매치 제안됨",
-  MATCH_ACCEPTED: "합석 준비 중",
-  LIVE: "대화 중",
-  PAUSED: "일시 정지",
-  CLOSED: "종료됨",
-  MODERATION_LOCKED: "잠금",
-};
+export async function generateMetadata() {
+  return { title: (await getT())("dashboard.eyebrow") };
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -46,11 +37,12 @@ export default async function DashboardPage({
 }) {
   const sp = await searchParams;
   const { user, profile } = await requireOnboardedSession("/dashboard");
+  const [t, locale] = await Promise.all([getT(), getLocale()]);
 
   const db = getDb();
   const club = await db.getPrimaryClub();
   const hours = await db.getOperatingHours(club.id);
-  const status = describeClubStatus(club, hours, now());
+  const status = describeClubStatus(club, hours, now(), t);
 
   const activeTable = await db.getActiveTableForUser(user.id);
   const consents = await db.getConsents(user.id);
@@ -69,9 +61,11 @@ export default async function DashboardPage({
 
   return (
     <Container className="py-14 sm:py-16">
-      <p className="label-caps">내 대시보드</p>
+      <p className="label-caps">{t("dashboard.eyebrow")}</p>
       <h1 className="mt-3 font-display text-4xl leading-tight text-ivory sm:text-5xl">
-        {profile?.nickname ?? "회원"}님
+        {t("dashboard.greeting", {
+          nickname: profile?.nickname ?? t("dashboard.member"),
+        })}
       </h1>
 
       {sp.feedback === "1" ? (
@@ -80,7 +74,7 @@ export default async function DashboardPage({
           className="mt-6 flex items-center gap-2 rounded-[var(--radius-control)] border border-success/40 bg-success-dim/50 px-4 py-3 text-sm text-ivory"
         >
           <CheckCircle2 aria-hidden className="size-4 text-success" />
-          피드백을 보내주셔서 감사합니다.
+          {t("dashboard.feedbackThanks")}
         </p>
       ) : null}
 
@@ -90,8 +84,7 @@ export default async function DashboardPage({
           className="mt-6 flex items-start gap-2 rounded-[var(--radius-control)] border border-champagne-dim/50 bg-champagne/5 px-4 py-3 text-sm leading-relaxed break-keep text-ivory"
         >
           <Clock aria-hidden className="mt-0.5 size-4 shrink-0 text-champagne" />
-          결제를 확인하고 있습니다. 결제사 확인이 끝나면 이용권이 자동으로
-          지갑에 들어옵니다. 잠시 후 이 페이지를 새로고침해 주세요.
+          {t("dashboard.purchaseProcessing")}
         </p>
       ) : null}
 
@@ -100,7 +93,7 @@ export default async function DashboardPage({
           role="status"
           className="mt-6 flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted"
         >
-          결제를 취소했습니다. 이용권은 차감되지 않았습니다.
+          {t("dashboard.purchaseCancelled")}
         </p>
       ) : null}
 
@@ -113,9 +106,9 @@ export default async function DashboardPage({
         <Card hairline>
           <CardBody className="space-y-4">
             <div className="flex items-center gap-2">
-              <CardTitle>클럽</CardTitle>
+              <CardTitle>{t("dashboard.club")}</CardTitle>
               <Badge tone={status.isOpen ? "success" : "neutral"}>
-                {status.isOpen ? "영업 중" : "영업 종료"}
+                {status.isOpen ? t("dashboard.open") : t("dashboard.closed")}
               </Badge>
             </div>
             <p className="text-sm leading-relaxed text-muted">{status.short}</p>
@@ -124,25 +117,25 @@ export default async function DashboardPage({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm text-ivory">{activeTable.name}</span>
                   <Badge tone="gold">
-                    {TABLE_STATE_LABEL[activeTable.state] ?? activeTable.state}
+                    {t(`tableState.${activeTable.state}`)}
                   </Badge>
                 </div>
                 <p className="mt-2 text-xs text-muted">
-                  초대코드{" "}
+                  {t("lounge.inviteCode")}{" "}
                   <span className="font-mono tracking-widest text-ivory">
                     {activeTable.inviteCode}
                   </span>
                 </p>
                 <div className="mt-4">
                   <ButtonLink href={`/lounges/${activeTable.id}`} size="sm">
-                    라운지로 이동
+                    {t("dashboard.toLounge")}
                     <ArrowRight aria-hidden className="size-4" />
                   </ButtonLink>
                 </div>
               </div>
             ) : (
               <ButtonLink href="/lobby" size="sm">
-                클럽 로비로 입장
+                {t("dashboard.toLobby")}
                 <ArrowRight aria-hidden className="size-4" />
               </ButtonLink>
             )}
@@ -152,25 +145,37 @@ export default async function DashboardPage({
         {/* 프로필 */}
         <Card hairline>
           <CardBody className="space-y-4">
-            <CardTitle>프로필</CardTitle>
+            <CardTitle>{t("dashboard.profile")}</CardTitle>
             {profile ? (
               <dl className="space-y-2 text-sm">
-                <Row label="닉네임" value={profile.nickname} />
-                <Row label="연령대" value={profile.ageBand} />
-                <Row label="대화 성향" value={ENERGY_LABEL[profile.groupVibe]} />
+                <Row label={t("profile.nickname")} value={profile.nickname} />
                 <Row
-                  label="관심사"
-                  value={profile.interests.join(" · ") || "—"}
+                  label={t("profile.ageBand")}
+                  value={ageBandLabel(t, profile.ageBand)}
                 />
-                <Row label="지역" value={profile.region ?? "—"} />
                 <Row
-                  label="평판 점수"
-                  value={`${profile.reputationScore}점`}
+                  label={t("dashboard.vibe")}
+                  value={energyLabel(t, profile.groupVibe)}
+                />
+                <Row
+                  label={t("common.interests")}
+                  value={
+                    profile.interests
+                      .map((i) => interestLabel(t, i))
+                      .join(" · ") || "—"
+                  }
+                />
+                <Row label={t("entry.region")} value={profile.region ?? "—"} />
+                <Row
+                  label={t("dashboard.reputation")}
+                  value={t("dashboard.points", {
+                    count: profile.reputationScore,
+                  })}
                 />
               </dl>
             ) : null}
             <ButtonLink href="/dashboard/profile" variant="secondary" size="sm">
-              프로필 수정
+              {t("dashboard.editProfile")}
             </ButtonLink>
           </CardBody>
         </Card>
@@ -180,10 +185,10 @@ export default async function DashboardPage({
           <CardBody className="space-y-4">
             <div className="flex items-center gap-2">
               <MessageSquare aria-hidden className="size-4 text-champagne" />
-              <CardTitle>대화 기록</CardTitle>
+              <CardTitle>{t("dashboard.history")}</CardTitle>
             </div>
             {sessions.length === 0 ? (
-              <p className="text-sm text-muted">아직 참여한 대화가 없습니다.</p>
+              <p className="text-sm text-muted">{t("dashboard.historyEmpty")}</p>
             ) : (
               <ul className="space-y-3">
                 {sessions.slice(0, 5).map((s) => {
@@ -195,7 +200,7 @@ export default async function DashboardPage({
                     >
                       <span className="flex items-center gap-2 text-sm text-ivory">
                         <Clock aria-hidden className="size-3.5 text-faint" />
-                        {new Date(s.startedAt).toLocaleString("ko-KR", {
+                        {new Date(s.startedAt).toLocaleString(locale, {
                           month: "long",
                           day: "numeric",
                           hour: "2-digit",
@@ -204,18 +209,22 @@ export default async function DashboardPage({
                       </span>
                       <span className="flex items-center gap-2">
                         <Badge tone={s.state === "ended" ? "neutral" : "success"}>
-                          {s.state === "ended" ? "종료" : "진행 중"}
+                          {s.state === "ended"
+                            ? t("dashboard.sessionEnded")
+                            : t("dashboard.sessionLive")}
                         </Badge>
                         {feedback ? (
                           <span className="text-xs text-muted">
-                            내 평가 {feedback.rating}점
+                            {t("dashboard.myRating", {
+                              rating: feedback.rating,
+                            })}
                           </span>
                         ) : (
                           <Link
                             href={`/room/${s.id}/feedback`}
                             className="text-xs text-champagne hover:text-champagne-soft"
                           >
-                            피드백 남기기
+                            {t("dashboard.leaveFeedback")}
                           </Link>
                         )}
                       </span>
@@ -232,37 +241,44 @@ export default async function DashboardPage({
           <CardBody className="space-y-4">
             <div className="flex items-center gap-2">
               <ShieldCheck aria-hidden className="size-4 text-champagne" />
-              <CardTitle>안전 · 동의</CardTitle>
+              <CardTitle>{t("dashboard.safety")}</CardTitle>
             </div>
             <dl className="space-y-2 text-sm">
               <Row
-                label="계정 상태"
+                label={t("dashboard.accountStatus")}
                 value={
                   user.status === "active"
-                    ? "정상"
+                    ? t("dashboard.statusActive")
                     : user.status === "suspended"
-                      ? "정지"
-                      : "이용 제한"
+                      ? t("dashboard.statusSuspended")
+                      : t("dashboard.statusRestricted")
                 }
               />
-              <Row label="필수 동의" value="완료" />
               <Row
-                label="차단한 회원"
-                value={`${blockedCount}명`}
+                label={t("dashboard.requiredConsent")}
+                value={t("dashboard.completed")}
+              />
+              <Row
+                label={t("dashboard.blockedMembers")}
+                value={t("dashboard.people", { count: blockedCount })}
               />
             </dl>
 
             <div>
-              <p className="label-caps">선택 동의</p>
+              <p className="label-caps">{t("dashboard.optionalConsent")}</p>
               <ul className="mt-2 space-y-1.5">
                 {optionalItems.map((item) => (
                   <li
                     key={item.type}
                     className="flex items-center justify-between gap-2 text-xs"
                   >
-                    <span className="text-muted">{item.title}</span>
+                    <span className="break-keep text-muted">
+                      {consentTitle(t, item.type)}
+                    </span>
                     <Badge tone={grantedTypes.has(item.type) ? "success" : "neutral"}>
-                      {grantedTypes.has(item.type) ? "동의함" : "동의 안 함"}
+                      {grantedTypes.has(item.type)
+                        ? t("dashboard.granted")
+                        : t("dashboard.notGranted")}
                     </Badge>
                   </li>
                 ))}
@@ -271,11 +287,11 @@ export default async function DashboardPage({
 
             <div className="flex flex-wrap gap-3">
               <ButtonLink href="/onboarding/consent" variant="secondary" size="sm">
-                동의 항목 변경
+                {t("dashboard.changeConsent")}
               </ButtonLink>
               <ButtonLink href="/safety" variant="ghost" size="sm">
                 <Users aria-hidden className="size-4" />
-                안전 센터
+                {t("dashboard.safetyCenter")}
               </ButtonLink>
             </div>
           </CardBody>

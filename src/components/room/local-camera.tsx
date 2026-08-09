@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { CameraOff, Loader2 } from "lucide-react";
 
+import { useT } from "@/lib/i18n/client";
+
 /**
  * 내 카메라 미리보기.
  *
@@ -11,11 +13,13 @@ import { CameraOff, Loader2 } from "lucide-react";
  * 전송은 Phase 2 범위).
  */
 export function LocalCamera({ enabled }: { enabled: boolean }) {
+  const t = useT();
+
   if (!enabled) {
     return (
       <Placeholder>
         <CameraOff aria-hidden className="size-5 text-muted" />
-        카메라 꺼짐
+        {t("room.cameraOff")}
       </Placeholder>
     );
   }
@@ -24,6 +28,7 @@ export function LocalCamera({ enabled }: { enabled: boolean }) {
 }
 
 function CameraStream() {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState<"loading" | "on" | "denied">("loading");
 
@@ -56,8 +61,8 @@ function CameraStream() {
     return (
       <Placeholder>
         <CameraOff aria-hidden className="size-5 text-muted" />
-        <span className="px-3 leading-relaxed">
-          카메라 권한이 없어 아바타로 참여합니다.
+        <span className="px-3 leading-relaxed break-keep">
+          {t("room.cameraDenied")}
         </span>
       </Placeholder>
     );
@@ -70,14 +75,14 @@ function CameraStream() {
         autoPlay
         playsInline
         muted
-        aria-label="내 카메라 미리보기"
+        aria-label={t("room.cameraPreviewLabel")}
         className="size-full scale-x-[-1] object-cover"
         hidden={status !== "on"}
       />
       {status === "loading" ? (
         <Placeholder>
           <Loader2 aria-hidden className="size-5 animate-spin text-champagne" />
-          카메라 여는 중…
+          {t("room.cameraOpening")}
         </Placeholder>
       ) : null}
     </>

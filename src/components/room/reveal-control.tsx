@@ -9,6 +9,8 @@ import {
   respondReveal,
 } from "@/app/(club)/room/[sessionId]/actions";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
+import type { Translate } from "@/lib/i18n/types";
 import type { RoomRevealView } from "@/lib/runtime/view";
 
 /**
@@ -30,6 +32,7 @@ export function RevealControl({
   disabled: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const busy = pending || disabled;
 
@@ -48,7 +51,7 @@ export function RevealControl({
           ? "border-champagne-dim bg-champagne/5"
           : "border-line bg-surface-raised"
       }`}
-      aria-label="얼굴 공개"
+      aria-label={t("room.revealLabel")}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {revealed ? (
@@ -56,7 +59,7 @@ export function RevealControl({
         ) : (
           <EyeOff aria-hidden className="size-4 shrink-0 text-muted" />
         )}
-        <p className="text-sm text-ivory">{headline(reveal)}</p>
+        <p className="text-sm break-keep text-ivory">{headline(t, reveal)}</p>
 
         <div className="ml-auto flex flex-wrap gap-2">
           {reveal.canDecide && reveal.awaitingMyResponse ? (
@@ -67,7 +70,7 @@ export function RevealControl({
                 onClick={() => run(() => respondReveal(sessionId, true))}
               >
                 <Eye aria-hidden className="size-4" />
-                수락 · 전원 공개
+                {t("room.revealAccept")}
               </Button>
               <Button
                 type="button"
@@ -75,7 +78,7 @@ export function RevealControl({
                 disabled={busy}
                 onClick={() => run(() => respondReveal(sessionId, false))}
               >
-                거절
+                {t("room.revealDecline")}
               </Button>
             </>
           ) : null}
@@ -88,7 +91,7 @@ export function RevealControl({
               onClick={() => run(() => remask(sessionId))}
             >
               <EyeOff aria-hidden className="size-4" />
-              다시 마스크
+              {t("room.remask")}
             </Button>
           ) : null}
 
@@ -103,28 +106,22 @@ export function RevealControl({
               onClick={() => run(() => requestReveal(sessionId))}
             >
               <Eye aria-hidden className="size-4" />
-              상대 방장에게 공개 제안
+              {t("room.proposeReveal")}
             </Button>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-2 flex items-start gap-1.5 text-xs text-faint">
+      <p className="mt-2 flex items-start gap-1.5 text-xs break-keep text-faint">
         {reveal.canDecide ? (
           <>
             <Users aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-            <span>
-              방장인 두 분이 모두 수락해야 공개되며, 공개는 방에 있는 모든
-              참가자에게 함께 적용됩니다.
-            </span>
+            <span>{t("room.revealHostNote")}</span>
           </>
         ) : (
           <>
             <ShieldAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-            <span>
-              얼굴 공개는 양쪽 라운지의 방장이 결정합니다. 공개 후에도 내가
-              차단한 상대는 계속 마스크로 보입니다.
-            </span>
+            <span>{t("room.revealGuestNote")}</span>
           </>
         )}
       </p>
@@ -132,23 +129,25 @@ export function RevealControl({
   );
 }
 
-function headline(reveal: RoomRevealView): string {
+function headline(t: Translate, reveal: RoomRevealView): string {
   switch (reveal.state) {
     case "REVEALED":
-      return "양쪽 방장이 수락해 방 전체가 얼굴을 공개했습니다.";
+      return t("room.revealHeadRevealed");
     case "REVEAL_REQUESTED":
       if (reveal.awaitingMyResponse) {
-        return `${reveal.requesterName ?? "상대 라운지"} 방장이 얼굴 공개를 제안했습니다.`;
+        return t("room.revealHeadAsked", {
+          name: reveal.requesterName ?? t("room.otherLounge"),
+        });
       }
       if (reveal.awaitingOtherResponse) {
-        return "상대 라운지 방장의 응답을 기다리는 중입니다.";
+        return t("room.revealHeadWaiting");
       }
-      return "두 방장이 얼굴 공개를 논의하고 있습니다.";
+      return t("room.revealHeadDiscussing");
     case "REVEAL_CANCELLED":
-      return "이번에는 공개하지 않기로 했습니다. 모두 마스크 상태입니다.";
+      return t("room.revealHeadCancelled");
     case "REMASKED":
-      return "다시 마스크 상태로 돌아왔습니다.";
+      return t("room.revealHeadRemasked");
     default:
-      return "모든 참가자가 마스크를 쓰고 있습니다.";
+      return t("room.revealHeadMasked");
   }
 }

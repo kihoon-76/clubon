@@ -1,6 +1,7 @@
 import { ClubHeader } from "@/components/layout/club-header";
 import { getDb } from "@/lib/db";
 import { describeClubStatus } from "@/lib/club/status";
+import { getT } from "@/lib/i18n/server";
 import { isAuthenticated, requireOnboardedSession } from "@/lib/session";
 import { now } from "@/lib/time";
 
@@ -18,13 +19,14 @@ export default async function ClubLayout({
   const db = getDb();
   const club = await db.getPrimaryClub();
   const hours = await db.getOperatingHours(club.id);
-  const status = describeClubStatus(club, hours, now());
+  const t = await getT();
+  const status = describeClubStatus(club, hours, now(), t);
 
   return (
     <div className="club-ambience flex min-h-screen flex-col bg-ink">
       <ClubHeader
         userId={user.id}
-        nickname={profile?.nickname ?? "회원"}
+        nickname={profile?.nickname ?? t("dashboard.member")}
         isOpen={status.isOpen}
         statusText={status.short}
         isStaff={user.role === "admin" || user.role === "moderator"}

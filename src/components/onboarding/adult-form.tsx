@@ -5,8 +5,10 @@ import { useActionState } from "react";
 import { confirmAdult, type OnboardingFormState } from "@/app/(onboarding)/actions";
 import { Field, FormError, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useT } from "@/lib/i18n/client";
 
 export function AdultCheckForm() {
+  const t = useT();
   const [state, formAction] = useActionState<OnboardingFormState, FormData>(
     confirmAdult,
     {},
@@ -17,9 +19,9 @@ export function AdultCheckForm() {
       <FormError message={state.error} />
 
       <Field
-        label="출생 연도"
+        label={t("onboarding.birthYear")}
         htmlFor="birthYear"
-        hint="연 단위만 확인하며, 생년월일 원본이나 신분증 이미지는 저장하지 않습니다."
+        hint={t("onboarding.birthYearHint")}
       >
         <Input
           id="birthYear"
@@ -29,7 +31,7 @@ export function AdultCheckForm() {
           required
           min={1900}
           max={new Date().getFullYear()}
-          placeholder="예: 1994"
+          placeholder={t("onboarding.birthYearPlaceholder")}
         />
       </Field>
 
@@ -40,13 +42,13 @@ export function AdultCheckForm() {
           required
           className="mt-0.5 size-4 shrink-0 accent-[var(--color-champagne)]"
         />
-        <span className="text-sm leading-relaxed text-ivory">
-          만 19세 이상이며, ClubOn이 성인 전용 서비스임을 이해했습니다.
+        <span className="text-sm leading-relaxed break-keep text-ivory">
+          {t("onboarding.adultCheckbox")}
         </span>
       </label>
 
-      <SubmitButton className="w-full" pendingLabel="확인 중…">
-        확인하고 다음 단계로
+      <SubmitButton className="w-full" pendingLabel={t("onboarding.adultPending")}>
+        {t("onboarding.adultSubmit")}
       </SubmitButton>
     </form>
   );

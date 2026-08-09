@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getDb } from "@/lib/db";
+import { getT } from "@/lib/i18n/server";
 import { REPORT_CATEGORIES } from "@/lib/moderation/report-categories";
 import { requireOnboardedSession } from "@/lib/session";
 import * as room from "@/lib/runtime/store";
@@ -43,11 +44,18 @@ export async function sendMessage(
   const result = room.postMessage(sessionId, user.id, body);
   const submissions = prev.submissions + 1;
 
+  const t = await getT();
   if (result.status === "blocked") {
-    return { error: result.reason ?? "메시지를 보낼 수 없습니다.", submissions };
+    return {
+      error: t(result.reasonKey ?? "moderation.blockedFallback"),
+      submissions,
+    };
   }
   if (result.status === "flagged") {
-    return { warning: result.reason ?? "검토 대상 메시지입니다.", submissions };
+    return {
+      warning: t(result.reasonKey ?? "moderation.flaggedFallback"),
+      submissions,
+    };
   }
   return { submissions };
 }
@@ -114,9 +122,10 @@ export async function reportParticipant(
     description: formData.get("description") ?? "",
     block: formData.get("block") === "on",
   });
-  if (!parsed.success) return { error: "신고 내용을 확인해 주세요." };
+  const t = await getT();
+  if (!parsed.success) return { error: t("moderation.reportInvalid") };
   if (parsed.data.targetId === user.id) {
-    return { error: "자기 자신은 신고할 수 없습니다." };
+    return { error: t("moderation.reportSelf") };
   }
 
   room.reportUser({
@@ -169,7 +178,11 @@ export async function endRoom(sessionId: string): Promise<void> {
     redirect(`/room/${sessionId}`);
   }
 
-  room.endSession(sessionId, "호스트가 종료했습니다.");
+  room.endSession(sessionId, "roomChat.endedByHost");
+
+  // 이용 기록도 함께 닫습니다. 닫힌 방은 연장 결제로도 되살아나지 않습니다 —
+  // 아무도 없는 자리에 시간만 붙는 일을 막습니다.
+  await db.endLoungeUsage(sessionId, "ended");
 
   const session = room.getSession(sessionId);
   if (session) {
@@ -209,7 +222,9 @@ export async function submitFeedback(
     wouldRematch: formData.get("wouldRematch") === "on",
     comment: formData.get("comment") ?? undefined,
   });
-  if (!parsed.success) return { error: "평가를 선택해 주세요." };
+  if (!parsed.success) {
+    return { error: (await getT())("moderation.feedbackInvalid") };
+  }
 
   room.saveFeedback({
     sessionId,

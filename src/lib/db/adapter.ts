@@ -19,11 +19,14 @@ import type {
   TableState,
   User,
 } from "./types";
+import type { MatchReason } from "@/lib/match/score";
 
 export interface CreateLoungeInput {
   userId: string;
   waiterId: string | null;
   name: string;
+  /** 라운지 지역 코드 (`lib/regions`). 매칭이 이 값으로 갈립니다. */
+  regionCode: string;
 }
 
 export interface MatchPreferenceInput {
@@ -37,7 +40,7 @@ export interface MatchPreferenceInput {
 export interface MatchCandidate {
   table: Table;
   score: number;
-  reasons: string[];
+  reasons: MatchReason[];
   profiles: Profile[];
 }
 
@@ -47,6 +50,8 @@ export interface CreateUserInput {
   passwordHash: string | null;
   /** Google 계정의 불변 식별자(id_token의 sub). 소셜 가입일 때만 채웁니다. */
   googleSub?: string | null;
+  /** 가입 폼에서 고른 성별. Google 가입은 null로 두고 나중에 받습니다. */
+  gender?: Gender | null;
 }
 
 /** 로그인 검증용 — 비밀번호 해시는 이 경로 밖으로 나가지 않습니다. */
@@ -81,22 +86,45 @@ export interface RecordPurchaseInput {
   /** 실제 결제 금액(최소 화폐 단위 정수) */
   amount: number;
   currency: string;
-  /** 지급할 이용권 수 */
-  purchasedPasses: number;
-  /** 지급할 우선 매칭 크레딧 */
-  priorityMatchingCredits: number;
-  /** vip이면 등급을 올립니다(standard로 내리지는 않습니다). */
-  membershipType: "standard" | "vip";
+  /** 지급할 방 매치 횟수 (시간 연장 상품이면 0) */
+  purchasedMatches: number;
+  /**
+   * 시간 연장 상품이면 늘려 줄 대상 방과 분 수.
+   *
+   * 결제 기록과 **같은 트랜잭션**에서 적용합니다. 기록만 남고 시간은 늘어나지
+   * 않는 상태를 만들지 않기 위해서입니다.
+   */
+  extend?: { sessionId: string; minutes: number } | null;
 }
 
 /**
- * 이용권 차감 결과.
+ * 연장 적용 결과.
  *
- * `charged`가 false면 이미 이 세션에서 차감된 적이 있다는 뜻입니다(재접속).
+ * 이미 닫힌 방은 늘릴 수 없습니다. 이때도 결제 기록은 남기고 실패만 알립니다 —
+ * 웹훅을 실패로 돌려 재시도하게 두면 영원히 성공하지 못하기 때문입니다.
+ * 운영자가 관리자 화면에서 확인해 환불합니다.
+ */
+export type ExtendOutcome =
+  | { ok: true; expiresAt: string }
+  | { ok: false; reason: "not_found" | "closed" };
+
+export interface RecordPurchaseResult {
+  /** 이 호출이 실제로 기록·지급을 수행했는지 (false = 중복 웹훅) */
+  applied: boolean;
+  /** 연장 상품이었을 때의 적용 결과. 연장 상품이 아니면 null. */
+  extend: ExtendOutcome | null;
+}
+
+/**
+ * 방 입장 결과 — 방의 시간 기록을 확보하고 **내 매치 횟수 1회**를 씁니다.
+ *
+ * `charged`가 false면 이 사람이 이 방에서 이미 한 번 썼다는 뜻입니다(재접속).
+ * 방 자체는 먼저 들어온 사람이 열고, 뒤이어 들어오는 사람은 그 방에 합류하되
+ * 각자 자기 횟수를 씁니다.
  */
 export type StartUsageResult =
   | { ok: true; usage: LoungeUsage; charged: boolean }
-  | { ok: false; reason: "no_passes" };
+  | { ok: false; reason: "no_matches" };
 
 /** 초대코드 합류 결과 — 실패 사유를 UI가 구분해 안내합니다. */
 export type JoinResult =
@@ -130,6 +158,11 @@ export interface DataAdapter {
   updateUserEmail(userId: string, email: string): Promise<void>;
   getCredentialsByEmail(email: string): Promise<Credentials | null>;
   createUser(input: CreateUserInput): Promise<User>;
+  /**
+   * 성별을 기록합니다. **아직 비어 있을 때만** 채우며 덮어쓰지 않습니다 —
+   * 매칭의 기준이 되는 값이라, 상대를 만난 뒤 뒤바꿀 수 있으면 안 됩니다.
+   */
+  setGenderIfUnset(userId: string, gender: Gender): Promise<void>;
   /** 성인 확인(생년) 기록. */
   confirmAdult(userId: string, birthYear: number): Promise<void>;
   saveConsents(
@@ -191,21 +224,24 @@ export interface DataAdapter {
   /** 양측 수락 후 개설된 화상 세션 id를 연결합니다. */
   attachSessionToBooking(bookingId: string, sessionId: string): Promise<void>;
 
-  /* --------------------------------------------------- 이용권 지갑 · 결제 */
+  /* ------------------------------------------------ 매치 횟수 지갑 · 결제 */
 
   /** 지갑을 반환합니다. 없으면 0으로 채운 기본 지갑을 만들어 돌려줍니다. */
   getWallet(userId: string): Promise<PassWallet>;
 
   /**
-   * 결제를 기록하고 이용권을 지급합니다.
+   * 결제를 기록하고 매치 횟수를 지급합니다.
    *
    * `paymentId` 기준 멱등 — 같은 결제가 다시 들어오면 아무것도 바꾸지 않고
    * `applied: false`를 돌려줍니다. 기록과 지급은 한 트랜잭션에서 일어납니다.
+   *
+   * `extend`가 있으면 횟수 대신 **그 방의 만료 시각**을 늘립니다. 이때도
+   * 같은 트랜잭션이라, 중복 웹훅으로 시간이 두 번 늘어나지 않습니다.
    */
-  recordPurchase(input: RecordPurchaseInput): Promise<{ applied: boolean }>;
+  recordPurchase(input: RecordPurchaseInput): Promise<RecordPurchaseResult>;
 
   /**
-   * 환불 처리. 이미 써 버린 이용권은 되돌릴 수 없으므로 **남아 있는 만큼만**
+   * 환불 처리. 이미 써 버린 횟수는 되돌릴 수 없으므로 **남아 있는 만큼만**
    * 회수합니다(잔액이 음수가 되지 않습니다).
    */
   refundPayment(
@@ -216,23 +252,27 @@ export interface DataAdapter {
   listPaymentsForUser(userId: string, limit?: number): Promise<PaymentRecord[]>;
 
   /** 관리자 수동 지급·회수. 양수면 지급, 음수면 회수(0 미만으로는 안 내려감). */
-  adjustPasses(userId: string, delta: number): Promise<PassWallet>;
+  adjustMatches(userId: string, delta: number): Promise<PassWallet>;
 
-  /* ------------------------------------------------------- 라운지 이용 기록 */
+  /* ---------------------------------------------------- 영상방 시간 기록 */
 
   /**
-   * 영상방이 처음 열릴 때 이용권 1회를 차감하고 이용 기록을 만듭니다.
+   * 영상방에 들어가면서 **내 매치 횟수 1회**를 씁니다.
    *
-   * **차감은 방 하나당 1회**이며 `payerUserId`(방을 연 라운지의 방장)에게서
-   * 빠집니다. 같은 방에 다른 참가자가 더 들어와도 추가 차감은 없습니다.
+   * 방의 시간 기록(`lounge_usages`)은 방 하나당 1행이라 먼저 들어온 사람이
+   * 만들고, 뒤이어 들어오는 사람은 그 행을 그대로 씁니다. 반면 **횟수 차감은
+   * 사람마다 1회**이며 `(sessionId, userId)` 기준으로 멱등입니다 —
+   * 새로고침·재접속으로 다시 불려도 두 번 빠지지 않습니다.
    *
-   * `sessionId` 기준 멱등 — 새로고침·재접속·다른 참가자의 입장으로 다시
-   * 불려도 기존 기록을 그대로 돌려주며 잔액은 건드리지 않습니다. 부담자의
-   * 잔여가 0이면 차감하지 않고 `no_passes`를 돌려줍니다.
+   * `ownerUserId`는 이 방을 연 라운지의 방장으로, 시간 연장 상품의 부담자를
+   * 가릴 때만 씁니다(횟수를 대신 내지는 않습니다).
+   *
+   * 요청자의 잔여 횟수가 0이면 아무것도 하지 않고 `no_matches`입니다.
    */
   startLoungeUsage(input: {
     sessionId: string;
-    payerUserId: string;
+    userId: string;
+    ownerUserId: string;
     roomId: string;
     minutes: number;
   }): Promise<StartUsageResult>;
@@ -242,7 +282,7 @@ export interface DataAdapter {
     sessionId: string,
     status: LoungeSessionStatus,
   ): Promise<void>;
-  /** 이 회원이 **이용권을 부담한** 라운지 기록. */
+  /** 이 회원이 **연** 방의 기록. */
   listUsagesForUser(userId: string, limit?: number): Promise<LoungeUsage[]>;
 
   /* -------------------------------------------------------------- 관리자 */

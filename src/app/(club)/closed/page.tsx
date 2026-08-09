@@ -6,10 +6,13 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { getDb } from "@/lib/db";
 import { describeClubStatus } from "@/lib/club/status";
+import { getT } from "@/lib/i18n/server";
 import { getSession } from "@/lib/session";
 import { now } from "@/lib/time";
 
-export const metadata = { title: "클럽 마감" };
+export async function generateMetadata() {
+  return { title: (await getT())("closed.eyebrow") };
+}
 
 export default async function ClosedPage() {
   const session = await getSession();
@@ -18,7 +21,8 @@ export default async function ClosedPage() {
   const db = getDb();
   const club = await db.getPrimaryClub();
   const hours = await db.getOperatingHours(club.id);
-  const status = describeClubStatus(club, hours, now());
+  const t = await getT();
+  const status = describeClubStatus(club, hours, now(), t);
 
   // 이미 영업 중이면 로비로.
   if (status.isOpen) redirect("/lobby");
@@ -32,11 +36,11 @@ export default async function ClosedPage() {
         >
           <Moon className="size-5" />
         </span>
-        <p className="mt-6 label-caps">클럽 마감</p>
-        <h1 className="mt-4 font-display text-4xl leading-tight text-ivory sm:text-5xl">
-          지금은 클럽이
+        <p className="mt-6 label-caps">{t("closed.eyebrow")}</p>
+        <h1 className="mt-4 font-display text-4xl leading-tight break-keep text-ivory sm:text-5xl">
+          {t("closed.titleLine1")}
           <br />
-          <span className="text-champagne">닫혀 있습니다.</span>
+          <span className="text-champagne">{t("closed.titleLine2")}</span>
         </h1>
 
         <Card hairline className="mt-8 overflow-hidden">
@@ -48,25 +52,24 @@ export default async function ClosedPage() {
               <CalendarClock className="size-5" />
             </span>
             <div>
-              <p className="text-sm text-muted">다음 오픈</p>
+              <p className="text-sm text-muted">{t("closed.nextOpen")}</p>
               <p className="mt-0.5 font-display text-xl text-ivory">
-                {status.opensAtText ?? "곧 안내됩니다"}
+                {status.opensAtText ?? t("closed.nextOpenUnknown")}
               </p>
             </div>
           </CardBody>
         </Card>
 
-        <p className="mt-8 text-[0.9375rem] leading-relaxed text-muted">
-          클럽은 매일 저녁 6시부터 새벽 4시까지 열립니다. 닫힌 시간에도 프로필
-          수정, 친구 초대, 다음 방문 준비는 계속할 수 있습니다.
+        <p className="mt-8 text-[0.9375rem] leading-relaxed break-keep text-muted">
+          {t("closed.body")}
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">
           <ButtonLink href="/dashboard" variant="secondary">
-            대시보드로 이동
+            {t("closed.toDashboard")}
           </ButtonLink>
           <ButtonLink href="/" variant="ghost">
-            홈으로
+            {t("closed.toHome")}
           </ButtonLink>
         </div>
       </div>

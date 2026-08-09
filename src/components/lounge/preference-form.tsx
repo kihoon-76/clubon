@@ -1,17 +1,22 @@
 import { requestBooking } from "@/app/(club)/lounges/actions";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { getT } from "@/lib/i18n/server";
 import {
   AGE_BAND_OPTIONS,
   ENERGY_OPTIONS,
   GENDER_OPTIONS,
   INTEREST_OPTIONS,
+  ageBandLabel,
+  energyLabel,
+  genderLabel,
+  interestLabel,
 } from "@/lib/match-options";
 
 /**
  * 원하는 상대 스타일 입력 폼. 라운지 매니저가 이 조건과 공통점이 가장 많은 상대
  * 라운지를 찾아 부킹합니다. 서버 액션(requestBooking)으로 제출됩니다.
  */
-export function PreferenceForm({
+export async function PreferenceForm({
   tableId,
   disabled = false,
 }: {
@@ -19,9 +24,11 @@ export function PreferenceForm({
   /** 라운지 인원이 최소치에 못 미치면 제출을 막습니다. */
   disabled?: boolean;
 }) {
+  const t = await getT();
+
   return (
     <form action={requestBooking.bind(null, tableId)} className="space-y-8">
-      <Fieldset legend="원하는 상대의 성별">
+      <Fieldset legend={t("entry.desiredGender")}>
         <div className="flex flex-wrap gap-2.5">
           {GENDER_OPTIONS.map((o, i) => (
             <PillOption
@@ -29,7 +36,7 @@ export function PreferenceForm({
               type="radio"
               name="desiredGender"
               value={o.value}
-              label={o.label}
+              label={genderLabel(t, o.value)}
               defaultChecked={o.value === "any"}
               required={i === 0}
             />
@@ -37,7 +44,7 @@ export function PreferenceForm({
         </div>
       </Fieldset>
 
-      <Fieldset legend="대화 분위기">
+      <Fieldset legend={t("entry.energy")}>
         <div className="flex flex-wrap gap-2.5">
           {ENERGY_OPTIONS.map((o) => (
             <PillOption
@@ -45,14 +52,14 @@ export function PreferenceForm({
               type="radio"
               name="energy"
               value={o.value}
-              label={o.label}
+              label={energyLabel(t, o.value)}
               defaultChecked={o.value === "balanced"}
             />
           ))}
         </div>
       </Fieldset>
 
-      <Fieldset legend="관심사 (여러 개 선택 가능)">
+      <Fieldset legend={t("entry.interests")}>
         <div className="flex flex-wrap gap-2.5">
           {INTEREST_OPTIONS.map((o) => (
             <PillOption
@@ -60,13 +67,13 @@ export function PreferenceForm({
               type="checkbox"
               name="interests"
               value={o}
-              label={o}
+              label={interestLabel(t, o)}
             />
           ))}
         </div>
       </Fieldset>
 
-      <Fieldset legend="선호 연령대 (여러 개 선택 가능)">
+      <Fieldset legend={t("entry.ageBands")}>
         <div className="flex flex-wrap gap-2.5">
           {AGE_BAND_OPTIONS.map((o) => (
             <PillOption
@@ -74,7 +81,7 @@ export function PreferenceForm({
               type="checkbox"
               name="ageBands"
               value={o}
-              label={o}
+              label={ageBandLabel(t, o)}
             />
           ))}
         </div>
@@ -82,11 +89,14 @@ export function PreferenceForm({
 
       {disabled ? (
         <p className="rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted">
-          라운지에 한 명 이상 모이면 상대를 찾을 수 있습니다.
+          {t("lounge.needMoreToMatch")}
         </p>
       ) : (
-        <SubmitButton className="w-full gold-glow" pendingLabel="상대를 찾는 중…">
-          이 조건으로 상대 찾기
+        <SubmitButton
+          className="w-full gold-glow"
+          pendingLabel={t("lounge.searching")}
+        >
+          {t("entry.findMatch")}
         </SubmitButton>
       )}
     </form>

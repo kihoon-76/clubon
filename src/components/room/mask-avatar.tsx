@@ -1,3 +1,4 @@
+import type { Translate } from "@/lib/i18n/types";
 import type { MaskId } from "@/lib/runtime/types";
 import { cn } from "@/lib/utils";
 
@@ -9,13 +10,9 @@ import { cn } from "@/lib/utils";
  * 노출하지 않습니다.
  */
 
-export const MASK_LABEL: Record<MaskId, string> = {
-  fox: "여우",
-  cat: "고양이",
-  rabbit: "토끼",
-  bear: "곰",
-  wolf: "늑대",
-};
+export function maskLabel(t: Translate, mask: MaskId): string {
+  return t(`masks.${mask}`);
+}
 
 const MASK_ACCENT: Record<MaskId, string> = {
   fox: "#c08a55",
@@ -61,10 +58,13 @@ const EARS: Record<MaskId, React.ReactNode> = {
 
 export function MaskAvatar({
   mask,
+  t,
   className,
   dimmed = false,
 }: {
   mask: MaskId;
+  /** 대체 텍스트에 마스크 이름이 들어갑니다. */
+  t: Translate;
   className?: string;
   /** 블러 처리 등으로 흐리게 표시 */
   dimmed?: boolean;
@@ -75,7 +75,7 @@ export function MaskAvatar({
     <svg
       viewBox="0 0 100 100"
       role="img"
-      aria-label={`${MASK_LABEL[mask]} 마스크`}
+      aria-label={t("room.maskAria", { mask: maskLabel(t, mask) })}
       className={cn("size-full", dimmed && "opacity-40 blur-[3px]", className)}
     >
       <defs>

@@ -1,4 +1,5 @@
 import { isGoogleAuthConfigured } from "@/lib/auth/google";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * Google 계속하기 버튼 + 구분선.
@@ -9,15 +10,16 @@ import { isGoogleAuthConfigured } from "@/lib/auth/google";
  * 키가 설정되지 않은 환경에서는 아무것도 그리지 않습니다. 눌러도 안 되는
  * 버튼을 보여주는 것보다 없는 편이 낫습니다.
  */
-export function GoogleButton({
+export async function GoogleButton({
   next,
-  label = "Google로 계속하기",
+  label,
 }: {
   next?: string;
   label?: string;
 }) {
   if (!isGoogleAuthConfigured()) return null;
 
+  const t = await getT();
   const href = next
     ? `/api/auth/google?next=${encodeURIComponent(next)}`
     : "/api/auth/google";
@@ -26,7 +28,7 @@ export function GoogleButton({
     <div className="space-y-5">
       <div className="flex items-center gap-4" aria-hidden>
         <span className="h-px flex-1 bg-line" />
-        <span className="text-xs text-faint">또는</span>
+        <span className="text-xs text-faint">{t("auth.or")}</span>
         <span className="h-px flex-1 bg-line" />
       </div>
 
@@ -35,7 +37,7 @@ export function GoogleButton({
         className="flex h-11 w-full items-center justify-center gap-3 rounded-[var(--radius-control)] border border-line bg-surface-raised px-5 text-[0.9375rem] font-medium text-ivory transition-colors hover:border-champagne-dim hover:bg-surface-overlay"
       >
         <GoogleMark />
-        {label}
+        {label ?? t("auth.google")}
       </a>
     </div>
   );

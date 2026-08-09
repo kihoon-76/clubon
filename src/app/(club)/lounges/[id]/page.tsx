@@ -10,16 +10,15 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { WaiterAvatar } from "@/components/waiter/waiter-avatar";
 import { getDb } from "@/lib/db";
+import { getT } from "@/lib/i18n/server";
 import { requireOnboardedSession } from "@/lib/session";
-import { getWaiter } from "@/lib/waiters";
+import { getWaiter, waiterEpithet, waiterName } from "@/lib/waiters";
 
-export const metadata = { title: "내 라운지" };
+export async function generateMetadata() {
+  return { title: (await getT())("lounge.metaTitle") };
+}
 
-const NOTICES: Record<string, string> = {
-  too_small:
-    "합석하려면 이 라운지에 참가자가 한 명 이상 있어야 합니다. 초대코드를 공유해 주세요.",
-  invalid: "입력한 조건을 다시 확인해 주세요.",
-};
+const NOTICE_CODES = new Set(["too_small", "invalid"]);
 
 export default async function LoungePage({
   params,
@@ -56,22 +55,31 @@ export default async function LoungePage({
   const editing = sp.edit === "1";
   const searched = sp.searched === "1";
   const declined = sp.declined === "1";
-  const notice = typeof sp.error === "string" ? NOTICES[sp.error] : undefined;
+  const t = await getT();
+  const notice =
+    typeof sp.error === "string" && NOTICE_CODES.has(sp.error)
+      ? t(`lounge.errors.${sp.error}`)
+      : undefined;
+  const nickname = profile?.nickname ?? t("dashboard.member");
 
   return (
     <Container className="py-14 sm:py-16">
       {/* 담당 라운지 매니저 */}
       {waiter ? (
         <div className="flex items-center gap-4 rounded-[var(--radius-card)] border border-champagne-dim/30 bg-ink p-5">
-          <WaiterAvatar waiter={waiter} className="w-16 shrink-0" />
+          <WaiterAvatar waiter={waiter} t={t} className="w-16 shrink-0" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-display text-xl text-ivory">{waiter.name}</span>
-              <Badge tone="gold">{waiter.epithet}</Badge>
+              <span className="font-display text-xl text-ivory">
+                {waiterName(t, waiter)}
+              </span>
+              <Badge tone="gold">{waiterEpithet(t, waiter)}</Badge>
             </div>
-            <p className="mt-1 text-sm text-muted">
-              {waiter.name} 매니저가 오늘 저녁 {profile?.nickname ?? "회원"}님의
-              자리를 안내합니다.
+            <p className="mt-1 text-sm break-keep text-muted">
+              {t("lounge.hostedBy", {
+                name: waiterName(t, waiter),
+                nickname,
+              })}
             </p>
           </div>
         </div>
@@ -80,7 +88,7 @@ export default async function LoungePage({
       {/* 라운지 요약 */}
       <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="label-caps">내 라운지</p>
+          <p className="label-caps">{t("lounge.myLounge")}</p>
           <h1 className="mt-3 font-display text-4xl leading-tight text-ivory sm:text-5xl">
             {table.name}
           </h1>
@@ -88,23 +96,14 @@ export default async function LoungePage({
         <form action={leaveLounge.bind(null, id)}>
           <Button type="submit" variant="ghost" size="sm">
             <DoorOpen aria-hidden className="size-4" />
-            라운지 나가기
+            {t("lounge.leave")}
           </Button>
         </form>
       </div>
 
       {notice ? <Notice tone="warn">{notice}</Notice> : null}
-      {declined ? (
-        <Notice tone="warn">
-          제안이 성사되지 않았습니다. 다른 조건으로 다시 찾아보세요.
-        </Notice>
-      ) : null}
-      {searched ? (
-        <Notice tone="warn">
-          조건에 맞는 상대 라운지를 아직 찾지 못했어요. 조건을 조금 넓혀 다시
-          시도해 보세요.
-        </Notice>
-      ) : null}
+      {declined ? <Notice tone="warn">{t("lounge.declined")}</Notice> : null}
+      {searched ? <Notice tone="warn">{t("lounge.noMatchYet")}</Notice> : null}
 
       <div className="mt-8">
         <LoungeRoster
@@ -121,13 +120,13 @@ export default async function LoungePage({
         <Card hairline className="mt-8">
           <CardBody className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <Badge tone="success">합석 진행 중</Badge>
-              <p className="mt-2 text-sm text-muted">
-                이미 열려 있는 마스크 대화방이 있습니다.
+              <Badge tone="success">{t("lounge.liveSession")}</Badge>
+              <p className="mt-2 text-sm break-keep text-muted">
+                {t("lounge.liveSessionBody")}
               </p>
             </div>
             <ButtonLink href={`/room/${liveSession.sessionId}`}>
-              대화방으로 입장
+              {t("lounge.enterRoom")}
               <ArrowRight aria-hidden className="size-4" />
             </ButtonLink>
           </CardBody>
@@ -136,25 +135,28 @@ export default async function LoungePage({
         <Card hairline className="mt-8">
           <CardBody className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <Badge tone="gold">매치 제안 도착</Badge>
-              <p className="mt-2 text-sm text-muted">
-                라운지 매니저가 상대 라운지를 찾았습니다. 수락 여부를 알려주세요.
+              <Badge tone="gold">{t("lounge.proposalArrived")}</Badge>
+              <p className="mt-2 text-sm break-keep text-muted">
+                {t("lounge.proposalBody")}
               </p>
             </div>
             <ButtonLink href={`/match/${livePropose.id}`}>
-              제안 확인하기
+              {t("lounge.viewProposal")}
               <ArrowRight aria-hidden className="size-4" />
             </ButtonLink>
           </CardBody>
         </Card>
       ) : (
         <div className="mt-10 max-w-2xl">
-          <h2 className="font-display text-2xl text-ivory">
-            어떤 분과 만나고 싶으세요?
+          <h2 className="font-display text-2xl break-keep text-ivory">
+            {t("lounge.whoTitle")}
           </h2>
-          <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted">
-            원하는 상대의 스타일을 알려주시면, {waiter?.name ?? "라운지 매니저"}가
-            공통점이 가장 많은 라운지를 찾아 부킹해 드립니다.
+          <p className="mt-2 text-[0.9375rem] leading-relaxed break-keep text-muted">
+            {t("lounge.whoBody", {
+              name: waiter
+                ? waiterName(t, waiter)
+                : t("waiters.fallbackName"),
+            })}
           </p>
           <div className="mt-8">
             <PreferenceForm
@@ -163,8 +165,8 @@ export default async function LoungePage({
             />
           </div>
           {editing ? (
-            <p className="mt-4 text-xs text-faint">
-              이전 제안은 취소되었습니다. 새 조건으로 다시 찾습니다.
+            <p className="mt-4 text-xs break-keep text-faint">
+              {t("lounge.editingNote")}
             </p>
           ) : null}
         </div>

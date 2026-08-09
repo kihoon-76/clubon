@@ -7,6 +7,7 @@ import { clearSessionCookie, setSessionCookie } from "@/lib/auth/cookie";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { nextStepFor, safeNext } from "@/lib/auth/redirect";
 import { getDb } from "@/lib/db";
+import type { Gender } from "@/lib/db/types";
 
 export interface AuthFormState {
   error?: string;
@@ -64,6 +65,13 @@ export async function signup(
     return { error: "비밀번호가 서로 일치하지 않습니다." };
   }
 
+  // 성별은 매칭이 갈리는 기준이라 가입할 때 함께 받습니다. 프로필 단계까지
+  // 미루면 그전에는 어떤 매칭도 성립하지 않습니다.
+  const gender = formData.get("gender");
+  if (gender !== "female" && gender !== "male") {
+    return { error: "성별을 선택해 주세요." };
+  }
+
   const db = getDb();
   if (await db.getCredentialsByEmail(parsed.data.email)) {
     return { error: "이미 가입된 이메일입니다. 로그인해 주세요." };
@@ -72,6 +80,7 @@ export async function signup(
   const user = await db.createUser({
     email: parsed.data.email,
     passwordHash: await hashPassword(parsed.data.password),
+    gender: gender as Gender,
   });
 
   await setSessionCookie(user.id);
