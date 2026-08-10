@@ -1,11 +1,11 @@
 "use client";
 
 import { useTransition } from "react";
-import { Ban, Crown, Eye, Flag, Mic, MicOff } from "lucide-react";
+import { Ban, Crown, Flag, Mic, MicOff } from "lucide-react";
 
 import { blockParticipant } from "@/app/(club)/room/[sessionId]/actions";
 import { LocalCamera } from "@/components/room/local-camera";
-import { MaskAvatar, RevealedAvatar, maskLabel } from "@/components/room/mask-avatar";
+import { MemberAvatar } from "@/components/room/member-avatar";
 import { Badge } from "@/components/ui/badge";
 import { useT } from "@/lib/i18n/client";
 import type { RoomParticipantView } from "@/lib/runtime/view";
@@ -22,47 +22,44 @@ const STATUS_KEY: Record<RoomParticipantView["status"], string | null> = {
 export function ParticipantTile({
   sessionId,
   participant,
+  selfPreview = false,
   onReport,
 }: {
   sessionId: string;
   participant: RoomParticipantView;
+  /**
+   * 내 카메라를 이 타일에서 직접 열어도 되는지.
+   *
+   * 화상 무대가 살아 있으면 내 영상은 이미 그 프레임이 내보내고 있으므로
+   * 여기서 같은 장치를 또 열지 않습니다(이중 점유). Daily 자격증명이 없는
+   * 데모처럼 무대가 붙지 못한 때에만 미리보기를 대신 띄웁니다.
+   */
+  selfPreview?: boolean;
   onReport: (target: RoomParticipantView) => void;
 }) {
   const t = useT();
   const [pending, startTransition] = useTransition();
   const p = participant;
-  // 공개 여부는 방장끼리의 합의로 방 전체에 한꺼번에 적용됩니다(뷰에서 계산).
-  const revealed = p.revealed;
   const statusKey = STATUS_KEY[p.status];
+  const showLocalCamera =
+    selfPreview && p.isMe && p.camOn && p.videoState !== "blurred";
 
   return (
     <li
       className={cn(
-        "relative overflow-hidden rounded-[var(--radius-card)] border bg-surface-raised",
-        revealed ? "border-champagne-dim" : "border-line",
+        "relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-raised",
         !p.present && "opacity-45",
       )}
     >
       {/* 영상 영역 */}
       <div className="relative aspect-4/3 bg-ink">
         <div className="absolute inset-0 flex items-center justify-center p-6">
-          {p.isMe ? (
-            // 공개된 뒤에는 내 얼굴도 화상 무대에 나오므로, 여기서 카메라를
-            // 한 번 더 잡지 않습니다(같은 장치 이중 점유 방지).
-            revealed ? (
-              <RevealedAvatar nickname={p.nickname} className="max-w-28" />
-            ) : p.camOn ? (
-              <LocalCamera enabled={p.camOn} />
-            ) : (
-              <MaskAvatar mask={p.mask} t={t} className="max-w-32" />
-            )
-          ) : revealed ? (
-            <RevealedAvatar nickname={p.nickname} className="max-w-28" />
+          {showLocalCamera ? (
+            <LocalCamera enabled />
           ) : (
-            <MaskAvatar
-              mask={p.mask}
-              t={t}
-              className="max-w-32"
+            <MemberAvatar
+              nickname={p.nickname}
+              className="max-w-28"
               dimmed={p.videoState === "blurred" || !p.camOn}
             />
           )}
@@ -84,12 +81,6 @@ export function ParticipantTile({
               {t("room.host")}
             </Badge>
           ) : null}
-          {revealed ? (
-            <Badge tone="success">
-              <Eye aria-hidden className="size-3" />
-              {t("room.revealedBadge")}
-            </Badge>
-          ) : null}
           {statusKey ? <Badge tone="danger">{t(statusKey)}</Badge> : null}
           {p.simulated ? <Badge tone="warn">{t("room.demo")}</Badge> : null}
         </div>
@@ -106,9 +97,6 @@ export function ParticipantTile({
         <div className="flex items-center justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm text-ivory">{p.nickname}</span>
-            <span className="shrink-0 text-[0.6875rem] text-faint">
-              {maskLabel(t, p.mask)}
-            </span>
           </span>
           {p.micOn ? (
             <Mic

@@ -18,6 +18,9 @@ create type public.account_status as enum ('active', 'suspended', 'banned');
 create type public.verification_method as enum ('email', 'phone', 'document');
 create type public.verification_status as enum ('unverified', 'pending', 'verified', 'failed');
 
+-- `face_tracking`·`mutual_face_reveal`은 마스크 기능과 함께 없어졌지만, 회원이
+-- 실제로 동의한 과거 기록을 읽을 수 있도록 값은 남겨 둡니다. 앱이 지금 받는
+-- 항목은 `lib/consent/items.ts`가 정합니다.
 create type public.consent_type as enum (
   'terms_of_service',
   'privacy_policy',
@@ -57,17 +60,7 @@ create type public.proposal_state as enum (
 create type public.proposal_response as enum ('pending', 'accepted', 'declined');
 
 create type public.session_state as enum ('live', 'paused', 'ended', 'locked');
-create type public.mask_kind as enum ('fox', 'cat', 'rabbit', 'bear', 'wolf');
 create type public.video_state as enum ('ok', 'blurred', 'frozen', 'avatar');
-
--- 얼굴 공개는 세션당 1건의 합의로 관리합니다(두 라운지 방장의 합의).
-create type public.reveal_agreement_state as enum (
-  'MASKED',
-  'REVEAL_REQUESTED',
-  'REVEALED',
-  'REMASKED',
-  'REVEAL_CANCELLED'
-);
 
 create type public.chat_scope as enum ('table', 'room');
 create type public.chat_kind as enum ('user', 'system', 'waiter');
@@ -306,7 +299,7 @@ create table public.participant_sessions (
   session_id uuid not null references public.video_sessions (id) on delete cascade,
   user_id uuid not null references public.users (id) on delete cascade,
   table_id uuid not null references public.tables (id) on delete cascade,
-  mask public.mask_kind not null default 'fox',
+  -- 마이크·카메라는 그 라운지의 기기를 맡은 방장에게만 의미가 있습니다.
   mic_on boolean not null default true,
   cam_on boolean not null default true,
   video_state public.video_state not null default 'ok',
@@ -319,33 +312,6 @@ create unique index participant_sessions_active_idx
   where left_at is null;
 
 create index participant_sessions_session_idx on public.participant_sessions (session_id);
-
--- ----------------------------------------------------------- 얼굴 공개 합의 --
-
--- 공개는 참가자 개인이 아니라 합석한 두 라운지의 방장이 결정하며, 확정되면
--- 방 안의 모든 참가자에게 한꺼번에 적용됩니다. 세션당 합의는 정확히 1건입니다.
-create table public.reveal_agreements (
-  id uuid primary key default gen_random_uuid(),
-  session_id uuid not null unique
-    references public.video_sessions (id) on delete cascade,
-  state public.reveal_agreement_state not null default 'MASKED',
-  -- 공개를 제안한 방장과 그 방장의 라운지. 반대쪽 라운지의 방장만 응답할 수 있습니다.
-  requester_id uuid references public.users (id) on delete set null,
-  requester_table_id uuid references public.tables (id) on delete set null,
-  granted_at timestamptz,
-  revoked_at timestamptz,
-  revoked_by uuid references public.users (id) on delete set null,
-  updated_at timestamptz not null default now(),
-  -- 제안·공개 상태에는 반드시 제안한 방장과 라운지가 기록되어 있어야 합니다.
-  constraint reveal_requires_requester
-    check (
-      state in ('MASKED', 'REMASKED')
-      or (requester_id is not null and requester_table_id is not null)
-    ),
-  -- 공개는 서버가 양쪽 방장의 수락을 확정한 시각이 남아 있을 때만 성립합니다.
-  constraint reveal_requires_grant
-    check (state <> 'REVEALED' or granted_at is not null)
-);
 
 -- ------------------------------------------------------------------- chat --
 
@@ -470,8 +436,6 @@ create trigger profiles_touch before update on public.profiles
 create trigger tables_touch before update on public.tables
   for each row execute function public.touch_updated_at();
 create trigger table_preferences_touch before update on public.table_preferences
-  for each row execute function public.touch_updated_at();
-create trigger reveal_agreements_touch before update on public.reveal_agreements
   for each row execute function public.touch_updated_at();
 
 -- --------------------------------------------- auth.users → public.users 동기화 --

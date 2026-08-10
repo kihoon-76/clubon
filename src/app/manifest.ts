@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ClubOn — 어디에 있든, 프라이빗 소셜 클럽",
     short_name: "ClubOn",
     description:
-      "프로필을 넘기는 대신 대화로 만나는 성인 전용 온라인 소셜 클럽. 마스크를 쓴 채 이야기하고, 양쪽 라운지의 방장이 모두 수락할 때만 얼굴을 공개합니다.",
+      "프로필을 넘기는 대신 대화로 만나는 성인 전용 온라인 소셜 클럽. 친구와 함께 입장해 이동도 대기도 없이 새로운 사람들과 이야기합니다.",
     start_url: "/",
     scope: "/",
     display: "standalone",

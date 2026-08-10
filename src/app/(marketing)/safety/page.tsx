@@ -1,4 +1,4 @@
-import { Eye, Flag, ShieldCheck, Video } from "lucide-react";
+import { Flag, ShieldCheck, SlidersHorizontal, Video } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
@@ -14,7 +14,12 @@ export async function generateMetadata() {
 }
 
 /** 아이콘만 이 파일에 남습니다 — 문구는 `safety.p<n>Title|Body`. */
-const PRINCIPLE_ICONS: LucideIcon[] = [ShieldCheck, Eye, Flag, Video];
+const PRINCIPLE_ICONS: LucideIcon[] = [
+  ShieldCheck,
+  SlidersHorizontal,
+  Flag,
+  Video,
+];
 
 export default async function SafetyCenterPage() {
   const t = await getT();
@@ -52,18 +57,7 @@ export default async function SafetyCenterPage() {
         ))}
       </div>
 
-      <section id="reveal" className="mt-20 scroll-mt-20 max-w-3xl">
-        <h2 className="font-display text-3xl break-keep text-ivory">
-          {t("safety.revealTitle")}
-        </h2>
-        <ul className="mt-6 space-y-3 text-[0.9375rem] leading-relaxed break-keep text-muted">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <li key={n}>· {t(`safety.reveal${n}`)}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section id="recording" className="mt-16 scroll-mt-20 max-w-3xl">
+      <section id="recording" className="mt-20 scroll-mt-20 max-w-3xl">
         <h2 className="font-display text-3xl break-keep text-ivory">
           {t("safety.recordingTitle")}
         </h2>

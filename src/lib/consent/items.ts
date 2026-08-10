@@ -25,9 +25,7 @@ export const CONSENT_ITEMS: ConsentItem[] = [
   { type: "ai_text_moderation", required: true },
   { type: "anti_recording", required: true },
   { type: "community_standards", required: true },
-  { type: "mutual_face_reveal", required: true },
   { type: "ai_video_moderation", required: false },
-  { type: "face_tracking", required: false },
 ];
 
 /** 동의 항목의 제목·본문 — 사전에서 찾습니다. */

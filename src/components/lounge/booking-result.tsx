@@ -19,7 +19,7 @@ function profileGenderLabel(t: Translate, gender: Profile["gender"]): string {
 }
 
 /**
- * 매치 제안 카드. 양측이 모두 수락해야 마스크 대화방이 열립니다.
+ * 매치 제안 카드. 양측이 모두 수락해야 대화방이 열립니다.
  * 팁·우선권은 상대의 수락을 강제하지 않습니다.
  */
 export async function BookingResult({
@@ -117,7 +117,7 @@ export async function BookingResult({
           <div className="flex items-start gap-3 rounded-[var(--radius-control)] border border-line bg-surface-overlay/50 p-4">
             <Video aria-hidden className="mt-0.5 size-4 shrink-0 text-champagne" />
             <p className="text-sm leading-relaxed break-keep text-muted">
-              {t("match.maskNotice")}
+              {t("match.videoNotice")}
             </p>
           </div>
 

@@ -60,6 +60,14 @@ export function roomNameFor(sessionId: string): string {
 }
 
 /**
+ * 한 통화에 들어올 수 있는 기기 수. 라운지 두 곳이 한 대씩입니다.
+ *
+ * 토큰을 방장에게만 발급하는 것으로 이미 막히지만, 방에도 걸어 둡니다.
+ * 앱이 실수로 토큰을 더 내주더라도 Daily가 세 번째 기기를 거절합니다.
+ */
+const MAX_DEVICES = 2;
+
+/**
  * 세션용 방을 확보하고 URL을 돌려줍니다. 이미 있으면 조회해서 재사용합니다.
  *
  * 방은 private이라 미팅 토큰 없이는 입장할 수 없습니다. 프리조인 화면과
@@ -77,13 +85,12 @@ export async function ensureRoom(sessionId: string): Promise<string> {
       properties: {
         exp: Math.floor(Date.now() / 1000) + ROOM_TTL_SECONDS,
         eject_at_room_exp: true,
+        max_participants: MAX_DEVICES,
         enable_prejoin_ui: false,
         enable_knocking: false,
         enable_chat: false,
         enable_screenshare: false,
-        // 마스크 상태로 입장하는 것이 기본값입니다. 얼굴 공개는 방장 합의
-        // 이후 토큰과 클라이언트 양쪽에서 열립니다.
-        start_video_off: true,
+        start_video_off: false,
         start_audio_off: false,
       },
     },
@@ -101,17 +108,23 @@ export async function ensureRoom(sessionId: string): Promise<string> {
 }
 
 /**
- * 참가자 1인용 미팅 토큰. 서버가 확인한 신원과 권한만 담습니다.
+ * 라운지 기기용 미팅 토큰. 서버가 확인한 신원과 권한만 담습니다.
  *
- * `startVideoOff`는 방이 아직 공개 전이면 true입니다. 토큰으로 한 번 더
- * 막아두면 클라이언트 코드가 잘못 동작해도 카메라가 먼저 켜지지 않습니다.
+ * **한 라운지는 한 대만 접속합니다.** 이 자리는 사람과 사람이 아니라 공간과
+ * 공간을 잇습니다. 같은 라운지의 회원들은 한 방에 함께 있으므로, 회의실에
+ * 카메라와 마이크를 한 벌만 두는 것과 같습니다. 그 한 벌을 맡는 기기가
+ * 방장의 것이고, 나머지 회원의 기기는 아예 통화에 들어오지 않습니다 —
+ * 같은 방에서 마이크를 여러 개 열면 하울링이 생기기 때문입니다.
+ *
+ * 그래서 이 함수는 **카메라를 맡은 방장에게만** 부릅니다. 나머지 회원에게는
+ * 토큰 자체를 발급하지 않으므로, 클라이언트를 고쳐도 통화에 들어올 수
+ * 없습니다.
  */
 export async function createMeetingToken(input: {
   sessionId: string;
   userId: string;
-  userName: string;
-  isOwner: boolean;
-  startVideoOff: boolean;
+  /** 화면에 뜨는 이름 — 개인이 아니라 그 라운지를 가리킵니다. */
+  loungeName: string;
 }): Promise<string> {
   const res = await dailyFetch("/meeting-tokens", {
     method: "POST",
@@ -119,9 +132,9 @@ export async function createMeetingToken(input: {
       properties: {
         room_name: roomNameFor(input.sessionId),
         user_id: input.userId,
-        user_name: input.userName,
-        is_owner: input.isOwner,
-        start_video_off: input.startVideoOff,
+        user_name: input.loungeName,
+        is_owner: true,
+        start_video_off: false,
         exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
         eject_at_token_exp: true,
         // 녹화는 켜지 않습니다. `enable_recording`은 불리언이 아니라

@@ -70,31 +70,6 @@ export async function toggleMedia(
   room.setMedia(sessionId, user.id, patch);
 }
 
-/* ------------------------------------------------------------- 얼굴 공개 */
-
-/**
- * 얼굴 공개는 방장 권한입니다. 세 동작 모두 요청자가 자기 라운지의 방장인지
- * 런타임에서 다시 확인하므로, 일반 참가자가 직접 호출해도 아무 일도 없습니다.
- */
-
-export async function requestReveal(sessionId: string): Promise<void> {
-  const { user } = await requireParticipant(sessionId);
-  room.requestReveal(sessionId, user.id);
-}
-
-export async function respondReveal(
-  sessionId: string,
-  accept: boolean,
-): Promise<void> {
-  const { user } = await requireParticipant(sessionId);
-  room.respondReveal(sessionId, user.id, accept);
-}
-
-export async function remask(sessionId: string): Promise<void> {
-  const { user } = await requireParticipant(sessionId);
-  room.remask(sessionId, user.id);
-}
-
 /* ------------------------------------------------------------- 신고 · 차단 */
 
 export interface ReportFormState {

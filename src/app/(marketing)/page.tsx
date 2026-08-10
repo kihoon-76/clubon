@@ -2,7 +2,6 @@ import {
   ArrowRight,
   ChevronDown,
   Clock,
-  Eye,
   Handshake,
   MessageSquare,
   ShieldCheck,
@@ -27,8 +26,8 @@ export default async function LandingPage() {
       <Hero t={t} />
       <BentoUsp t={t} />
       <HowItWorks t={t} />
+      <Pricing t={t} />
       <Waiter t={t} />
-      <MaskAndReveal t={t} />
       <Safety t={t} />
       <Hours t={t} />
       <ClosingCta t={t} />
@@ -99,70 +98,76 @@ function Hero({ t }: { t: Translate }) {
 
 /* ------------------------------------------------------------- Bento USP */
 
+/**
+ * 'ClubOn이 다른 이유'.
+ *
+ * 값이 아니라 **설렘**을 먼저 말하는 자리입니다. 금액은 이 화면에서 꺼내지
+ * 않고, 서비스를 다 본 뒤의 `Pricing` 섹션이 맡습니다.
+ */
 function BentoUsp({ t }: { t: Translate }) {
   return (
     <section className="relative overflow-hidden scroll-mt-20">
       <div aria-hidden className="club-ambience absolute inset-0 opacity-70" />
-      <Container className="relative py-16 text-center break-keep sm:py-28">
-        {/* 1. 가격 대비 — 한 줄로 읽혀야 해서 본문보다 넓게 잡습니다 */}
+      <Container className="relative py-20 text-center break-keep sm:py-28">
         <p className="label-caps">{t("landing.uspEyebrow")}</p>
 
-        <h2 className="mx-auto mt-6 max-w-[30rem] font-display text-[1.75rem] leading-[1.35] text-ivory sm:mt-8 sm:max-w-4xl sm:text-[2.25rem] sm:leading-[1.3] lg:max-w-5xl lg:text-[2.75rem]">
-          {t("landing.uspCompare")}{" "}
-          <span className="text-muted line-through decoration-danger/60 decoration-[1.5px] sm:whitespace-nowrap">
-            {t("landing.uspComparePrice")}
+        {/* 이 화면에서 가장 큰 문장. 강조는 마지막 구절 하나에만 둡니다. */}
+        <h2 className="mx-auto mt-7 max-w-[22rem] font-display text-[2rem] leading-[1.25] text-ivory sm:mt-9 sm:max-w-3xl sm:text-[3rem] sm:leading-[1.18] lg:max-w-4xl lg:text-[3.5rem]">
+          {t("landing.uspHeadline")}{" "}
+          <span className="block italic text-champagne sm:inline">
+            {t("landing.uspHeadlineAccent")}
           </span>
-          <br />
-          <span className="italic text-champagne">{t("landing.uspOurs")}</span>
         </h2>
 
         <span
           aria-hidden
-          className="mx-auto mt-9 block h-px w-16 bg-gradient-to-r from-transparent via-champagne-dim to-transparent sm:mt-12"
+          className="mx-auto mt-10 block h-px w-16 bg-gradient-to-r from-transparent via-champagne-dim to-transparent sm:mt-12"
         />
 
-        <div className="mx-auto max-w-[30rem] sm:max-w-2xl">
-          {/* 2. 부담 없는 입장 */}
-          <p className="mt-9 text-[1.0625rem] leading-[1.85] break-keep text-muted sm:mt-12 sm:text-lg">
-            {t("landing.uspEasy1")}
-            <br />
-            {t("landing.uspEasy2")}
-          </p>
+        {/* 보조 문구 — 두 문장을 각각 한 줄로 두어 좁은 화면에서도 끊기가
+            자연스럽습니다. */}
+        <p className="mx-auto mt-10 max-w-[24rem] text-[1.0625rem] leading-[1.8] break-keep text-muted sm:mt-12 sm:max-w-2xl sm:text-xl sm:leading-[1.75]">
+          {t("landing.uspSub1")}
+          <br className="hidden sm:block" />{" "}
+          {t("landing.uspSub2")}
+        </p>
 
-          {/* 3. 두 가지 약속 — 모바일에서는 강조구를 항상 둘째 줄로 내립니다 */}
-          <div className="mt-9 space-y-4 border-y border-line py-8 sm:mt-12 sm:py-10">
-            <p className="text-[1.0625rem] leading-[1.7] break-keep text-ivory sm:text-xl">
-              {t("landing.uspPromise1")}{" "}
-              <span className="block text-champagne sm:inline">
-                {t("landing.uspPromise1Accent")}
-              </span>
-            </p>
-            <p className="text-[1.0625rem] leading-[1.7] break-keep text-ivory sm:text-xl">
-              {t("landing.uspPromise2")}{" "}
-              <span className="block text-champagne sm:inline">
-                {t("landing.uspPromise2Accent")}
-              </span>
-            </p>
-          </div>
-
-          {/* 4. 마무리 */}
-          <p className="mt-9 text-[1.0625rem] leading-[1.85] break-keep text-muted sm:mt-12 sm:text-lg">
-            {t("landing.uspClose1")}
-            <br />
-            {t("landing.uspClose2")}{" "}
-            <span className="text-champagne">{t("landing.uspCloseAccent")}</span>
-            {t("landing.uspCloseTail")}
-          </p>
-
-          <p className="mt-10 font-display text-[1.625rem] leading-[1.4] break-keep text-ivory sm:mt-14 sm:text-[2.25rem] sm:leading-[1.3]">
-            {t("landing.uspTagline")}{" "}
-            <span className="italic text-champagne">
-              {t("landing.uspTaglineAccent")}
-            </span>
-          </p>
-
-          <p className="label-caps mt-7 sm:mt-8">{t("landing.uspSignature")}</p>
+        <div className="mt-11 flex justify-center sm:mt-14">
+          <ButtonLink href="#how" size="lg" className="gold-glow">
+            {t("landing.uspCta")}
+            <ArrowRight className="size-4" />
+          </ButtonLink>
         </div>
+
+        <p className="label-caps mt-10 sm:mt-12">{t("landing.uspSignature")}</p>
+      </Container>
+    </section>
+  );
+}
+
+/* --------------------------------------------------------------- Pricing */
+
+/**
+ * 라운지 이용 안내.
+ *
+ * 금액은 이용 방식을 다 읽은 뒤에 나옵니다. 크게 외치지 않고 한 줄로만
+ * 적는 것이 이 섹션의 요지입니다.
+ */
+function Pricing({ t }: { t: Translate }) {
+  return (
+    <section id="pricing" className="scroll-mt-20">
+      <Container className="py-20 sm:py-24">
+        <Card hairline className="mx-auto max-w-2xl">
+          <CardBody className="text-center break-keep">
+            <p className="label-caps">{t("landing.priceEyebrow")}</p>
+            <p className="mt-5 font-display text-2xl leading-snug text-ivory sm:text-[1.75rem]">
+              {t("landing.priceTitle")}
+            </p>
+            <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted sm:text-base">
+              {t("landing.priceBody")}
+            </p>
+          </CardBody>
+        </Card>
       </Container>
     </section>
   );
@@ -177,7 +182,7 @@ const STEP_ICONS: LucideIcon[] = [
   Sparkles,
   Handshake,
   MessageSquare,
-  Eye,
+  Clock,
 ];
 
 function HowItWorks({ t }: { t: Translate }) {
@@ -265,35 +270,6 @@ function Waiter({ t }: { t: Translate }) {
             ))}
           </CardBody>
         </Card>
-      </Container>
-    </section>
-  );
-}
-
-/* -------------------------------------------------------- Mask and reveal */
-
-function MaskAndReveal({ t }: { t: Translate }) {
-  return (
-    <section id="reveal" className="scroll-mt-20 border-y border-line/70 bg-surface/50">
-      <Container className="py-20 sm:py-28">
-        <SectionHeading
-          eyebrow={t("landing.revealEyebrow")}
-          title={t("landing.revealTitle")}
-          description={t("landing.revealBody")}
-        />
-
-        <div className="mt-14 grid gap-5 md:grid-cols-3">
-          {[1, 2, 3].map((n) => (
-            <Card key={n} className="h-full">
-              <CardBody>
-                <CardTitle>{t(`landing.reveal${n}Title`)}</CardTitle>
-                <p className="mt-3 text-[0.9375rem] leading-relaxed break-keep text-muted">
-                  {t(`landing.reveal${n}Body`)}
-                </p>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
       </Container>
     </section>
   );

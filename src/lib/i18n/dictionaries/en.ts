@@ -12,7 +12,7 @@ export const en: DeepPartial<Dictionary> = {
   site: {
     title: "ClubOn — a private social club, wherever you are",
     description:
-      "An adults-only online social club where you meet through conversation instead of swiping profiles. Enter as a group, talk with a mask on, and reveal faces only when the hosts of both lounges agree.",
+      "An adults-only online social club where you meet through conversation instead of swiping profiles. Walk in with your friends and meet new people — no travel, no waiting in line.",
     ogAlt: "ClubOn — tonight, switch the club on",
     ogLocale: "en_US",
   },
@@ -298,7 +298,7 @@ export const en: DeepPartial<Dictionary> = {
   safety: {
     metaTitle: "Safety centre",
     metaDescription:
-      "ClubOn's safety principles, face reveal policy, no-recording policy, and how to report.",
+      "ClubOn's safety principles, no-recording policy, and how to report.",
     eyebrow: "Safety centre",
     title: "A comfortable conversation starts with safety",
     intro:
@@ -307,39 +307,27 @@ export const en: DeepPartial<Dictionary> = {
     p1Title: "You only meet as a group",
     p1Body:
       "Lounges meet as groups. A shared room starts with at least 2 people, and if the count drops below that the session pauses and everyone returns to a waiting lounge.",
-    p2Title: "Faces are covered by default",
+    p2Title: "Your camera and mic are yours to control",
     p2Body:
-      "Every session starts with animal masks on. If face tracking briefly fails, the video is blurred or replaced by an avatar — your real face is never exposed.",
+      "You can turn your camera and microphone off at any time and stay in the conversation. If a moderation action limits your video, it is blurred or replaced by an avatar.",
     p3Title: "You can leave or report at any time",
     p3Body:
       "Reporting and blocking are always one tap away inside the room. Once you block someone, you never meet them in future matches either.",
     p4Title: "Filming and recording are prohibited",
     p4Body:
-      "We confirm this three times: at sign-up, before entering a room, and before a reveal. The screen carries a watermark with a user identifier and a timestamp.",
-
-    revealTitle: "Face reveal policy",
-    reveal1:
-      "A reveal happens only when the hosts of both lounges accept. An individual participant cannot ask another participant to reveal directly.",
-    reveal2:
-      "Once both hosts have accepted, every mask in that room comes off at the same moment.",
-    reveal3:
-      "If either host puts the masks back on, everyone returns to masks immediately. The same happens if the host who agreed leaves the room.",
-    reveal4:
-      "Even after a reveal, anyone you have blocked stays masked to you, and anyone whose video is limited by a moderation action is not revealed.",
-    reveal5: "When the session ends, the reveal ends with it.",
-    reveal6: "Declining never shows the other side a reason.",
+      "We confirm this twice: at sign-up and before entering a room. The screen carries a watermark with a user identifier and a timestamp.",
 
     recordingTitle: "No-recording policy",
     recordingBody:
       "Capturing, recording, filming, or sharing another participant's video, audio, or personal information is prohibited. Violations may lead to a permanent ban and legal liability under applicable law.",
     recordingLimits:
-      "The platform cannot technically block every screenshot or recording made with a separate device. That is why masks by default, host-agreed reveals, dynamic watermarks, repeated confirmations, and reporting and enforcement all run together.",
+      "The platform cannot technically block every screenshot or recording made with a separate device. That is why dynamic watermarks, repeated confirmations, and reporting and enforcement all run together.",
 
     reportTitle: "How to report",
     report1: "Tap the report button on that participant inside the room.",
     report2: "Choose a reason, and describe what happened if you want to.",
     report3:
-      "You can block the participant at the same time — once blocked, they only ever appear to you masked again.",
+      "You can block the participant at the same time — once blocked, their messages stop reaching you.",
     report4:
       "Staff review the report and decide on a warning, a limit, a suspension, or another action.",
     reportUrgent:
@@ -355,7 +343,6 @@ export const en: DeepPartial<Dictionary> = {
     howItWorks: "How it works",
     groupSafety: "Safety and trust",
     safetyCenter: "Safety centre",
-    revealPolicy: "Face reveal policy",
     recordingPolicy: "No-recording policy",
     groupLegal: "Legal",
     terms: "Terms of Service",
@@ -370,7 +357,7 @@ export const en: DeepPartial<Dictionary> = {
     heroLine1: "Wherever you are,",
     heroLine2: "a private social club.",
     heroBody:
-      "You meet through conversation, not by swiping profiles. Sit at one table with your friends, talk with a mask on, and reveal your face only when the hosts of both lounges agree.",
+      "You meet through conversation, not by swiping profiles. Sit at one table with your friends, and start talking with the lounge you are matched with.",
     heroCta: "Request entry",
     heroSecondary: "See how it works",
     heroNote:
@@ -378,23 +365,17 @@ export const en: DeepPartial<Dictionary> = {
     scrollDown: "Scroll down",
 
     uspEyebrow: "What makes ClubOn different",
-    uspCompare: "One night in a club booking room:",
-    uspComparePrice: "$300 to $1,500.",
-    uspOurs: "A ClubOn lounge room is $30.",
-    uspEasy1: "No bar tab, no taxi fare, no queue.",
-    uspEasy2:
-      "Walk into a lounge with your friends, put on an animal mask, and just talk.",
-    uspPromise1: "If the conversation clicks, both hosts agree and you",
-    uspPromise1Accent: "reveal your faces!",
-    uspPromise2: "If it does not, move on with no awkwardness —",
-    uspPromise2Accent: "on to the next lounge!",
-    uspClose1: "Private nightlife, from home.",
-    uspClose2: "All the anticipation of a night out, at",
-    uspCloseAccent: "a tenth",
-    uspCloseTail: " of the cost.",
-    uspTagline: "Tonight, don't go to the club —",
-    uspTaglineAccent: "switch it on.",
-    uspSignature: "CLUB ON — the online booking lounge",
+    uspHeadline: "Tonight, the most memorable way to meet",
+    uspHeadlineAccent: "someone new",
+    uspSub1: "A private online lounge — no travel, no waiting in line.",
+    uspSub2:
+      "Walk in with your friends and meet new people at your own pace.",
+    uspCta: "Explore the lounges",
+    uspSignature: "CLUB ON — the online social lounge",
+
+    priceEyebrow: "Lounge pricing",
+    priceTitle: "Lounge pass ₩30,000",
+    priceBody: "No extra charges — yours for the full session.",
 
     howEyebrow: "How it works",
     howTitle: "Start at one table, meet another",
@@ -412,12 +393,12 @@ export const en: DeepPartial<Dictionary> = {
     step4Title: "Both tables accept",
     step4Body:
       "The shared room opens only when both tables agree. Neither side is pushed into it.",
-    step5Title: "Talk with a mask on",
+    step5Title: "Talk in the shared room",
     step5Body:
-      "You start behind an animal mask, so you meet through conversation rather than looks.",
-    step6Title: "Faces show only when both hosts accept",
+      "The two lounges share one screen and one sound. You can turn your camera and mic off whenever you like.",
+    step6Title: "For as long as the session runs",
     step6Body:
-      "When the hosts of both lounges accept, every mask in the room comes off at the same moment.",
+      "A seat runs 30 minutes. If the conversation is going well, you can pay to extend it.",
 
     waiterEyebrow: "AI lounge manager",
     waiterTitle: "Finds the lounge that fits and connects you",
@@ -434,20 +415,6 @@ export const en: DeepPartial<Dictionary> = {
     waiterLine3:
       "Both lounges have accepted. Your shared room opens in 10 seconds.",
 
-    revealEyebrow: "Masks and reveals",
-    revealTitle: "Faces show only when both hosts agree",
-    revealBody:
-      "Every conversation starts behind an animal mask. Masks come off only when the hosts of both lounges accept, and then they come off for the whole room at once.",
-    reveal1Title: "Both hosts must accept",
-    reveal1Body:
-      "When one host proposes it, the other lounge's host gets a confirmation request. Declining never shows a reason.",
-    reveal2Title: "The whole room reveals together",
-    reveal2Body:
-      "Once agreed, everyone in both lounges unmasks at the same time — except anyone you have blocked, who stays masked to you.",
-    reveal3Title: "You can put the mask back on any time",
-    reveal3Body:
-      "If either host reverses it, everyone returns to masks immediately. The same happens when a host leaves or the session ends.",
-
     safetyEyebrow: "Safety and trust",
     safetyTitle: "Comfort starts with safety",
     safety1Title: "Adults only",
@@ -463,7 +430,7 @@ export const en: DeepPartial<Dictionary> = {
     safety4Body:
       "Consent and watermarks deter it, and reported violations lead to suspension or worse.",
     safetyNote:
-      "Moderation combines automated screening with human review, but cannot be guaranteed to catch every violation. The platform also cannot technically block every screenshot or off-device recording. That is why masks by default, host-agreed reveals, watermarks, and reporting all run together.",
+      "Moderation combines automated screening with human review, but cannot be guaranteed to catch every violation. The platform also cannot technically block every screenshot or off-device recording. That is why watermarks and reporting run together.",
 
     hoursTitle: "Every evening, 6pm to 4am",
     hoursBody:
@@ -478,7 +445,7 @@ export const en: DeepPartial<Dictionary> = {
   roomChat: {
     system: "System",
     opened:
-      "The two lounges have met. {waiter} is hosting this evening's seat. Faces are revealed only when the hosts of both lounges accept, and then every mask in the room comes off together.",
+      "The two lounges have met. {waiter} is hosting this evening's seat. Start with a hello and take it from there.",
     noRecording:
       "Capturing, recording, filming, or sharing another participant's video, audio, or personal information is prohibited.",
     left: "{nickname} has left.",
@@ -494,16 +461,6 @@ export const en: DeepPartial<Dictionary> = {
     actionMute: "muted",
     actionBlur: "video blurred",
     actionWarn: "warned",
-
-    revealProposed:
-      "Host {nickname} proposed revealing faces. If the other lounge's host accepts, every mask in the room comes off.",
-    revealDeclined:
-      "The other lounge's host would rather not reveal faces this time. Everyone keeps their mask on.",
-    revealed:
-      "Both lounge hosts accepted, so every mask in this room has come off. Either host can put the masks back on at any time.",
-    remasked: "The host put the masks back on. Everyone is masked again.",
-    hostLeftRemask:
-      "The host who agreed to the reveal has left, so everyone is masked again.",
 
     sim1: "Hi everyone, good to meet you :)",
     sim2: "How has your day been?",
@@ -524,14 +481,20 @@ export const en: DeepPartial<Dictionary> = {
     extendGiftHint:
       "You can extend the room on behalf of whoever opened this seat. The extra time applies to everyone here.",
 
+    myLounge: "Our lounge",
+    otherLoungeName: "The other lounge",
+    alsoHere: "Also here",
+    blockedTag: "Blocked",
+    audienceNote:
+      "One device in this lounge carries its picture and sound. Like a meeting-room camera, each room connects once — on this screen you use the chat and the timer.",
+    audienceControls:
+      "The microphone and camera are controlled from this lounge's device. Opening several microphones in one room causes echo.",
+
     stateLive: "Live",
     statePaused: "Paused",
     stateLocked: "Locked",
     stateEnded: "Ended",
     participantCount: "{count} here",
-    revealedNote: "Faces are revealed.",
-    maskedNote:
-      "You talk by voice; faces are revealed together once both hosts agree.",
     pausedNote:
       "The room dropped below the minimum of 2 participants, so the conversation is paused. It resumes automatically once people are back.",
     endedNote: "This session has ended.",
@@ -566,24 +529,6 @@ export const en: DeepPartial<Dictionary> = {
     newSeat: "Request a new seat",
     topUpMatches: "Top up room matches",
 
-    revealLabel: "Face reveal",
-    revealAccept: "Accept · reveal everyone",
-    revealDecline: "Decline",
-    remask: "Mask again",
-    proposeReveal: "Propose a reveal to the other host",
-    revealHostNote:
-      "Both hosts must accept before faces are revealed, and the reveal applies to everyone in the room at once.",
-    revealGuestNote:
-      "The hosts of the two lounges decide on revealing faces. Even after a reveal, anyone you have blocked stays masked to you.",
-    revealHeadRevealed:
-      "Both hosts accepted, so the whole room has revealed their faces.",
-    revealHeadAsked: "Host {name} proposed revealing faces.",
-    revealHeadWaiting: "Waiting for the other lounge's host to respond.",
-    revealHeadDiscussing: "The two hosts are discussing a reveal.",
-    revealHeadCancelled:
-      "You decided not to reveal this time. Everyone stays masked.",
-    revealHeadRemasked: "Everyone is masked again.",
-    revealHeadMasked: "Everyone in the room is wearing a mask.",
     otherLounge: "the other lounge",
 
     chatTitle: "Chat",
@@ -598,7 +543,6 @@ export const en: DeepPartial<Dictionary> = {
 
     me: "You",
     host: "Host",
-    revealedBadge: "Revealed",
     demo: "Demo",
     statusWarned: "Warned",
     statusRestricted: "Video limited",
@@ -610,7 +554,6 @@ export const en: DeepPartial<Dictionary> = {
     blockedNote: "You have blocked this participant.",
     report: "Report",
     block: "Block",
-    maskAria: "{mask} mask",
 
     reportTitle: "Report {nickname}",
     reportIntro:
@@ -621,7 +564,7 @@ export const en: DeepPartial<Dictionary> = {
     reportDetailPlaceholder:
       "Telling us what happened helps with the review.",
     reportBlockToo:
-      "Block this member too. Once blocked, you stop seeing their messages and any reveal permission is revoked immediately.",
+      "Block this member too. Once blocked, you stop seeing their messages and their video.",
     reportCancel: "Cancel",
     reportSubmit: "Submit report",
     reportPending: "Submitting…",
@@ -634,8 +577,7 @@ export const en: DeepPartial<Dictionary> = {
     videoExpired: "This lounge's {minutes} minutes are up.",
     videoUnconfigured:
       "The video server is not configured, so this runs as chat only, without audio or video.",
-    videoError:
-      "The video connection failed. Chat and the masked conversation continue as normal.",
+    videoError: "The video connection failed. Chat continues as normal.",
     cameraPreviewLabel: "My camera preview",
     cameraOff: "Camera off",
     cameraDenied: "Without camera permission you join as an avatar.",
@@ -643,7 +585,7 @@ export const en: DeepPartial<Dictionary> = {
   },
   feedback: {
     metaTitle: "Session feedback",
-    roomMetaTitle: "Masked conversation room",
+    roomMetaTitle: "Lounge conversation room",
     eyebrow: "Wrapping up",
     title: "How was tonight's seat?",
     intro:
@@ -693,13 +635,6 @@ export const en: DeepPartial<Dictionary> = {
     reportInvalid: "Please check the details of your report.",
     reportSelf: "You cannot report yourself.",
     feedbackInvalid: "Please choose a rating.",
-  },
-  masks: {
-    fox: "Fox",
-    cat: "Cat",
-    rabbit: "Rabbit",
-    bear: "Bear",
-    wolf: "Wolf",
   },
   reportCategories: {
     harassment: "Harassment or insults",
@@ -805,17 +740,9 @@ export const en: DeepPartial<Dictionary> = {
       title: "Community standards",
       body: "I will not harass, use hate speech, or sexually harass anyone, and I will take part in conversation with mutual respect.",
     },
-    mutual_face_reveal: {
-      title: "How faces are revealed",
-      body: "I understand that faces are revealed only when the hosts of both lounges accept, and that once confirmed it applies to everyone in the room at once.",
-    },
     ai_video_moderation: {
       title: "AI video safety screening (optional)",
       body: "I agree to safety screening of video frames. The video itself is not stored — only the screening result is recorded.",
-    },
-    face_tracking: {
-      title: "Face-tracked mask (optional)",
-      body: "I agree to face position tracking so the mask stays aligned. If tracking fails, your face is blurred rather than exposed.",
     },
   },
   profile: {
@@ -1062,8 +989,8 @@ export const en: DeepPartial<Dictionary> = {
     reasonEnergy: "Same conversation energy",
     reasonAgeBands: "Age range: {values}",
 
-    maskNotice:
-      "When you enter, the conversation starts with animal masks on. A face is revealed to another person only when you have both agreed, and only to that person.",
+    videoNotice:
+      "Once you join, the two lounges share one screen and one sound. You can turn your camera and mic off whenever you like.",
     recordingNotice:
       "Capturing, recording, filming, or sharing another participant's video, audio, or personal information is prohibited. Violations may lead to a permanent ban and legal liability under applicable law.",
 
@@ -1087,7 +1014,7 @@ export const en: DeepPartial<Dictionary> = {
     noMatchYet:
       "We have not found a lounge that fits your conditions yet. Try widening them a little.",
     liveSession: "Already meeting",
-    liveSessionBody: "You have a masked conversation room open right now.",
+    liveSessionBody: "You have a conversation room open right now.",
     enterRoom: "Enter the room",
     proposalArrived: "A match has been proposed",
     proposalBody:

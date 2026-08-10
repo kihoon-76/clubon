@@ -35,10 +35,8 @@ export type ConsentType =
   | "camera_microphone"
   | "ai_text_moderation"
   | "ai_video_moderation"
-  | "face_tracking"
   | "anti_recording"
-  | "community_standards"
-  | "mutual_face_reveal";
+  | "community_standards";
 
 export interface User {
   id: string;

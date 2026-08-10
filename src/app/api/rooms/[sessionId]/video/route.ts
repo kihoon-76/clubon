@@ -15,8 +15,15 @@ import {
 /**
  * 화상 입장 정보 발급.
  *
- * 방 URL과 미팅 토큰은 이 세션의 활성 참가자에게만 내려갑니다. 참가 자격과
- * 공개 여부는 요청 때마다 서버에서 다시 계산하므로, 클라이언트가 보낸 값은
+ * 이 자리는 사람과 사람이 아니라 **공간과 공간**을 잇습니다. 한 라운지의
+ * 회원들은 한 방에 함께 있으므로 기기도 한 대만 통화에 들어옵니다. 그래서
+ * 토큰은 **그 라운지의 방장에게만** 내려가고, 나머지 회원에게는 자리에
+ * 있다는 사실만 알려 줍니다(`role: "audience"`).
+ *
+ * 매치 차감은 역할과 무관하게 지금까지처럼 참가자마다 일어납니다 — 화상
+ * 구조를 바꾸는 것과 값을 매기는 방식을 바꾸는 것은 별개입니다.
+ *
+ * 참가 자격은 요청 때마다 서버에서 다시 계산하므로, 클라이언트가 보낸 값은
  * 신뢰하지 않습니다.
  */
 export async function GET(
@@ -84,18 +91,26 @@ export async function GET(
     );
   }
 
+  // 카메라를 맡지 않은 회원은 통화에 들어오지 않습니다. 같은 방에서 마이크를
+  // 여러 개 열면 하울링이 생기고, 어차피 화면과 소리는 방장의 기기가 함께
+  // 내보냅니다. 앱에서는 채팅·타이머·신고가 그대로 동작합니다.
+  if (!view.isLoungeCamera) {
+    return NextResponse.json(
+      { configured: true, role: "audience", expiresAt },
+      { headers: { "cache-control": "no-store" } },
+    );
+  }
+
   try {
     const roomUrl = await ensureRoom(sessionId);
     const token = await createMeetingToken({
       sessionId,
       userId: user.id,
-      userName: view.me.nickname,
-      isOwner: view.isHost,
-      startVideoOff: !view.me.revealed,
+      loungeName: view.myLoungeName,
     });
 
     return NextResponse.json(
-      { configured: true, roomUrl, token, expiresAt },
+      { configured: true, role: "camera", roomUrl, token, expiresAt },
       { headers: { "cache-control": "no-store" } },
     );
   } catch (error) {

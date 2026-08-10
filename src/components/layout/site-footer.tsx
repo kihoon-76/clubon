@@ -17,7 +17,6 @@ const GROUPS: { titleKey: string; links: { href: string; key: string }[] }[] = [
     titleKey: "footer.groupSafety",
     links: [
       { href: "/safety", key: "footer.safetyCenter" },
-      { href: "/safety#reveal", key: "footer.revealPolicy" },
       { href: "/safety#recording", key: "footer.recordingPolicy" },
     ],
   },

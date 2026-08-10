@@ -297,7 +297,7 @@ async function openRoom(booking: Booking, actingUserId: string): Promise<string>
     }
   }
 
-  // 얼굴 공개를 결정할 두 방장을 세션에 고정해 둡니다.
+  // 각 라운지의 카메라·마이크를 맡을 두 방장을 세션에 고정해 둡니다.
   const [tableA, tableB] = await Promise.all([
     db.getTable(booking.requesterTableId),
     db.getTable(booking.matchedTableId),

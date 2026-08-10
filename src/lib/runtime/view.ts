@@ -11,12 +11,7 @@ import {
 import { purchasableCodes } from "@/lib/payments/creem";
 import { getT } from "@/lib/i18n/server";
 import type { Translate } from "@/lib/i18n/types";
-import type {
-  ChatMessage,
-  MaskId,
-  RevealState,
-  SessionState,
-} from "@/lib/runtime/types";
+import type { ChatMessage, SessionState } from "@/lib/runtime/types";
 
 /**
  * 룸 화면이 쓰는 단일 뷰 모델. 서버 컴포넌트와 폴링 API가 같은 형태를
@@ -27,7 +22,6 @@ export interface RoomParticipantView {
   userId: string;
   nickname: string;
   tableId: string;
-  mask: MaskId;
   micOn: boolean;
   camOn: boolean;
   videoState: "ok" | "blurred" | "frozen" | "avatar";
@@ -37,25 +31,7 @@ export interface RoomParticipantView {
   isMe: boolean;
   /** 이 참가자가 이 라운지의 방장인지 */
   isRoomHost: boolean;
-  /** 지금 내 화면에서 이 참가자의 얼굴이 보이는지 */
-  revealed: boolean;
   blockedByMe: boolean;
-}
-
-/**
- * 방 전체의 얼굴 공개 상태. 공개 여부는 참가자 개인이 아니라 양쪽 라운지의
- * 방장이 합의로 결정하며, 확정되면 모든 참가자에게 한꺼번에 적용됩니다.
- */
-export interface RoomRevealView {
-  state: RevealState;
-  /** 내가 방장이라 공개를 요청·수락·철회할 수 있는지 */
-  canDecide: boolean;
-  /** 상대 라운지 방장이 제안했고 내 응답을 기다리는 중 */
-  awaitingMyResponse: boolean;
-  /** 내가 제안했고 상대 라운지 방장의 응답을 기다리는 중 */
-  awaitingOtherResponse: boolean;
-  /** 제안한 방장의 닉네임 */
-  requesterName: string | null;
 }
 
 export interface RoomMessageView {
@@ -81,7 +57,19 @@ export interface RoomView {
   messages: RoomMessageView[];
   /** 내가 이 라운지의 호스트인지 (세션 종료 권한) */
   isHost: boolean;
-  reveal: RoomRevealView;
+  /**
+   * 내 기기가 이 라운지의 카메라·마이크인지.
+   *
+   * 라운지 하나는 통화에 **한 대만** 들어옵니다. 같은 라운지의 회원들은 한
+   * 방에 함께 있어서, 회의실에 카메라와 마이크를 한 벌 두는 것과 같습니다.
+   * 그 한 벌을 방장이 맡으므로 `isHost`와 같은 사람이지만, 하나는 세션을
+   * 종료할 권한이고 이것은 기기의 역할이라 이름을 나눠 둡니다.
+   */
+  isLoungeCamera: boolean;
+  /** 내 라운지 이름 — 통화에서 개인 대신 이 이름이 보입니다. */
+  myLoungeName: string;
+  /** 상대 라운지 이름 */
+  otherLoungeName: string;
   waiterName: string | null;
   /**
    * 이 방의 시간 현황.
@@ -177,35 +165,39 @@ export async function buildRoomView(
   if (!meRaw) return null;
 
   const blocked = new Set(room.getBlockedIds(viewerId));
-  const agreement = room.getRevealAgreement(sessionId);
-  const roomRevealed = agreement.state === "REVEALED";
   const isHostOf = (userId: string) =>
     session.hostAUserId === userId || session.hostBUserId === userId;
 
   const toView = (p: (typeof participants)[number]): RoomParticipantView => {
     const isMe = p.userId === viewerId;
+    // 통화에 들어와 있는 기기는 라운지당 한 대(방장)뿐입니다. 나머지 회원의
+    // 기기는 애초에 통화에 없으므로 마이크·카메라도 켜져 있지 않습니다 —
+    // 저장된 값이 무엇이든 화면에는 꺼진 것으로 보여야 사실과 맞습니다.
+    const isCamera = isHostOf(p.userId);
     return {
       userId: p.userId,
       nickname: p.nickname,
       tableId: p.tableId,
-      mask: p.mask,
-      micOn: p.micOn,
-      camOn: p.camOn,
+      micOn: isCamera && p.micOn,
+      camOn: isCamera && p.camOn,
       videoState: p.videoState,
       status: p.status,
       present: !p.leftAt && p.status !== "removed",
       simulated: p.simulated,
       isMe,
       isRoomHost: isHostOf(p.userId),
-      // 방이 공개 상태여도 내가 차단한 상대와 모더레이션으로 영상이 제한된
-      // 참가자는 계속 마스크로 보입니다.
-      revealed:
-        roomRevealed && !blocked.has(p.userId) && p.videoState !== "blurred",
       blockedByMe: blocked.has(p.userId),
     };
   };
 
-  const myTable = await db.getTable(meRaw.tableId);
+  // 두 라운지의 이름. 통화에서는 개인 대신 이 이름이 보입니다 — 화면 하나가
+  // 사람 하나가 아니라 공간 하나를 가리키기 때문입니다.
+  const otherTableId =
+    session.tableAId === meRaw.tableId ? session.tableBId : session.tableAId;
+  const [myTable, otherTable] = await Promise.all([
+    db.getTable(meRaw.tableId),
+    db.getTable(otherTableId),
+  ]);
   const iAmHost = isHostOf(viewerId);
 
   // 횟수 현황은 조회만 합니다 — 차감은 영상 입장(/api/rooms/[id]/video)에서만.
@@ -225,9 +217,6 @@ export async function buildRoomView(
     await db.endLoungeUsage(sessionId, "expired");
     usage = { ...usage, sessionStatus: "expired" };
   }
-  const requestPending = agreement.state === "REVEAL_REQUESTED";
-  const iRequested = agreement.requesterTableId === meRaw.tableId;
-
   const iAmRoomOwner = room.roomOwnerId(sessionId) === viewerId;
   // 늘릴 시간이 실제로 있어야(= 영상이 시작되었고 방이 닫히지 않았어야) 팝니다.
   // 만료된 방은 결제로 되살아나므로 여기에 포함됩니다.
@@ -256,15 +245,14 @@ export async function buildRoomView(
       mine: m.senderId === viewerId,
     })),
     isHost: myTable?.hostUserId === viewerId,
-    reveal: {
-      state: agreement.state,
-      canDecide: iAmHost,
-      awaitingMyResponse: requestPending && iAmHost && !iRequested,
-      awaitingOtherResponse: requestPending && iRequested,
-      requesterName:
-        participants.find((p) => p.userId === agreement.requesterId)?.nickname ??
-        null,
-    },
+    // 카메라 역할은 **세션이 열릴 때 고정된 방장**을 따릅니다. 마이크·카메라
+    // 조작(`store.setMedia`)과 참가자별 `isRoomHost`가 같은 값을 보므로, 토큰을
+    // 받는 사람과 화면에서 카메라로 표시되는 사람이 어긋나지 않습니다.
+    // (`isHost`는 세션 종료 권한이라 지금 시점의 라운지 방장을 봅니다 — 대화
+    // 도중 방장이 바뀌면 둘이 갈릴 수 있고, 그래도 그게 맞습니다.)
+    isLoungeCamera: iAmHost,
+    myLoungeName: myTable?.name ?? t("room.myLounge"),
+    otherLoungeName: otherTable?.name ?? t("room.otherLoungeName"),
     waiterName: null,
     usage: usage
       ? {

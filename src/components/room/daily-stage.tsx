@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { DailyCall } from "@daily-co/daily-js";
-import { Loader2, Ticket, VideoOff } from "lucide-react";
+import { Loader2, Ticket, Users, VideoOff } from "lucide-react";
 
 import { ButtonLink } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 type Status =
   | "connecting"
   | "live"
+  /** 내 기기는 이 라운지의 카메라가 아니라 통화에 들어가지 않습니다. */
+  | "audience"
   | "unconfigured"
   | "error"
   /** 남은 매치 횟수가 없어 서버가 입장을 막았습니다. */
@@ -37,23 +39,24 @@ const DAILY_THEME = {
 /**
  * Daily Prebuilt 화상 무대.
  *
- * 얼굴 공개 전에는 프레임을 화면에서 감추고 음성만 흘립니다 — 이때 보이는
- * 얼굴 없는 화면은 기존 마스크 타일이 담당합니다. 방장 합의로 공개되면
- * 프레임을 펼치고 카메라를 켭니다.
- *
- * 감출 때 `display:none`을 쓰지 않는 이유는, 프레임이 레이아웃에서 빠지면
- * 음성 재생까지 끊길 수 있기 때문입니다. 1px 투명 상자로 남겨 둡니다.
+ * 두 라운지의 화면과 소리가 이 프레임 하나로 오갑니다. 화상이 아예 없는
+ * 상태(미설정·실패·관객)에서는 프레임을 펼치지 않되, 레이아웃에서 빼면
+ * 음성 재생까지 끊길 수 있어 1px 투명 상자로 남겨 둡니다.
  */
 export function DailyStage({
   sessionId,
-  revealed,
   micOn,
   camOn,
+  onLiveChange,
 }: {
   sessionId: string;
-  revealed: boolean;
   micOn: boolean;
   camOn: boolean;
+  /**
+   * 무대가 실제로 통화에 붙었는지 알립니다. 무대가 살아 있으면 내 카메라는
+   * 이 프레임이 잡고 있으므로, 화면 다른 곳에서 같은 장치를 또 열면 안 됩니다.
+   */
+  onLiveChange?: (live: boolean) => void;
 }) {
   const t = useT();
   const mountRef = useRef<HTMLDivElement>(null);
@@ -80,11 +83,24 @@ export function DailyStage({
 
       const info = (await res.json()) as
         | { configured: false }
-        | { configured: true; roomUrl: string; token: string; expiresAt: string };
+        | { configured: true; role: "audience" }
+        | {
+            configured: true;
+            role: "camera";
+            roomUrl: string;
+            token: string;
+            expiresAt: string;
+          };
 
       if (cancelled) return;
       if (!info.configured) {
         setStatus("unconfigured");
+        return;
+      }
+      // 이 라운지의 카메라가 아니면 통화에 붙지 않습니다. 화면과 소리는 방
+      // 앞의 기기 한 대가 맡고, 여기서는 채팅과 타이머만 씁니다.
+      if (info.role === "audience") {
+        setStatus("audience");
         return;
       }
 
@@ -140,7 +156,6 @@ export function DailyStage({
   }, [sessionId]);
 
   // 마이크·카메라는 앱의 상태를 원본으로 삼아 통화 쪽에 반영합니다.
-  // 카메라는 방이 공개된 뒤에만 켜집니다.
   useEffect(() => {
     if (status !== "live") return;
     callRef.current?.setLocalAudio(micOn);
@@ -148,14 +163,19 @@ export function DailyStage({
 
   useEffect(() => {
     if (status !== "live") return;
-    callRef.current?.setLocalVideo(revealed && camOn);
-  }, [revealed, camOn, status]);
+    callRef.current?.setLocalVideo(camOn);
+  }, [camOn, status]);
 
-  // 화상이 아예 없는 상태(미설정·실패)에서 큰 빈 상자를 띄우면 마스크 타일만
+  useEffect(() => {
+    onLiveChange?.(status === "live");
+  }, [status, onLiveChange]);
+
+  // 화상이 아예 없는 상태(미설정·실패)에서 큰 빈 상자를 띄우면 아래 타일만
   // 밀려나므로, 이때는 한 줄 안내로 줄입니다.
   const stageless =
     status === "unconfigured" ||
     status === "error" ||
+    status === "audience" ||
     status === "no_matches" ||
     status === "expired";
 
@@ -164,16 +184,16 @@ export function DailyStage({
       <div
         className={cn(
           "relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-ink",
-          revealed && !stageless
-            ? "aspect-video w-full"
-            : // 공개 전에는 자리를 차지하지 않되, 음성이 끊기지 않도록
-              // 프레임 자체는 레이아웃에 살려 둡니다.
-              "pointer-events-none size-px border-0 opacity-0",
+          stageless
+            ? // 무대가 없을 때도 음성이 끊기지 않도록 프레임 자체는 레이아웃에
+              // 살려 둡니다.
+              "pointer-events-none size-px border-0 opacity-0"
+            : "aspect-video w-full",
         )}
       >
         <div ref={mountRef} className="size-full" />
 
-        {revealed && status === "connecting" ? (
+        {status === "connecting" ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-xs text-faint">
             <Loader2 aria-hidden className="size-5 animate-spin text-champagne" />
             {t("room.videoConnecting")}
@@ -196,6 +216,13 @@ export function DailyStage({
             </ButtonLink>
           </div>
         </div>
+      ) : null}
+
+      {status === "audience" ? (
+        <p className="flex items-start gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-xs leading-relaxed break-keep text-muted">
+          <Users aria-hidden className="mt-0.5 size-4 shrink-0 text-champagne" />
+          {t("room.audienceNote")}
+        </p>
       ) : null}
 
       {status === "expired" ? (
