@@ -156,6 +156,7 @@ export const en: DeepPartial<Dictionary> = {
     },
   },
   regions: {
+    global: "Global · Worldwide",
     korea: "South Korea",
     "kr-seoul": "Seoul",
     "kr-gyeonggi": "Gyeonggi",
@@ -194,6 +195,8 @@ export const en: DeepPartial<Dictionary> = {
     select: "Select",
     regionNote:
       "We only look within your region. Quieter regions may take longer to match.",
+    globalNote:
+      "Global mode can match your lounge with people anywhere in the world.",
     aiDisclaimer:
       "AI lounge managers are digital personas that help conversation. They are not real people.",
     desiredGender: "Preferred gender",
@@ -362,6 +365,11 @@ export const en: DeepPartial<Dictionary> = {
     heroSecondary: "See how it works",
     heroNote:
       "There is no 1-to-1 matching. Every conversation starts as a group of at least two.",
+    liveNow: "Live on ClubOn",
+    liveNote: "Members currently active in lounges, refreshed every 15 seconds.",
+    liveUsers: "Members",
+    waitingLounges: "Waiting",
+    liveRooms: "In conversation",
     scrollDown: "Scroll down",
 
     uspEyebrow: "What makes ClubOn different",

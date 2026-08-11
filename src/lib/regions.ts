@@ -224,6 +224,10 @@ export const COUNTRIES: readonly Country[] = [
 
 /** 1단계에서 대한민국을 고르면 쓰는 값. 국가 코드 자리에 들어갑니다. */
 export const KOREA = "kr";
+/** 전 세계 지역의 라운지와 매칭할 수 있는 선택값. */
+export const GLOBAL_REGION = "global";
+
+const GLOBAL: Region = { code: GLOBAL_REGION, label: "Global" };
 
 const KR_BY_CODE = new Map(KR_REGIONS.map((r) => [r.code, r]));
 const COUNTRY_BY_CODE = new Map(COUNTRIES.map((c) => [c.code, c]));
@@ -250,6 +254,7 @@ export const COUNTRIES_BY_CONTINENT: readonly {
  * 없는 코드는 null입니다.
  */
 export function getRegion(code: string): Region | null {
+  if (code === GLOBAL_REGION) return GLOBAL;
   return KR_BY_CODE.get(code) ?? COUNTRY_BY_CODE.get(code) ?? null;
 }
 
@@ -277,6 +282,7 @@ export function krRegionLabel(region: Region, t: Translate): string {
  * 대륙을 붙여 봤자 길기만 하고 알아보기 쉬워지지 않습니다.
  */
 export function regionLabel(code: string, t: Translate): string | null {
+  if (code === GLOBAL_REGION) return t("regions.global");
   const kr = KR_BY_CODE.get(code);
   if (kr) return `${t("regions.korea")} · ${krRegionLabel(kr, t)}`;
   return COUNTRY_BY_CODE.get(code)?.label ?? null;

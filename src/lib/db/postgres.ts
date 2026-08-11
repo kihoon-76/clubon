@@ -662,7 +662,11 @@ export class PostgresAdapter implements DataAdapter {
       where id <> ${tableId}
         and state in ('WAITING', 'READY')
         and closed_at is null
-        and region_code = ${myRegion}`;
+        and (
+          ${myRegion} = 'global'
+          or region_code = ${myRegion}
+          or region_code = 'global'
+        )`;
 
     let best: MatchCandidate | null = null;
 

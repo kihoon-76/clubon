@@ -6,6 +6,7 @@ import { MapPin } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import {
   COUNTRIES_BY_CONTINENT,
+  GLOBAL_REGION,
   KOREA,
   KR_REGIONS,
   krRegionLabel,
@@ -51,6 +52,7 @@ export function RegionPicker({
           required
         >
           <option value="">{t("entry.select")}</option>
+          <option value={GLOBAL_REGION}>{t("regions.global")}</option>
           <option value={KOREA}>{t("regions.korea")}</option>
           {COUNTRIES_BY_CONTINENT.map((group) => (
             <optgroup key={group.continent} label={group.label}>
@@ -80,7 +82,9 @@ export function RegionPicker({
 
       <p className="flex items-start gap-2 text-xs leading-relaxed break-keep text-faint">
         <MapPin aria-hidden className="mt-0.5 size-3.5 shrink-0 text-champagne" />
-        {t("entry.regionNote")}
+        {country === GLOBAL_REGION
+          ? t("entry.globalNote")
+          : t("entry.regionNote")}
       </p>
     </div>
   );

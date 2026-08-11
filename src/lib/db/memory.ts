@@ -790,7 +790,11 @@ export class DevMemoryAdapter implements DataAdapter {
       if (table.closedAt) continue;
       // 시드 데모 라운지는 지역 필터에서 뺍니다 — 어느 지역을 고르든 혼자서
       // 전체 흐름을 확인할 수 있어야 하기 때문입니다(데모 전용).
-      if (!isSeededDemoLounge(table.id) && table.regionCode !== myRegion) {
+      if (
+        myRegion !== "global" &&
+        table.regionCode !== "global" &&
+        table.regionCode !== myRegion
+      ) {
         continue;
       }
 

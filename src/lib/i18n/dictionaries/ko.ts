@@ -165,6 +165,7 @@ export const ko = {
   },
   /** 지역 표기 — 코드는 `regions.<지역 코드>`로 찾습니다. */
   regions: {
+    global: "글로벌 · 전 세계",
     korea: "대한민국",
     "kr-seoul": "서울",
     "kr-gyeonggi": "경기",
@@ -202,6 +203,8 @@ export const ko = {
     select: "선택하세요",
     regionNote:
       "상대는 같은 지역 안에서만 찾습니다. 사람이 적은 지역은 매칭까지 시간이 더 걸릴 수 있습니다.",
+    globalNote:
+      "글로벌 모드는 국가와 지역 제한 없이 전 세계 라운지를 대상으로 매칭합니다.",
     aiDisclaimer:
       "AI 라운지 매니저는 대화를 돕는 디지털 페르소나이며 실제 사람이 아닙니다.",
     desiredGender: "원하는 상대의 성별",
@@ -371,6 +374,11 @@ export const ko = {
     heroSecondary: "이용 방식 살펴보기",
     heroNote:
       "1:1 매칭은 제공하지 않습니다. 모든 대화는 최소 2명 이상의 그룹으로 시작됩니다.",
+    liveNow: "실시간 ClubOn",
+    liveNote: "현재 라운지에 참여 중인 회원 현황이며 15초마다 갱신됩니다.",
+    liveUsers: "참여 회원",
+    waitingLounges: "매칭 대기",
+    liveRooms: "대화 중",
     scrollDown: "아래로 스크롤",
 
     uspEyebrow: "ClubOn이 다른 이유",

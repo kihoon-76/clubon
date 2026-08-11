@@ -12,6 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
+import { LivePresence } from "@/components/landing/live-presence";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ export default async function LandingPage() {
   return (
     <>
       <Hero t={t} />
+      <LivePresence />
       <BentoUsp t={t} />
       <HowItWorks t={t} />
       <Pricing t={t} />
