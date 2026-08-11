@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { saveConsents, type OnboardingFormState } from "@/app/(onboarding)/actions";
 import { CONSENT_ITEMS, consentBody, consentTitle } from "@/lib/consent/items";
@@ -20,10 +20,43 @@ export function ConsentForm({
     saveConsents,
     {},
   );
+  const [checkedConsents, setCheckedConsents] = useState(
+    () => new Set(granted),
+  );
+  const allChecked = CONSENT_ITEMS.every((item) =>
+    checkedConsents.has(item.type),
+  );
+
+  function toggleAll(checked: boolean) {
+    setCheckedConsents(
+      checked ? new Set(CONSENT_ITEMS.map((item) => item.type)) : new Set(),
+    );
+  }
+
+  function toggleConsent(type: (typeof CONSENT_ITEMS)[number]["type"], checked: boolean) {
+    setCheckedConsents((current) => {
+      const next = new Set(current);
+      if (checked) next.add(type);
+      else next.delete(type);
+      return next;
+    });
+  }
 
   return (
     <form action={formAction} className="space-y-5">
       <FormError message={state.error} />
+
+      <label className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-control)] border border-champagne-dim bg-surface-raised p-4">
+        <input
+          type="checkbox"
+          checked={allChecked}
+          onChange={(event) => toggleAll(event.target.checked)}
+          className="size-4 shrink-0 accent-[var(--color-champagne)]"
+        />
+        <span className="text-sm font-medium text-ivory">
+          {t("onboarding.consentAll")}
+        </span>
+      </label>
 
       <ul className="space-y-3">
         {CONSENT_ITEMS.map((item) => (
@@ -33,7 +66,10 @@ export function ConsentForm({
                 type="checkbox"
                 name={`consent:${item.type}`}
                 required={item.required}
-                defaultChecked={granted.includes(item.type)}
+                checked={checkedConsents.has(item.type)}
+                onChange={(event) =>
+                  toggleConsent(item.type, event.target.checked)
+                }
                 className="mt-1 size-4 shrink-0 accent-[var(--color-champagne)]"
               />
               <span className="min-w-0">

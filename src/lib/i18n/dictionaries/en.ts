@@ -704,6 +704,7 @@ export const en: DeepPartial<Dictionary> = {
       "Automated moderation cannot be guaranteed to catch every violation. The platform also cannot fully prevent screenshots or recording with a separate device.",
     required: "Required",
     optional: "Optional",
+    consentAll: "Agree to all",
     consentSubmit: "Agree and set up my profile",
     consentPending: "Saving…",
 

@@ -722,6 +722,7 @@ export const ko = {
       "자동 모더레이션은 모든 위반을 완벽하게 탐지한다고 보장하지 않습니다. 또한 플랫폼은 스크린샷이나 외부 기기 촬영을 기술적으로 완전히 차단할 수 없습니다.",
     required: "필수",
     optional: "선택",
+    consentAll: "모두 동의",
     consentSubmit: "동의하고 프로필 설정하기",
     consentPending: "저장 중…",
 
