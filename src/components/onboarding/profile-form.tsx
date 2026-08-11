@@ -88,7 +88,7 @@ export function ProfileForm({
                 value={g.value}
                 label={t(g.key)}
                 required={i === 0}
-                defaultChecked={(profile?.gender ?? "other") === g.value}
+                defaultChecked={profile?.gender === g.value}
               />
             ))}
           </div>
