@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Radio, Users, Video } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
 import { useT } from "@/lib/i18n/client";
@@ -46,12 +46,6 @@ export function LivePresence() {
     };
   }, []);
 
-  const stats = [
-    { icon: Users, label: t("landing.liveUsers"), value: data.onlineUsers },
-    { icon: Radio, label: t("landing.waitingLounges"), value: data.waitingLounges },
-    { icon: Video, label: t("landing.liveRooms"), value: data.liveRooms },
-  ];
-
   return (
     <section aria-labelledby="live-presence-title" className="border-y border-line/70 bg-surface/50">
       <Container className="py-8 sm:py-10">
@@ -66,16 +60,16 @@ export function LivePresence() {
             <p className="mt-2 text-sm text-muted">{t("landing.liveNote")}</p>
           </div>
 
-          <dl className="grid grid-cols-3 gap-3 sm:min-w-[28rem]">
-            {stats.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="rounded-[var(--radius-control)] border border-line bg-surface-raised px-3 py-3 text-center">
-                <dt className="flex items-center justify-center gap-1.5 text-[0.6875rem] text-faint">
-                  <Icon aria-hidden className="size-3.5 text-champagne" />
-                  {label}
-                </dt>
-                <dd className="mt-1 font-mono text-xl tabular-nums text-ivory">{value}</dd>
-              </div>
-            ))}
+          <dl className="sm:min-w-44">
+            <div className="rounded-[var(--radius-control)] border border-line bg-surface-raised px-5 py-3 text-center">
+              <dt className="flex items-center justify-center gap-1.5 text-[0.6875rem] text-faint">
+                <Users aria-hidden className="size-3.5 text-champagne" />
+                {t("landing.liveUsers")}
+              </dt>
+              <dd className="mt-1 font-mono text-xl tabular-nums text-ivory">
+                {data.onlineUsers}
+              </dd>
+            </div>
           </dl>
         </div>
       </Container>
