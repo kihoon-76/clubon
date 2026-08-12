@@ -120,12 +120,6 @@ export default async function DashboardPage({
                     {t(`tableState.${activeTable.state}`)}
                   </Badge>
                 </div>
-                <p className="mt-2 text-xs text-muted">
-                  {t("lounge.inviteCode")}{" "}
-                  <span className="font-mono tracking-widest text-ivory">
-                    {activeTable.inviteCode}
-                  </span>
-                </p>
                 <div className="mt-4">
                   <ButtonLink href={`/lounges/${activeTable.id}`} size="sm">
                     {t("dashboard.toLounge")}

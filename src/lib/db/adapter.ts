@@ -127,13 +127,6 @@ export type StartUsageResult =
   | { ok: false; reason: "no_matches" };
 
 /** 초대코드 합류 결과 — 실패 사유를 UI가 구분해 안내합니다. */
-export type JoinResult =
-  | { ok: true; table: Table }
-  | {
-      ok: false;
-      reason: "not_found" | "full" | "closed" | "already_member" | "in_other";
-    };
-
 /**
  * 데이터 접근 계약. 앱 코드는 이 인터페이스에만 의존하며,
  * 환경에 따라 DevMemoryAdapter 또는 PostgresAdapter로 교체됩니다.
@@ -192,7 +185,6 @@ export interface DataAdapter {
   /** 라운지 생성(호스트 입장). 이미 활성 라운지가 있으면 라운지 매니저만 갱신해 반환. */
   createLounge(input: CreateLoungeInput): Promise<Table>;
   /** 초대코드로 기존 라운지에 합류합니다. */
-  joinTableByCode(userId: string, code: string): Promise<JoinResult>;
   /** 지정한 사용자를 라운지 멤버로 추가합니다(데모 동반자 등). */
   addMemberToTable(tableId: string, userId: string): Promise<void>;
   /** 라운지에서 나갑니다. 호스트가 나가면 남은 최고참 멤버가 승계합니다. */

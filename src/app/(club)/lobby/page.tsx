@@ -1,4 +1,4 @@
-import { ArrowRight, Plus, Sparkles, TicketCheck, Users } from "lucide-react";
+import { ArrowRight, Plus, Sparkles, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { Container } from "@/components/layout/container";
@@ -81,11 +81,6 @@ export default async function LobbyPage({
               <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
                 <Users aria-hidden className="size-4 text-champagne" />
                 {t("lobby.memberCount", { count: members.length })}
-                {" · "}
-                {t("lounge.inviteCode")}{" "}
-                <span className="font-mono tracking-widest text-ivory">
-                  {activeTable.inviteCode}
-                </span>
               </p>
             </div>
             <ButtonLink href={`/lounges/${activeTable.id}`} className="shrink-0">
@@ -94,21 +89,13 @@ export default async function LobbyPage({
           </CardBody>
         </Card>
       ) : (
-        <div className="mt-10 grid gap-5 sm:grid-cols-2">
+        <div className="mt-10">
           <ActionCard
             href="/entry"
             icon={Plus}
             title={t("lobby.entryTitle")}
             body={t("lobby.entryBody")}
             cta={t("lobby.entryCta")}
-          />
-          <ActionCard
-            href="/lounges/join"
-            icon={TicketCheck}
-            title={t("lobby.joinTitle")}
-            body={t("lobby.joinBody")}
-            cta={t("lobby.joinCta")}
-            variant="secondary"
           />
         </div>
       )}

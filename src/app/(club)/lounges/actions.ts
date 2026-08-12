@@ -22,10 +22,6 @@ import {
   INTEREST_OPTIONS,
 } from "@/lib/match-options";
 
-export interface LoungeFormState {
-  error?: string;
-}
-
 /** 데모 동반자로 초대할 수 있는 계정 — 시드 데이터에 있을 때만 사용됩니다. */
 const DEMO_COMPANION_IDS = [
   "aaaaaaaa-0000-0000-0000-000000000003", // 하나
@@ -53,30 +49,6 @@ export async function startWithWaiter(formData: FormData): Promise<void> {
 }
 
 /* ------------------------------------------------------------ 초대 · 합류 */
-
-export async function joinByCode(
-  _prev: LoungeFormState,
-  formData: FormData,
-): Promise<LoungeFormState> {
-  const { user } = await requireOnboardedSession();
-
-  const code = String(formData.get("code") ?? "").trim();
-  if (!/^[A-Za-z0-9]{4,10}$/.test(code)) {
-    return { error: "초대코드 형식이 올바르지 않습니다." };
-  }
-
-  const result = await getDb().joinTableByCode(user.id, code);
-  if (result.ok) redirect(`/lounges/${result.table.id}`);
-
-  const messages: Record<typeof result.reason, string> = {
-    not_found: "그런 초대코드를 가진 라운지가 없습니다.",
-    full: "이미 정원이 찬 라운지입니다.",
-    closed: "이미 종료된 라운지입니다.",
-    already_member: "이미 참여 중인 라운지입니다.",
-    in_other: "다른 라운지에 참여 중입니다. 먼저 나간 뒤 시도해 주세요.",
-  };
-  return { error: messages[result.reason] };
-}
 
 /** 즉석 생성되는 데모 동반자의 프로필 재료. */
 const DEMO_COMPANION_NAMES = ["연우", "수아", "가온", "리안", "해든", "다온"];
@@ -167,11 +139,7 @@ export async function requestBooking(
   if (!myTable || myTable.id !== tableId) redirect("/lobby");
 
   // 불변식: 합석 룸은 총 2명 이상 — 라운지당 최소 1명이 필요합니다.
-  const club = await db.getPrimaryClub();
   const members = await db.getActiveTableMembers(tableId);
-  if (members.length < club.minTableSize) {
-    redirect(`/lounges/${tableId}?error=too_small`);
-  }
 
   const parsed = prefSchema.safeParse({
     desiredGender: formData.get("desiredGender"),

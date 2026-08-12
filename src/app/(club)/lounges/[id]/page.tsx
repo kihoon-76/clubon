@@ -39,7 +39,6 @@ export default async function LoungePage({
 
   const table = myTable;
   const waiter = table.waiterId ? getWaiter(table.waiterId) : undefined;
-  const club = await db.getPrimaryClub();
   const members = await db.getActiveTableMembers(id);
   const profiles = await db.getProfilesForTable(id);
   const booking = await db.getBookingForTable(id);
@@ -50,7 +49,6 @@ export default async function LoungePage({
     booking?.state === "ACCEPTED" && booking.sessionId ? booking : null;
 
   // 데모 동반자 버튼은 인메모리 데모 모드에서만 노출합니다.
-  const canAddDemoCompanion = !process.env.DATABASE_URL;
 
   const editing = sp.edit === "1";
   const searched = sp.searched === "1";
@@ -106,13 +104,7 @@ export default async function LoungePage({
       {searched ? <Notice tone="warn">{t("lounge.noMatchYet")}</Notice> : null}
 
       <div className="mt-8">
-        <LoungeRoster
-          table={table}
-          members={members}
-          profiles={profiles}
-          minSize={club.minTableSize}
-          canAddDemoCompanion={canAddDemoCompanion}
-        />
+        <LoungeRoster table={table} members={members} profiles={profiles} />
       </div>
 
       {/* 진행 중인 제안 · 세션 */}
@@ -161,7 +153,7 @@ export default async function LoungePage({
           <div className="mt-8">
             <PreferenceForm
               tableId={id}
-              disabled={profiles.length < club.minTableSize}
+              disabled={false}
             />
           </div>
           {editing ? (

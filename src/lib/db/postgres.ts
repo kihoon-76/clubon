@@ -6,7 +6,6 @@ import type {
   CreateUserInput,
   Credentials,
   DataAdapter,
-  JoinResult,
   MatchCandidate,
   MatchPreferenceInput,
   ExtendOutcome,
@@ -525,38 +524,6 @@ export class PostgresAdapter implements DataAdapter {
       on conflict (table_id) do nothing`;
 
     return table;
-  }
-
-  async joinTableByCode(userId: string, code: string): Promise<JoinResult> {
-    const rows = await this.sql`
-      select * from public.tables where upper(invite_code) = ${code.trim().toUpperCase()} limit 1`;
-    if (rows.length === 0) return { ok: false, reason: "not_found" };
-
-    const table = mapTable(rows[0]);
-    if (table.closedAt || table.state === "CLOSED") {
-      return { ok: false, reason: "closed" };
-    }
-
-    const members = await this.getActiveTableMembers(table.id);
-    if (members.some((m) => m.userId === userId)) {
-      return { ok: false, reason: "already_member" };
-    }
-    if (await this.getActiveTableForUser(userId)) {
-      return { ok: false, reason: "in_other" };
-    }
-    if (members.length >= table.maxSize) return { ok: false, reason: "full" };
-
-    await this.sql`
-      insert into public.table_members (table_id, user_id, role)
-      values (${table.id}, ${userId}, 'member')`;
-
-    const club = await this.getPrimaryClub();
-    if (table.state === "FORMING" && members.length + 1 >= club.minTableSize) {
-      await this.sql`
-        update public.tables set state = 'READY', updated_at = now() where id = ${table.id}`;
-      table.state = "READY";
-    }
-    return { ok: true, table };
   }
 
   async addMemberToTable(tableId: string, userId: string): Promise<void> {

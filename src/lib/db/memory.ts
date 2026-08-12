@@ -4,7 +4,6 @@ import type {
   CreateUserInput,
   Credentials,
   DataAdapter,
-  JoinResult,
   MatchCandidate,
   MatchPreferenceInput,
   ExtendOutcome,
@@ -636,45 +635,6 @@ export class DevMemoryAdapter implements DataAdapter {
       regionPreference: null,
     });
     return { ...table };
-  }
-
-  async joinTableByCode(userId: string, code: string): Promise<JoinResult> {
-    const s = store();
-    const normalized = code.trim().toUpperCase();
-    const table = [...s.tables.values()].find(
-      (t) => t.inviteCode.toUpperCase() === normalized,
-    );
-    if (!table) return { ok: false, reason: "not_found" };
-    if (table.closedAt || table.state === "CLOSED") {
-      return { ok: false, reason: "closed" };
-    }
-
-    const members = await this.getActiveTableMembers(table.id);
-    if (members.some((m) => m.userId === userId)) {
-      return { ok: false, reason: "already_member" };
-    }
-
-    const other = await this.getActiveTableForUser(userId);
-    if (other) return { ok: false, reason: "in_other" };
-
-    if (members.length >= table.maxSize) return { ok: false, reason: "full" };
-
-    const nowIso = new Date().toISOString();
-    s.tableMembers.push({
-      id: `tm-${table.id}-${userId}`,
-      tableId: table.id,
-      userId,
-      role: "member",
-      joinedAt: nowIso,
-      leftAt: null,
-    });
-
-    // 최소 인원을 채우면 FORMING → READY.
-    if (table.state === "FORMING" && members.length + 1 >= s.club.minTableSize) {
-      table.state = "READY";
-    }
-    table.updatedAt = nowIso;
-    return { ok: true, table: { ...table } };
   }
 
   async addMemberToTable(tableId: string, userId: string): Promise<void> {
