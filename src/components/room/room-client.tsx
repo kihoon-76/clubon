@@ -30,14 +30,6 @@ import type { RoomParticipantView, RoomView } from "@/lib/runtime/view";
 const POLL_INTERVAL_MS = 2500;
 
 /** 연장 결제가 실패했을 때 룸으로 되돌아오며 붙는 코드. */
-const EXTEND_ERROR_CODES = new Set([
-  "no_usage",
-  "closed",
-  "unavailable",
-  "not_configured",
-  "creem_error",
-]);
-
 /**
  * 라이브 대화방.
  *
@@ -45,16 +37,10 @@ const EXTEND_ERROR_CODES = new Set([
  * 음성·영상은 Daily Prebuilt가 담당하고, 그 아래 타일은 누가 자리에 있는지와
  * 신고·차단 같은 조작을 맡습니다.
  */
-export function RoomClient({
-  initial,
-  extendPending = false,
-  extendError = null,
-}: {
+export function RoomClient({ initial }: {
   initial: RoomView;
   /** 연장 결제를 마치고 돌아온 직후인지 (웹훅 확인 전) */
-  extendPending?: boolean;
   /** 연장 결제를 시작하지 못한 사유 코드 */
-  extendError?: string | null;
 }) {
   const t = useT();
   const [view, setView] = useState<RoomView>(initial);
@@ -76,7 +62,6 @@ export function RoomClient({
   const timeUp = expiredAt !== null && expiredAt === expiresAt;
   // 같은 기준으로 "결제 확인 중" 안내도 거둡니다 — 처음 받은 만료 시각과
   // 달라졌다면 연장이 실제로 적용된 것입니다.
-  const extendApplied = expiresAt !== (initial.usage?.expiresAt ?? null);
 
   const refresh = useCallback(async () => {
     try {
@@ -146,28 +131,9 @@ export function RoomClient({
           </p>
         ) : null}
 
-        {extendError ? (
-          <p className="rounded-[var(--radius-control)] border border-danger/40 bg-danger-dim/40 px-4 py-3 text-sm break-keep text-ivory">
-            {EXTEND_ERROR_CODES.has(extendError)
-              ? t(`room.extendErrors.${extendError}`)
-              : t("room.extendFailed")}
-          </p>
-        ) : null}
-
-        {extendPending && !extendApplied ? (
-          <p
-            role="status"
-            className="rounded-[var(--radius-control)] border border-line bg-surface-raised px-4 py-3 text-sm break-keep text-muted"
-          >
-            {t("room.extendChecking")}
-          </p>
-        ) : null}
-
         <SessionTimer
-          sessionId={view.sessionId}
           usage={view.usage}
           remainingMatches={view.remainingMatches}
-          extensions={view.extensions}
           onExpire={handleExpire}
         />
 

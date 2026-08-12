@@ -11,7 +11,6 @@ import { getDb } from "@/lib/db";
 import { describeClubStatus } from "@/lib/club/status";
 import {
   ENTRY_PASS,
-  EXTRA_MATCH,
   LOUNGE_MINUTES,
   formatUsd,
   productName,
@@ -166,7 +165,7 @@ function EntrySummary({
   // 결제는 링크(GET)가 아니라 form POST입니다. 프리페치나 크롤러가 결제
   // 세션을 만들지 못하게 하려는 것으로, 방 안의 연장 상품과 같은 규칙입니다.
   const sellable = purchasableCodes();
-  const product = remaining > 0 ? EXTRA_MATCH : ENTRY_PASS;
+  const product = ENTRY_PASS;
   const canBuy = sellable.has(product.code);
 
   return (

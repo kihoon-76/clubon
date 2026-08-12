@@ -110,7 +110,11 @@ export function DailyStage({
 
       // 개발 모드의 이중 마운트 등으로 남아 있는 인스턴스를 먼저 정리합니다.
       // 중복 생성은 daily-js가 예외로 막습니다.
-      DailyIframe.getCallInstance()?.destroy();
+      const previousCall = DailyIframe.getCallInstance();
+      if (previousCall) {
+        await previousCall.destroy();
+      }
+      if (cancelled || !mountRef.current) return;
 
       frame = DailyIframe.createFrame(mountRef.current, {
         showLeaveButton: false,
@@ -182,6 +186,8 @@ export function DailyStage({
   return (
     <>
       <div
+        data-testid="daily-stage"
+        data-video-status={status}
         className={cn(
           "relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-ink",
           stageless

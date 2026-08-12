@@ -6,11 +6,8 @@ import { FormError } from "@/components/ui/field";
 import {
   CREDIT_PRODUCTS,
   ENTRY_PASS,
-  EXTENSION_ADDONS,
   LOUNGE_MINUTES,
-  addonDescription,
   formatUsd,
-  productName,
 } from "@/lib/payments/catalog";
 import { purchasableCodes } from "@/lib/payments/creem";
 import { getT } from "@/lib/i18n/server";
@@ -72,7 +69,7 @@ export default async function PricingPage({
         </div>
       ) : null}
 
-      <div className="mt-14 grid gap-5 sm:grid-cols-2">
+      <div className="mt-14 max-w-xl">
         {CREDIT_PRODUCTS.map((product) => (
           <PlanCard
             key={product.code}
@@ -87,41 +84,6 @@ export default async function PricingPage({
         {t("pricing.note")}
       </p>
 
-      {/* 시간 연장 */}
-      <section className="mt-20">
-        <h2 className="font-display text-2xl text-ivory">
-          {t("pricing.extendTitle")}
-        </h2>
-        <p className="mt-2 max-w-2xl text-[0.9375rem] leading-relaxed break-keep text-muted">
-          {t("pricing.extendIntro")}
-        </p>
-
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-          {EXTENSION_ADDONS.map((addon) => (
-            <li
-              key={addon.code}
-              className="rounded-[var(--radius-card)] border border-line bg-surface-raised p-5"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <h3 className="text-[0.9375rem] font-medium text-ivory">
-                  {productName(t, addon.code)}
-                </h3>
-                <span className="font-display text-lg text-champagne">
-                  {formatUsd(addon.priceCents)}
-                </span>
-              </div>
-              <p className="mt-2 text-sm leading-relaxed break-keep text-muted">
-                {addonDescription(t, addon.code)}
-              </p>
-              <p className="mt-3 text-xs text-faint">
-                {available.has(addon.code)
-                  ? t("pricing.extendInRoom")
-                  : t("pricing.extendPreparing")}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
     </Container>
   );
 }

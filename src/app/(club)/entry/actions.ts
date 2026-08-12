@@ -40,18 +40,14 @@ const entrySchema = z.object({
   ageBands: z.array(z.enum(AGE_BAND_OPTIONS)).max(5),
 });
 
-function entryErrorUrl(
-  error: "region" | "invalid",
-  regionCode: string,
-  waiterId: string,
-) {
-  const params = new URLSearchParams({ error });
-  if (getRegion(regionCode)) params.set("region", regionCode);
-  if (getWaiter(waiterId)) params.set("waiter", waiterId);
-  return `/entry?${params.toString()}`;
-}
+export type EntryActionState = {
+  error: "region" | "invalid" | null;
+};
 
-export async function submitEntry(formData: FormData): Promise<void> {
+export async function submitEntry(
+  _previousState: EntryActionState,
+  formData: FormData,
+): Promise<EntryActionState> {
   const { user, profile } = await requireOnboardedSession("/entry");
   const db = getDb();
 
@@ -65,7 +61,7 @@ export async function submitEntry(formData: FormData): Promise<void> {
     : derivedRegionCode;
   const waiterId = String(formData.get("waiterId") ?? "").trim();
   const region = getRegion(regionCode);
-  if (!region) redirect(entryErrorUrl("region", regionCode, waiterId));
+  if (!region) return { error: "region" };
 
   const parsed = entrySchema.safeParse({
     waiterId,
@@ -74,12 +70,10 @@ export async function submitEntry(formData: FormData): Promise<void> {
     interests: formData.getAll("interests"),
     ageBands: formData.getAll("ageBands"),
   });
-  if (!parsed.success) {
-    redirect(entryErrorUrl("invalid", regionCode, waiterId));
-  }
+  if (!parsed.success) return { error: "invalid" };
 
   const waiter = getWaiter(parsed.data.waiterId);
-  if (!waiter) redirect(entryErrorUrl("invalid", regionCode, waiterId));
+  if (!waiter) return { error: "invalid" };
 
   // 자리 이름은 **저장되고 상대 라운지에도 보입니다**. 만든 사람의 언어로
   // 굳으므로 고유명사처럼 읽히는 짧은 형태로 둡니다.

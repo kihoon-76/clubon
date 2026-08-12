@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 
-import { submitEntry } from "@/app/(club)/entry/actions";
+import {
+  submitEntry,
+  type EntryActionState,
+} from "@/app/(club)/entry/actions";
 import { RegionPicker } from "@/components/entry/region-picker";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useT } from "@/lib/i18n/client";
@@ -39,9 +42,15 @@ export function EntryForm({
 }) {
   const t = useT();
   const [waiterId, setWaiterId] = useState(defaultWaiterId ?? WAITERS[0].id);
+  const [desiredGender, setDesiredGender] = useState("");
+  const [energy, setEnergy] = useState("balanced");
+  const [interests, setInterests] = useState<string[]>([]);
+  const [ageBands, setAgeBands] = useState<string[]>([]);
+  const initialState: EntryActionState = { error: null };
+  const [state, formAction] = useActionState(submitEntry, initialState);
 
   return (
-    <form action={submitEntry} className="space-y-8 sm:space-y-10">
+    <form action={formAction} className="space-y-8 sm:space-y-10">
       <Section step={1} title={t("entry.step1Title")} hint={t("entry.step1Hint")}>
         <RegionPicker defaultValue={defaultRegion} />
       </Section>
@@ -94,6 +103,8 @@ export function EntryForm({
                   name="desiredGender"
                   value={o.value}
                   label={genderLabel(t, o.value)}
+                  checked={desiredGender === o.value}
+                  onCheckedChange={() => setDesiredGender(o.value)}
                   required={i === 0}
                 />
               ))}
@@ -109,7 +120,8 @@ export function EntryForm({
                   name="energy"
                   value={o.value}
                   label={energyLabel(t, o.value)}
-                  defaultChecked={o.value === "balanced"}
+                  checked={energy === o.value}
+                  onCheckedChange={() => setEnergy(o.value)}
                 />
               ))}
             </Pills>
@@ -124,6 +136,14 @@ export function EntryForm({
                   name="interests"
                   value={o}
                   label={interestLabel(t, o)}
+                  checked={interests.includes(o)}
+                  onCheckedChange={(checked) =>
+                    setInterests((current) =>
+                      checked
+                        ? [...current, o]
+                        : current.filter((value) => value !== o),
+                    )
+                  }
                 />
               ))}
             </Pills>
@@ -138,12 +158,30 @@ export function EntryForm({
                   name="ageBands"
                   value={o}
                   label={ageBandLabel(t, o)}
+                  checked={ageBands.includes(o)}
+                  onCheckedChange={(checked) =>
+                    setAgeBands((current) =>
+                      checked
+                        ? [...current, o]
+                        : current.filter((value) => value !== o),
+                    )
+                  }
                 />
               ))}
             </Pills>
           </Fieldset>
         </div>
       </Section>
+
+      {state.error ? (
+        <p
+          role="alert"
+          aria-live="polite"
+          className="rounded-[var(--radius-control)] border border-danger/40 bg-danger-dim/40 px-4 py-3 text-sm break-keep text-ivory"
+        >
+          {t(`entry.errors.${state.error}`)}
+        </p>
+      ) : null}
 
       <SubmitButton
         className="w-full gold-glow"
@@ -209,14 +247,16 @@ function PillOption({
   name,
   value,
   label,
-  defaultChecked,
+  checked,
+  onCheckedChange,
   required,
 }: {
   type: "radio" | "checkbox";
   name: string;
   value: string;
   label: string;
-  defaultChecked?: boolean;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
   required?: boolean;
 }) {
   return (
@@ -225,7 +265,8 @@ function PillOption({
         type={type}
         name={name}
         value={value}
-        defaultChecked={defaultChecked}
+        checked={checked}
+        onChange={(event) => onCheckedChange(event.target.checked)}
         required={required}
         className="peer sr-only"
       />

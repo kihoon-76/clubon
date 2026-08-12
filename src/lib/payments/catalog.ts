@@ -23,7 +23,7 @@ import type { Translate } from "@/lib/i18n/types";
 
 /* ------------------------------------------------------------ 매치 횟수 */
 
-export type CreditCode = "entry_pass" | "match_1";
+export type CreditCode = "entry_pass";
 
 export interface CreditProduct {
   code: CreditCode;
@@ -57,18 +57,7 @@ export const ENTRY_PASS: CreditProduct = {
 };
 
 /** 추가 매치 — 받은 5회를 다 쓴 뒤 1회씩 더 사는 상품. */
-export const EXTRA_MATCH: CreditProduct = {
-  code: "match_1",
-  priceCents: 1000,
-  matches: 1,
-  featureCount: 2,
-  productIdEnv: "CREEM_MATCH_1_PRODUCT_ID",
-};
-
-export const CREDIT_PRODUCTS: readonly CreditProduct[] = [
-  ENTRY_PASS,
-  EXTRA_MATCH,
-] as const;
+export const CREDIT_PRODUCTS: readonly CreditProduct[] = [ENTRY_PASS] as const;
 
 export function getCreditProduct(code: string): CreditProduct | null {
   return CREDIT_PRODUCTS.find((p) => p.code === code) ?? null;
@@ -76,7 +65,7 @@ export function getCreditProduct(code: string): CreditProduct | null {
 
 /* ------------------------------------------------------------ 시간 연장 */
 
-export type ExtensionCode = "extend_30" | "gift_extend_30";
+export type ExtensionCode = never;
 
 /**
  * 영상방 안에서 이 상품을 살 수 있는 사람.
@@ -105,22 +94,7 @@ export interface ExtensionAddon {
  * 회원이 계산해야 합니다. 기본 시간과 같은 단위로 통일하면 "한 번 더"만
  * 누르면 됩니다.
  */
-export const EXTENSION_ADDONS: readonly ExtensionAddon[] = [
-  {
-    code: "extend_30",
-    priceCents: 500,
-    extendMinutes: 30,
-    inRoomBuyer: "payer",
-    productIdEnv: "CREEM_EXTEND_30_PRODUCT_ID",
-  },
-  {
-    code: "gift_extend_30",
-    priceCents: 500,
-    extendMinutes: 30,
-    inRoomBuyer: "guest",
-    productIdEnv: "CREEM_GIFT_EXTEND_30_PRODUCT_ID",
-  },
-] as const;
+export const EXTENSION_ADDONS: readonly ExtensionAddon[] = [];
 
 /** 연장 상품이면 반환합니다. 아니면 null — 체크아웃·웹훅의 판매 가능 판정입니다. */
 export function getExtensionAddon(code: string): ExtensionAddon | null {

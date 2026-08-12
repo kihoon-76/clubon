@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Clock, Ticket } from "lucide-react";
 
-import { ExtendControl } from "@/components/room/extend-control";
 import { ButtonLink } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import { LOUNGE_MINUTES } from "@/lib/payments/catalog";
 import { cn } from "@/lib/utils";
-import type { RoomExtensionView, RoomUsageView } from "@/lib/runtime/view";
+import type { RoomUsageView } from "@/lib/runtime/view";
 
 /**
  * 이 방의 남은 시간.
@@ -38,18 +37,14 @@ function formatRemaining(ms: number): string {
 }
 
 export function SessionTimer({
-  sessionId,
   usage,
   remainingMatches,
-  extensions,
   onExpire,
 }: {
-  sessionId: string;
   usage: RoomUsageView | null;
   /** 내 남은 방 매치 횟수 */
   remainingMatches: number;
   /** 지금 내가 살 수 있는 연장 상품 (없으면 연장 UI를 띄우지 않습니다) */
-  extensions: RoomExtensionView[];
   /**
    * 시간이 다 됐음을 알립니다. 끝난 **만료 시각**을 함께 넘겨, 연장으로 시각이
    * 뒤로 밀리면 룸이 다시 이어 붙일 수 있게 합니다.
@@ -103,7 +98,6 @@ export function SessionTimer({
         </p>
         {/* 연장은 아직 아무도 방을 닫지 않았다면 끝난 뒤에도 살 수 있습니다.
             산 시간은 결제가 확인된 시점부터 다시 흐릅니다. */}
-        <ExtendControl sessionId={sessionId} options={extensions} />
         <div className="mt-4">
           <ButtonLink href="/entry" size="sm">
             <Ticket aria-hidden className="size-4" />
@@ -166,9 +160,6 @@ export function SessionTimer({
       </div>
 
       {/* 아직 여유가 있을 때는 결제 버튼을 띄우지 않습니다. */}
-      {warnLevel ? (
-        <ExtendControl sessionId={sessionId} options={extensions} />
-      ) : null}
     </section>
   );
 }
