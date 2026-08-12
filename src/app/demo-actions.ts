@@ -14,7 +14,7 @@ import { DEMO_USER_COOKIE } from "@/lib/session";
  * 실제 배포에서는 아무 일도 하지 않습니다.
  */
 export async function switchDemoUser(formData: FormData): Promise<void> {
-  if (process.env.DATABASE_URL) redirect("/lobby");
+  if (process.env.DATABASE_URL || process.env.POSTGRES_URL) redirect("/lobby");
 
   const userId = String(formData.get("userId") ?? "");
   if (!DEMO_ACCOUNTS.some((a) => a.id === userId)) redirect("/lobby");

@@ -19,7 +19,7 @@ export async function DemoUserSwitcher({
 }: {
   currentUserId: string;
 }) {
-  if (process.env.DATABASE_URL) return null;
+  if (process.env.DATABASE_URL || process.env.POSTGRES_URL) return null;
   const t = await getT();
 
   return (

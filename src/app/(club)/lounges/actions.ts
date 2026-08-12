@@ -60,7 +60,7 @@ const DEMO_COMPANION_NAMES = ["연우", "수아", "가온", "리안", "해든", 
  * 시드 데모 계정이 모두 다른 라운지에 있으면 새 데모 계정을 만들어 채웁니다.
  */
 export async function addDemoCompanion(tableId: string): Promise<void> {
-  if (process.env.DATABASE_URL) redirect(`/lounges/${tableId}`);
+  if (process.env.DATABASE_URL || process.env.POSTGRES_URL) redirect(`/lounges/${tableId}`);
 
   const { user } = await requireOnboardedSession();
   const db = getDb();

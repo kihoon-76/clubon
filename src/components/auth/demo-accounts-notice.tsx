@@ -15,7 +15,7 @@ const DEMO_ACCOUNTS = [
  * DATABASE_URL이 설정된 실제 배포에서는 렌더링되지 않습니다.
  */
 export async function DemoAccountsNotice() {
-  if (process.env.DATABASE_URL) return null;
+  if (process.env.DATABASE_URL || process.env.POSTGRES_URL) return null;
   const t = await getT();
 
   return (
