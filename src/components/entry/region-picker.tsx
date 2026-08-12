@@ -37,6 +37,11 @@ export function RegionPicker({
   // 서버로 나가는 값. 대한민국이면 시·도까지 골라야 완성됩니다.
   return (
     <div className="space-y-4">
+      <input
+        type="hidden"
+        name="regionCode"
+        value={country === KOREA ? krRegion : country}
+      />
       <label className="block">
         <span className="label-caps mb-2 block">{t("entry.country")}</span>
         <Select

@@ -58,7 +58,11 @@ export async function submitEntry(formData: FormData): Promise<void> {
   // 지역 코드는 폼에서 오므로 카탈로그에 있는 값인지 서버가 다시 확인합니다.
   const countryCode = String(formData.get("countryCode") ?? "").trim();
   const krRegionCode = String(formData.get("krRegionCode") ?? "").trim();
-  const regionCode = countryCode === KOREA ? krRegionCode : countryCode;
+  const submittedRegionCode = String(formData.get("regionCode") ?? "").trim();
+  const derivedRegionCode = countryCode === KOREA ? krRegionCode : countryCode;
+  const regionCode = getRegion(submittedRegionCode)
+    ? submittedRegionCode
+    : derivedRegionCode;
   const waiterId = String(formData.get("waiterId") ?? "").trim();
   const region = getRegion(regionCode);
   if (!region) redirect(entryErrorUrl("region", regionCode, waiterId));
