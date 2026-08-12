@@ -390,7 +390,7 @@ export const ko = {
 
     priceEyebrow: "라운지 이용 안내",
     priceTitle: "라운지 이용권 30,000원",
-    priceBody: "추가 비용 없이 정해진 시간 동안 이용할 수 있습니다.",
+    priceBody: "방 매칭 5회, 각 매칭 방마다 화상 대화 시간은 30분입니다.",
 
     howEyebrow: "이용 방식",
     howTitle: "한 테이블에서 시작해, 다른 테이블과 만납니다",

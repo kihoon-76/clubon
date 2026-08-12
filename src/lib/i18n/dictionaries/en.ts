@@ -382,7 +382,7 @@ export const en: DeepPartial<Dictionary> = {
 
     priceEyebrow: "Lounge pricing",
     priceTitle: "Lounge pass ₩30,000",
-    priceBody: "No extra charges — yours for the full session.",
+    priceBody: "Includes 5 room matches, with 30 minutes of video conversation per matched room.",
 
     howEyebrow: "How it works",
     howTitle: "Start at one table, meet another",
