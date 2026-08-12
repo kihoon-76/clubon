@@ -382,6 +382,15 @@ export const ko = {
     liveUsers: "현재 접속 중",
     waitingLounges: "매칭 대기",
     liveRooms: "대화 중",
+    shareEyebrow: "ClubOn 공유하기",
+    shareTitle: "좋은 만남이 필요한 친구에게 라운지를 켜주세요",
+    shareBody:
+      "QR 코드를 보여주거나 링크를 보내면 ClubOn 홈으로 바로 연결됩니다. 카카오톡과 휴대폰 공유 메뉴에서도 사용할 수 있습니다.",
+    shareText: "오늘 클럽에 가지 말고, ClubOn을 켜세요.",
+    shareButton: "공유하기",
+    shareCopy: "링크 복사",
+    shareCopied: "복사 완료",
+    shareQrAlt: "ClubOn 홈페이지 QR 코드",
     scrollDown: "아래로 스크롤",
 
     uspEyebrow: "ClubOn이 다른 이유",

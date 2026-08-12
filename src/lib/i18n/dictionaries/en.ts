@@ -373,6 +373,15 @@ export const en: DeepPartial<Dictionary> = {
     liveUsers: "Online now",
     waitingLounges: "Waiting",
     liveRooms: "In conversation",
+    shareEyebrow: "Share ClubOn",
+    shareTitle: "Switch on the lounge for friends ready to meet someone new",
+    shareBody:
+      "Show the QR code or send the link to open ClubOn instantly. It also works with your phone's share menu and messaging apps.",
+    shareText: "Don't go to the club tonight. Switch ClubOn.",
+    shareButton: "Share",
+    shareCopy: "Copy link",
+    shareCopied: "Copied",
+    shareQrAlt: "QR code for the ClubOn homepage",
     scrollDown: "Scroll down",
 
     uspEyebrow: "What makes ClubOn different",

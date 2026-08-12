@@ -14,6 +14,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
 import { LivePresence } from "@/components/landing/live-presence";
+import { ShareClubOn } from "@/components/landing/share-clubon";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ export default async function LandingPage() {
     <>
       <Hero t={t} />
       <LivePresence />
+      <ShareClubOn />
       <BentoUsp t={t} />
       <HowItWorks t={t} />
       <Pricing t={t} />

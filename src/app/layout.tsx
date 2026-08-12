@@ -62,7 +62,7 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [
         {
           // 1200×630 — 카카오톡 큰 썸네일과 대부분의 SNS가 쓰는 표준 비율.
-          url: "/og.png",
+          url: "/og-clubon-premium.png",
           width: 1200,
           height: 630,
           alt: t("site.ogAlt"),
@@ -73,7 +73,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: ["/og.png"],
+      images: ["/og-clubon-premium.png"],
     },
     ...STATIC_METADATA,
   };
