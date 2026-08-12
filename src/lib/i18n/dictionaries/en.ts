@@ -393,7 +393,7 @@ export const en: DeepPartial<Dictionary> = {
       "You register as a member after a year-of-birth check and item-by-item consent.",
     step2Title: "Form a table",
     step2Body:
-      "Make a table of 1–4 people, or join a friend's table with their invite code. On your own, you can still look for another lounge right away.",
+      "Make a table of 1–4 people. On your own, you can still look for another lounge right away.",
     step3Title: "An AI lounge manager matches you",
     step3Body:
       "Your manager finds a lounge that fits, based on interests, languages, and conversation energy.",
