@@ -13,7 +13,6 @@ import type { Translate } from "@/lib/i18n/types";
 export const GENDER_OPTIONS: { value: DesiredGender }[] = [
   { value: "female" },
   { value: "male" },
-  { value: "any" },
 ];
 
 export const ENERGY_OPTIONS: { value: ConversationEnergy }[] = [
@@ -38,10 +37,11 @@ export const INTEREST_OPTIONS = [
 ] as const;
 
 export const AGE_BAND_OPTIONS = [
-  "20대 초반",
-  "20대 후반",
-  "30대 초반",
-  "30대 후반",
+  "20대",
+  "30대",
+  "40대",
+  "50대",
+  "60대",
 ] as const;
 
 /* ------------------------------------------------------------ 화면 표기 */
@@ -68,10 +68,11 @@ const INTEREST_KEY: Record<string, string> = {
 };
 
 const AGE_BAND_KEY: Record<string, string> = {
-  "20대 초반": "early20s",
-  "20대 후반": "late20s",
-  "30대 초반": "early30s",
-  "30대 후반": "late30s",
+  "20대": "20s",
+  "30대": "30s",
+  "40대": "40s",
+  "50대": "50s",
+  "60대": "60s",
 };
 
 /**

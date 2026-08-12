@@ -152,7 +152,7 @@ const prefSchema = z.object({
   ),
   energy: z.enum(ENERGY_OPTIONS.map((o) => o.value) as [string, ...string[]]),
   interests: z.array(z.enum(INTEREST_OPTIONS)).max(12),
-  ageBands: z.array(z.enum(AGE_BAND_OPTIONS)).max(4),
+  ageBands: z.array(z.enum(AGE_BAND_OPTIONS)).max(5),
 });
 
 /** 원하는 상대 스타일을 저장하고, 공통점이 가장 많은 상대 라운지를 부킹합니다. */

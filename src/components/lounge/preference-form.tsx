@@ -37,7 +37,6 @@ export async function PreferenceForm({
               name="desiredGender"
               value={o.value}
               label={genderLabel(t, o.value)}
-              defaultChecked={o.value === "any"}
               required={i === 0}
             />
           ))}

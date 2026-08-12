@@ -4,7 +4,12 @@ import type {
   Profile,
 } from "@/lib/db/types";
 import type { Translate } from "@/lib/i18n/types";
-import { ageBandLabel, genderLabel, interestLabel } from "@/lib/match-options";
+import {
+  AGE_BAND_OPTIONS,
+  ageBandLabel,
+  genderLabel,
+  interestLabel,
+} from "@/lib/match-options";
 
 /**
  * 라운지 매칭 공통 점수 로직. 인메모리/Postgres 어댑터가 동일하게 사용합니다.
@@ -51,7 +56,12 @@ export function scoreCandidate(
   }
 
   const interests = new Set(candidateProfiles.flatMap((p) => p.interests));
-  const ageBands = new Set(candidateProfiles.map((p) => p.ageBand));
+  const ageBands = new Set(
+    candidateProfiles.map((profile) =>
+      AGE_BAND_OPTIONS.find((band) => profile.ageBand.startsWith(band)) ??
+      profile.ageBand,
+    ),
+  );
 
   let score = 0;
   const reasons: MatchReason[] = [];

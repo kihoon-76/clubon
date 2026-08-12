@@ -117,6 +117,7 @@ export default async function EntryPage({
       ) : (
         <div className="mt-10">
           <EntryForm
+            defaultRegion={typeof sp.region === "string" ? sp.region : null}
             defaultWaiterId={
               typeof sp.waiter === "string" && getWaiter(sp.waiter)
                 ? sp.waiter

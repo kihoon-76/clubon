@@ -124,10 +124,11 @@ export const en: DeepPartial<Dictionary> = {
       games: "Games",
     },
     ageBands: {
-      early20s: "Early 20s",
-      late20s: "Late 20s",
-      early30s: "Early 30s",
-      late30s: "Late 30s",
+      "20s": "20s",
+      "30s": "30s",
+      "40s": "40s",
+      "50s": "50s",
+      "60s": "60s",
     },
   },
   products: {

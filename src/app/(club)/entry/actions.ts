@@ -6,7 +6,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import type { ConversationEnergy, DesiredGender } from "@/lib/db/types";
 import { getT } from "@/lib/i18n/server";
-import { getRegion } from "@/lib/regions";
+import { getRegion, KOREA } from "@/lib/regions";
 import { hasBlockBetween } from "@/lib/runtime/store";
 import { requireOnboardedSession } from "@/lib/session";
 import { getWaiter } from "@/lib/waiters";
@@ -37,29 +37,45 @@ const entrySchema = z.object({
   ),
   energy: z.enum(ENERGY_OPTIONS.map((o) => o.value) as [string, ...string[]]),
   interests: z.array(z.enum(INTEREST_OPTIONS)).max(12),
-  ageBands: z.array(z.enum(AGE_BAND_OPTIONS)).max(4),
+  ageBands: z.array(z.enum(AGE_BAND_OPTIONS)).max(5),
 });
+
+function entryErrorUrl(
+  error: "region" | "invalid",
+  regionCode: string,
+  waiterId: string,
+) {
+  const params = new URLSearchParams({ error });
+  if (getRegion(regionCode)) params.set("region", regionCode);
+  if (getWaiter(waiterId)) params.set("waiter", waiterId);
+  return `/entry?${params.toString()}`;
+}
 
 export async function submitEntry(formData: FormData): Promise<void> {
   const { user, profile } = await requireOnboardedSession("/entry");
   const db = getDb();
 
   // 지역 코드는 폼에서 오므로 카탈로그에 있는 값인지 서버가 다시 확인합니다.
-  const regionCode = String(formData.get("regionCode") ?? "").trim();
+  const countryCode = String(formData.get("countryCode") ?? "").trim();
+  const krRegionCode = String(formData.get("krRegionCode") ?? "").trim();
+  const regionCode = countryCode === KOREA ? krRegionCode : countryCode;
+  const waiterId = String(formData.get("waiterId") ?? "").trim();
   const region = getRegion(regionCode);
-  if (!region) redirect("/entry?error=region");
+  if (!region) redirect(entryErrorUrl("region", regionCode, waiterId));
 
   const parsed = entrySchema.safeParse({
-    waiterId: formData.get("waiterId"),
+    waiterId,
     desiredGender: formData.get("desiredGender"),
     energy: formData.get("energy"),
     interests: formData.getAll("interests"),
     ageBands: formData.getAll("ageBands"),
   });
-  if (!parsed.success) redirect("/entry?error=invalid");
+  if (!parsed.success) {
+    redirect(entryErrorUrl("invalid", regionCode, waiterId));
+  }
 
   const waiter = getWaiter(parsed.data.waiterId);
-  if (!waiter) redirect("/entry?error=invalid");
+  if (!waiter) redirect(entryErrorUrl("invalid", regionCode, waiterId));
 
   // 자리 이름은 **저장되고 상대 라운지에도 보입니다**. 만든 사람의 언어로
   // 굳으므로 고유명사처럼 읽히는 짧은 형태로 둡니다.

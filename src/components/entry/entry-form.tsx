@@ -94,7 +94,6 @@ export function EntryForm({
                   name="desiredGender"
                   value={o.value}
                   label={genderLabel(t, o.value)}
-                  defaultChecked={o.value === "any"}
                   required={i === 0}
                 />
               ))}

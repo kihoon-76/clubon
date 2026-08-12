@@ -35,15 +35,12 @@ export function RegionPicker({
   const [krRegion, setKrRegion] = useState(isKr ? (defaultValue as string) : "");
 
   // 서버로 나가는 값. 대한민국이면 시·도까지 골라야 완성됩니다.
-  const regionCode = country === KOREA ? krRegion : country;
-
   return (
     <div className="space-y-4">
-      <input type="hidden" name="regionCode" value={regionCode} />
-
       <label className="block">
         <span className="label-caps mb-2 block">{t("entry.country")}</span>
         <Select
+          name="countryCode"
           value={country}
           onChange={(v) => {
             setCountry(v);
@@ -69,7 +66,12 @@ export function RegionPicker({
       {country === KOREA ? (
         <label className="block">
           <span className="label-caps mb-2 block">{t("entry.krRegion")}</span>
-          <Select value={krRegion} onChange={setKrRegion} required>
+          <Select
+            name="krRegionCode"
+            value={krRegion}
+            onChange={setKrRegion}
+            required
+          >
             <option value="">{t("entry.select")}</option>
             {KR_REGIONS.map((r) => (
               <option key={r.code} value={r.code}>
@@ -91,11 +93,13 @@ export function RegionPicker({
 }
 
 function Select({
+  name,
   value,
   onChange,
   required,
   children,
 }: {
+  name: string;
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
@@ -103,6 +107,7 @@ function Select({
 }) {
   return (
     <select
+      name={name}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required={required}
