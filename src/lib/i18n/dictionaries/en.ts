@@ -385,7 +385,8 @@ export const en: DeepPartial<Dictionary> = {
     priceBody: "Includes 5 room matches, with 30 minutes of video conversation per matched room.",
 
     howEyebrow: "How it works",
-    howTitle: "Start at one table, meet another",
+    howTitle:
+      "Not just on Friday nights or in your hometown—even while camping with friends or relaxing on the beach, wherever you are becomes your club lounge",
     howBody:
       "ClubOn is not random video chat. You enter as a group, and a match happens only when both sides agree.",
     step1Title: "Verify your age, then enter",
