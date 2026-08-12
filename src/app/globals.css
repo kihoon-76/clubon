@@ -162,6 +162,14 @@
       0 0 28px rgba(216, 190, 134, 0.12);
   }
 
+  .on-switch {
+    animation: on-pulse 2.8s var(--ease-club) infinite;
+  }
+
+  .on-word {
+    text-shadow: 0 0 22px rgba(216, 190, 134, 0.38);
+  }
+
   /* 히어로 하단으로 갈수록 어두워지는 비네트 */
   .vignette {
     background: radial-gradient(
@@ -219,6 +227,18 @@
   50% {
     transform: translateY(6px);
     opacity: 1;
+  }
+}
+
+@keyframes on-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(216, 190, 134, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(216, 190, 134, 0.06),
+      0 0 26px rgba(216, 190, 134, 0.28);
   }
 }
 

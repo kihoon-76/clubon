@@ -4,6 +4,7 @@ import {
   Clock,
   Handshake,
   MessageSquare,
+  Power,
   ShieldCheck,
   Sparkles,
   UserRoundCheck,
@@ -56,6 +57,30 @@ function Hero({ t }: { t: Translate }) {
               {t("landing.heroLine2")}
             </span>
           </h1>
+
+          <div className="mt-7 max-w-2xl overflow-hidden rounded-[var(--radius-card)] border border-champagne-dim/40 bg-surface-raised/70 shadow-[0_0_50px_rgba(216,190,134,0.08)] backdrop-blur-sm sm:mt-9">
+            <div className="flex items-stretch">
+              <div className="flex w-14 shrink-0 items-center justify-center border-r border-champagne-dim/30 bg-champagne/10 sm:w-20">
+                <span className="on-switch flex size-9 items-center justify-center rounded-full border border-champagne/60 bg-ink text-champagne sm:size-11">
+                  <Power aria-hidden className="size-4 sm:size-5" />
+                </span>
+              </div>
+              <div className="min-w-0 px-4 py-4 sm:px-6 sm:py-5">
+                <p className="text-sm leading-relaxed break-keep text-muted sm:text-base">
+                  {t("landing.heroSwitchLead")}
+                </p>
+                <p className="mt-1 font-display text-[1.35rem] leading-tight break-keep text-ivory sm:text-[1.75rem]">
+                  {t("landing.heroSwitchAction")} {" "}
+                  <span className="text-faint line-through decoration-champagne-dim/70">
+                    {t("landing.heroSwitchContrast")}
+                  </span>{" "}
+                  <span className="on-word italic text-champagne">
+                    {t("landing.heroSwitchOn")}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed break-keep text-muted sm:mt-7 sm:text-xl">
             {t("landing.heroBody")}

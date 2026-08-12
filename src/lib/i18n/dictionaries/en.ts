@@ -360,6 +360,10 @@ export const en: DeepPartial<Dictionary> = {
     badge: "19+ · members only · alcohol-free",
     heroLine1: "Wherever you are,",
     heroLine2: "a private social club.",
+    heroSwitchLead: "Tonight, don't go to the club.",
+    heroSwitchAction: "Switch the club on.",
+    heroSwitchContrast: "Don't GO—go",
+    heroSwitchOn: "ON.",
     heroBody:
       "You meet through conversation, not by swiping profiles. Sit at one table with your friends, and start talking with the lounge you are matched with.",
     heroCta: "Request entry",

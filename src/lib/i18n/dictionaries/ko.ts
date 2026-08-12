@@ -369,6 +369,10 @@ export const ko = {
     badge: "만 19세 이상 · 회원제 · 술 없는 클럽",
     heroLine1: "어디에 있든,",
     heroLine2: "프라이빗 소셜 클럽.",
+    heroSwitchLead: "오늘, 클럽에 가지 마세요.",
+    heroSwitchAction: "클럽을 켜세요.",
+    heroSwitchContrast: "GO 말고,",
+    heroSwitchOn: "ON.",
     heroBody:
       "프로필을 넘기는 대신 대화로 만납니다. 친구와 함께 한 테이블에 앉아, 어울리는 다른 라운지와 합석해 이야기를 시작하세요.",
     heroCta: "입장 신청하기",
