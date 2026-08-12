@@ -6,6 +6,7 @@ import { confirmAdult, type OnboardingFormState } from "@/app/(onboarding)/actio
 import { Field, FormError, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useT } from "@/lib/i18n/client";
+import { latestEligibleBirthDate } from "@/lib/auth/age";
 
 export function AdultCheckForm() {
   const t = useT();
@@ -20,18 +21,16 @@ export function AdultCheckForm() {
 
       <Field
         label={t("onboarding.birthYear")}
-        htmlFor="birthYear"
+        htmlFor="birthDate"
         hint={t("onboarding.birthYearHint")}
       >
         <Input
-          id="birthYear"
-          name="birthYear"
-          type="number"
-          inputMode="numeric"
+          id="birthDate"
+          name="birthDate"
+          type="date"
           required
-          min={1900}
-          max={new Date().getFullYear()}
-          placeholder={t("onboarding.birthYearPlaceholder")}
+          min="1900-01-01"
+          max={latestEligibleBirthDate()}
         />
       </Field>
 

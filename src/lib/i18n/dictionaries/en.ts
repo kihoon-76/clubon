@@ -352,12 +352,12 @@ export const en: DeepPartial<Dictionary> = {
     terms: "Terms of Service",
     privacy: "Privacy Policy",
     adultsOnly:
-      "For adults aged 19 and over. This is not a dating-match or adult entertainment service — it is a social club for group conversation.",
+      "For adults aged 21 and over. This is not a dating-match or adult entertainment service — it is a social club for group conversation.",
     noRecording:
       "Capturing, recording, filming, or sharing another participant's video, audio, or personal information is prohibited. Violations may lead to a permanent ban and legal liability under applicable law.",
   },
   landing: {
-    badge: "19+ · members only · alcohol-free",
+    badge: "21+ · members only · alcohol-free",
     heroLine1: "Wherever you are,",
     heroLine2: "a private social club.",
     heroSwitchLead: "Tonight, don't go to the club.",
@@ -707,13 +707,13 @@ export const en: DeepPartial<Dictionary> = {
 
     adultTitle: "Age check",
     adultIntro:
-      "ClubOn is for adults aged 19 and over. Enter your year of birth so we can confirm that.",
-    birthYear: "Year of birth",
+      "Enter your date of birth to confirm that you are at least 21.",
+    birthYear: "Date of birth",
     birthYearHint:
-      "We check the year only. We never store your full date of birth or any ID image.",
-    birthYearPlaceholder: "e.g. 1994",
+      "Worldwide access is limited to people aged 21 or older based on their actual birthday.",
+    birthYearPlaceholder: "",
     adultCheckbox:
-      "I am 19 or older and understand that ClubOn is an adults-only service.",
+      "I am at least 21 years old and confirm that this date of birth is accurate.",
     adultSubmit: "Confirm and continue",
     adultPending: "Checking…",
 
@@ -743,7 +743,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     adult_only: {
       title: "Adults only",
-      body: "I am 19 or older and understand this is an adults-only service.",
+      body: "I am 21 or older and understand this is an adults-only service.",
     },
     camera_microphone: {
       title: "Camera and microphone",
@@ -789,8 +789,8 @@ export const en: DeepPartial<Dictionary> = {
       interestsEmpty: "Please choose at least one interest.",
       genderMissing: "Please choose your gender.",
       invalid: "Please check what you entered.",
-      adultUnchecked: "Please confirm that you are 19 or older.",
-      birthYearInvalid: "Please enter your year of birth correctly.",
+      adultUnchecked: "Please confirm that you are 21 or older.",
+      birthYearInvalid: "Please enter your date of birth correctly.",
       tooYoung: "This is an adults-only service for people aged {age} and over.",
       consentMissing: "You must agree to every required item before entering.",
     },

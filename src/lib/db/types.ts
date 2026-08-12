@@ -45,6 +45,7 @@ export interface User {
   status: AccountStatus;
   adultConfirmedAt: string | null;
   birthYear: number | null;
+  birthDate: string | null;
   /**
    * 가입할 때 선언한 성별. 진실의 원천이며 `Profile.gender`는 사본입니다.
    *

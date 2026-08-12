@@ -9,6 +9,8 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { nextStepFor, safeNext } from "@/lib/auth/redirect";
 import { getDb } from "@/lib/db";
 import type { Gender } from "@/lib/db/types";
+import { isAtLeastAge, MINIMUM_AGE, parseBirthDate } from "@/lib/auth/age";
+import { getT } from "@/lib/i18n/server";
 
 export interface AuthFormState {
   error?: string;
@@ -55,6 +57,7 @@ export async function signup(
   _prev: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  const t = await getT();
   const parsed = credentialsSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -64,6 +67,18 @@ export async function signup(
   }
   if (formData.get("password") !== formData.get("passwordConfirm")) {
     return { error: "비밀번호가 서로 일치하지 않습니다." };
+  }
+
+  const rawBirthDate = formData.get("birthDate");
+  const birthDate = parseBirthDate(rawBirthDate);
+  if (!birthDate || birthDate.getUTCFullYear() < 1900) {
+    return { error: t("profile.errors.birthYearInvalid") };
+  }
+  if (!isAtLeastAge(birthDate)) {
+    return { error: t("profile.errors.tooYoung", { age: MINIMUM_AGE }) };
+  }
+  if (formData.get("adultCheck") !== "on") {
+    return { error: t("profile.errors.adultUnchecked") };
   }
 
   // 성별은 매칭이 갈리는 기준이라 가입할 때 함께 받습니다. 프로필 단계까지
@@ -84,8 +99,10 @@ export async function signup(
     gender: gender as Gender,
   });
 
+  await db.confirmAdult(user.id, String(rawBirthDate));
+
   await setSessionCookie(user.id);
-  redirect("/onboarding/adult");
+  redirect("/onboarding/consent");
 }
 
 export async function logout(): Promise<void> {

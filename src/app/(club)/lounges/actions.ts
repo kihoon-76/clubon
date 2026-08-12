@@ -91,7 +91,7 @@ export async function addDemoCompanion(tableId: string): Promise<void> {
     // 로그인 불가 — 데모 참가자 표시 전용 계정입니다.
     passwordHash: "",
   });
-  await db.confirmAdult(created.id, 1994);
+  await db.confirmAdult(created.id, "1994-01-01");
   await db.markConsentCompleted(created.id);
   await db.markOnboardingCompleted(created.id);
   await db.upsertProfile(created.id, {

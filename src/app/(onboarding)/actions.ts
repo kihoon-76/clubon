@@ -9,14 +9,13 @@ import type { ConversationEnergy, Gender } from "@/lib/db/types";
 import { getT } from "@/lib/i18n/server";
 import { AGE_BAND_OPTIONS, ENERGY_OPTIONS, INTEREST_OPTIONS } from "@/lib/match-options";
 import { requireSession } from "@/lib/session";
+import { isAtLeastAge, MINIMUM_AGE, parseBirthDate } from "@/lib/auth/age";
 
 export interface OnboardingFormState {
   error?: string;
 }
 
 /* --------------------------------------------------------------- 성인 확인 */
-
-const MIN_ADULT_AGE = 19;
 
 export async function confirmAdult(
   _prev: OnboardingFormState,
@@ -29,17 +28,17 @@ export async function confirmAdult(
     return { error: t("profile.errors.adultUnchecked") };
   }
 
-  const birthYear = Number(formData.get("birthYear"));
-  const thisYear = new Date().getFullYear();
-  if (!Number.isInteger(birthYear) || birthYear < 1900 || birthYear > thisYear) {
+  const rawBirthDate = formData.get("birthDate");
+  const birthDate = parseBirthDate(rawBirthDate);
+  if (!birthDate || birthDate.getUTCFullYear() < 1900) {
     return { error: t("profile.errors.birthYearInvalid") };
   }
   // 생년월일 원본은 저장하지 않고 연 단위로만 확인합니다.
-  if (thisYear - birthYear < MIN_ADULT_AGE) {
-    return { error: t("profile.errors.tooYoung", { age: MIN_ADULT_AGE }) };
+  if (!isAtLeastAge(birthDate)) {
+    return { error: t("profile.errors.tooYoung", { age: MINIMUM_AGE }) };
   }
 
-  await getDb().confirmAdult(user.id, birthYear);
+  await getDb().confirmAdult(user.id, String(rawBirthDate));
   redirect("/onboarding/consent");
 }
 

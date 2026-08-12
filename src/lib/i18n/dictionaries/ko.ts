@@ -72,7 +72,7 @@ export const ko = {
     signupEyebrow: "입장 신청",
     signupHeadline: "클럽에 등록하기",
     signupIntro:
-      "만 19세 이상 성인 전용입니다. 가입 후 성인 확인과 동의 절차가 이어집니다.",
+      "만 21세 이상 성인 전용입니다. 가입 시 생년월일 확인과 동의 절차가 이어집니다.",
     googleSignup: "Google로 가입하기",
     legalNoticeBefore: "가입 시",
     legalNoticeBetween: "및",
@@ -361,12 +361,12 @@ export const ko = {
     terms: "이용약관",
     privacy: "개인정보처리방침",
     adultsOnly:
-      "만 19세 이상 성인만 이용할 수 있습니다. 본 서비스는 데이팅 매칭이나 성인 오락 서비스가 아니며, 그룹 대화를 위한 소셜 클럽입니다.",
+      "만 21세 이상 성인만 이용할 수 있습니다. 본 서비스는 데이팅 매칭이나 성인 오락 서비스가 아니며, 그룹 대화를 위한 소셜 클럽입니다.",
     noRecording:
       "다른 참가자의 영상, 음성, 개인정보를 캡처·녹화·촬영하거나 공유하는 행위는 금지됩니다. 위반 시 영구 이용정지 및 관련 법률에 따른 법적 책임이 따를 수 있습니다.",
   },
   landing: {
-    badge: "만 19세 이상 · 회원제 · 술 없는 클럽",
+    badge: "만 21세 이상 · 회원제 · 술 없는 클럽",
     heroLine1: "어디에 있든,",
     heroLine2: "프라이빗 소셜 클럽.",
     heroSwitchLead: "오늘, 클럽에 가지 마세요.",
@@ -726,12 +726,12 @@ export const ko = {
 
     adultTitle: "성인 확인",
     adultIntro:
-      "ClubOn은 만 19세 이상 성인만 이용할 수 있습니다. 확인을 위해 출생 연도를 입력해 주세요.",
-    birthYear: "출생 연도",
+      "생년월일을 입력해 만 21세 이상인지 확인합니다.",
+    birthYear: "생년월일",
     birthYearHint:
-      "연 단위만 확인하며, 생년월일 원본이나 신분증 이미지는 저장하지 않습니다.",
-    birthYearPlaceholder: "예: 1994",
-    adultCheckbox: "만 19세 이상이며, ClubOn이 성인 전용 서비스임을 이해했습니다.",
+      "전 세계 공통으로 실제 생일 기준 만 21세 이상만 가입할 수 있습니다.",
+    birthYearPlaceholder: "",
+    adultCheckbox: "만 21세 이상이며, 입력한 생년월일이 사실임을 확인합니다.",
     adultSubmit: "확인하고 다음 단계로",
     adultPending: "확인 중…",
 
@@ -766,7 +766,7 @@ export const ko = {
     },
     adult_only: {
       title: "성인 전용 서비스",
-      body: "만 19세 이상이며, 성인 전용 서비스임을 이해했습니다.",
+      body: "만 21세 이상이며, 성인 전용 서비스임을 이해했습니다.",
     },
     camera_microphone: {
       title: "카메라·마이크 사용",
@@ -811,8 +811,8 @@ export const ko = {
       interestsEmpty: "관심사를 1개 이상 골라주세요.",
       genderMissing: "성별을 선택해 주세요.",
       invalid: "입력을 확인해 주세요.",
-      adultUnchecked: "만 19세 이상임을 확인해 주세요.",
-      birthYearInvalid: "출생 연도를 정확히 입력해 주세요.",
+      adultUnchecked: "만 21세 이상임을 확인해 주세요.",
+      birthYearInvalid: "생년월일을 정확히 입력해 주세요.",
       tooYoung: "만 {age}세 이상만 이용할 수 있는 성인 전용 서비스입니다.",
       consentMissing: "필수 항목에 모두 동의해야 입장할 수 있습니다.",
     },

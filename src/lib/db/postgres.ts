@@ -185,6 +185,7 @@ function mapUser(r: Row): User {
     status: r.status as User["status"],
     adultConfirmedAt: isoOrNull(r.adult_confirmed_at),
     birthYear: r.birth_year == null ? null : Number(r.birth_year),
+    birthDate: r.birth_date == null ? null : String(r.birth_date).slice(0, 10),
     gender: (r.gender as User["gender"]) ?? null,
     onboardingCompletedAt: isoOrNull(r.onboarding_completed_at),
     consentCompletedAt: isoOrNull(r.consent_completed_at),
@@ -375,10 +376,12 @@ export class PostgresAdapter implements DataAdapter {
       where id = ${userId}`;
   }
 
-  async confirmAdult(userId: string, birthYear: number): Promise<void> {
+  async confirmAdult(userId: string, birthDate: string): Promise<void> {
     await this.sql`
       update public.users
-      set birth_year = ${birthYear}, adult_confirmed_at = now(), updated_at = now()
+      set birth_date = ${birthDate}::date,
+          birth_year = extract(year from ${birthDate}::date)::int,
+          adult_confirmed_at = now(), updated_at = now()
       where id = ${userId}`;
   }
 

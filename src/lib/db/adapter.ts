@@ -159,7 +159,7 @@ export interface DataAdapter {
   /** 프로필에서 선택한 성별로 갱신합니다. */
   updateGender(userId: string, gender: Gender): Promise<void>;
   /** 성인 확인(생년) 기록. */
-  confirmAdult(userId: string, birthYear: number): Promise<void>;
+  confirmAdult(userId: string, birthDate: string): Promise<void>;
   saveConsents(
     userId: string,
     version: string,

@@ -203,6 +203,7 @@ function seed(): Store {
       status: "active",
       adultConfirmedAt: nowIso,
       birthYear: 1994,
+      birthDate: "1994-01-01",
       gender: d.gender,
       onboardingCompletedAt: nowIso,
       consentCompletedAt: nowIso,
@@ -456,6 +457,7 @@ export class DevMemoryAdapter implements DataAdapter {
       status: "active",
       adultConfirmedAt: null,
       birthYear: null,
+      birthDate: null,
       gender: input.gender ?? null,
       onboardingCompletedAt: null,
       consentCompletedAt: null,
@@ -469,10 +471,11 @@ export class DevMemoryAdapter implements DataAdapter {
     return { ...user };
   }
 
-  async confirmAdult(userId: string, birthYear: number): Promise<void> {
+  async confirmAdult(userId: string, birthDate: string): Promise<void> {
     const u = store().users.get(userId);
     if (!u) return;
-    u.birthYear = birthYear;
+    u.birthDate = birthDate;
+    u.birthYear = Number(birthDate.slice(0, 4));
     u.adultConfirmedAt = new Date().toISOString();
   }
 

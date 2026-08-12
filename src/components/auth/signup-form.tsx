@@ -6,6 +6,7 @@ import { signup, type AuthFormState } from "@/app/(auth)/actions";
 import { Field, FormError, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useT } from "@/lib/i18n/client";
+import { latestEligibleBirthDate } from "@/lib/auth/age";
 
 export function SignupForm() {
   const t = useT();
@@ -54,6 +55,15 @@ export function SignupForm() {
           minLength={8}
         />
       </Field>
+
+      <Field label={t("onboarding.birthYear")} htmlFor="birthDate" hint={t("onboarding.birthYearHint")}>
+        <Input id="birthDate" name="birthDate" type="date" autoComplete="bday" required min="1900-01-01" max={latestEligibleBirthDate()} />
+      </Field>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-control)] border border-line bg-surface p-4 transition-colors has-[:checked]:border-champagne-dim">
+        <input type="checkbox" name="adultCheck" required className="mt-0.5 size-4 shrink-0 accent-[var(--color-champagne)]" />
+        <span className="text-sm leading-relaxed break-keep text-ivory">{t("onboarding.adultCheckbox")}</span>
+      </label>
 
       {/* 성별은 매칭이 갈리는 기준이라 가입할 때 받습니다. 나중에 바꿀 수
           없으므로 그 사실을 미리 알립니다. */}
