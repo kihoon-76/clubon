@@ -48,10 +48,13 @@ export function DailyStage({
   micOn,
   camOn,
   onLiveChange,
+  joinEndpoint,
 }: {
   sessionId: string;
   micOn: boolean;
   camOn: boolean;
+  /** 로그인·결제와 분리된 운영 점검 등에서 사용할 입장 정보 API. */
+  joinEndpoint?: string;
   /**
    * 무대가 실제로 통화에 붙었는지 알립니다. 무대가 살아 있으면 내 카메라는
    * 이 프레임이 잡고 있으므로, 화면 다른 곳에서 같은 장치를 또 열면 안 됩니다.
@@ -68,7 +71,7 @@ export function DailyStage({
     let frame: DailyCall | null = null;
 
     async function join() {
-      const res = await fetch(`/api/rooms/${sessionId}/video`, {
+      const res = await fetch(joinEndpoint ?? `/api/rooms/${sessionId}/video`, {
         cache: "no-store",
       });
 
@@ -157,7 +160,7 @@ export function DailyStage({
       callRef.current = null;
       frame?.destroy();
     };
-  }, [sessionId]);
+  }, [joinEndpoint, sessionId]);
 
   // 마이크·카메라는 앱의 상태를 원본으로 삼아 통화 쪽에 반영합니다.
   useEffect(() => {
