@@ -8,15 +8,11 @@ import { useT } from "@/lib/i18n/client";
 
 interface LivePresenceData {
   onlineUsers: number;
-  waitingLounges: number;
-  liveRooms: number;
   updatedAt: string;
 }
 
 const EMPTY: LivePresenceData = {
   onlineUsers: 0,
-  waitingLounges: 0,
-  liveRooms: 0,
   updatedAt: "",
 };
 

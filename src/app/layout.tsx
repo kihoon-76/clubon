@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
+import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { getLocale, getT } from "@/lib/i18n/server";
 
@@ -112,7 +113,10 @@ export default async function RootLayout({
       className={`${cormorant.variable} ${notoSansKr.variable} h-full`}
     >
       <body className="min-h-full antialiased">
-        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+        <LocaleProvider locale={locale}>
+          <PresenceHeartbeat />
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );

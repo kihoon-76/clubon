@@ -1,39 +1,32 @@
 import { NextResponse } from "next/server";
 
-import { getDb } from "@/lib/db";
+import { readSessionUserId } from "@/lib/auth/cookie";
+import { countOnlineUsers, touchPresence } from "@/lib/presence";
 
 export const dynamic = "force-dynamic";
 
-const ACTIVE_STATES = new Set([
-  "FORMING",
-  "READY",
-  "WAITING",
-  "MATCH_PROPOSED",
-  "MATCH_ACCEPTED",
-  "LIVE",
-]);
-
 export async function GET() {
-  const db = getDb();
-  const tables = (await db.listTables(500)).filter(
-    (table) => !table.closedAt && ACTIVE_STATES.has(table.state),
-  );
-  const memberLists = await Promise.all(
-    tables.map((table) => db.getActiveTableMembers(table.id)),
-  );
-  const onlineUsers = new Set(
-    memberLists.flatMap((members) => members.map((member) => member.userId)),
-  ).size;
+  const onlineUsers = await countOnlineUsers();
 
   return NextResponse.json(
     {
       onlineUsers,
-      waitingLounges: tables.filter((table) =>
-        ["READY", "WAITING", "MATCH_PROPOSED"].includes(table.state),
-      ).length,
-      liveRooms: tables.filter((table) => table.state === "LIVE").length,
       updatedAt: new Date().toISOString(),
     },
     { headers: { "Cache-Control": "no-store" } },
   );
+}
+
+export async function POST() {
+  const userId = await readSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const updated = await touchPresence(userId);
+  if (!updated) {
+    return NextResponse.json({ error: "presence_unavailable" }, { status: 503 });
+  }
+
+  return new NextResponse(null, { status: 204 });
 }
