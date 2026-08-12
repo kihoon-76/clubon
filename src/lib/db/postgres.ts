@@ -48,7 +48,8 @@ const globalSql = globalThis as unknown as { __clubonSql?: Sql };
 
 function client(): Sql {
   if (!globalSql.__clubonSql) {
-    const url = process.env.DATABASE_URL as string;
+    const url = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
+    if (!url) throw new Error("DATABASE_URL 또는 POSTGRES_URL이 필요합니다.");
     const isLocal = url.includes("localhost") || url.includes("127.0.0.1");
     globalSql.__clubonSql = postgres(url, {
       ssl: isLocal ? false : "require",

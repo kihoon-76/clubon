@@ -50,9 +50,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
 /** 로그인 세션 쿠키로 들어온 '진짜' 로그인 회원인지. */
 export async function isAuthenticated(): Promise<boolean> {
-  const id = await readSessionUserId();
-  if (!id) return false;
-  return !!(await getDb().getUser(id));
+  return (await readSessionUserId()) !== null;
 }
 
 export async function getSession(): Promise<Session | null> {

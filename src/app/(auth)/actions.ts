@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -89,5 +90,7 @@ export async function signup(
 
 export async function logout(): Promise<void> {
   await clearSessionCookie();
-  redirect("/");
+  const cookieStore = await cookies();
+  cookieStore.delete("clubon_dev_user");
+  redirect("/login");
 }

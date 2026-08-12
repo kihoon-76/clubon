@@ -17,7 +17,7 @@ const globalDb = globalThis as unknown as { __clubonDb?: DataAdapter };
 export function getDb(): DataAdapter {
   if (globalDb.__clubonDb) return globalDb.__clubonDb;
 
-  if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL || process.env.POSTGRES_URL) {
     globalDb.__clubonDb = new PostgresAdapter();
     return globalDb.__clubonDb;
   }

@@ -73,9 +73,10 @@ export async function ClubHeader({
                 type="submit"
                 aria-label={t("nav.logout")}
                 title={t("nav.logout")}
-                className="flex size-11 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-champagne-dim hover:text-ivory sm:size-9"
+                className="flex h-11 items-center gap-2 rounded-full border border-line px-3 text-muted transition-colors hover:border-champagne-dim hover:text-ivory sm:h-9"
               >
                 <LogOut aria-hidden className="size-4" />
+                <span className="text-xs sm:text-sm">{t("nav.logout")}</span>
               </button>
             </form>
           ) : (
