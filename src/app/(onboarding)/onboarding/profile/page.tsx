@@ -32,7 +32,7 @@ export default async function ProfileSetupPage() {
 
       <Card hairline className="mt-8">
         <CardBody>
-          <ProfileForm profile={profile} lockedGender={user.gender} />
+          <ProfileForm profile={profile} />
         </CardBody>
       </Card>
     </>

@@ -367,6 +367,13 @@ export class PostgresAdapter implements DataAdapter {
       where id = ${userId} and gender is null`;
   }
 
+  async updateGender(userId: string, gender: Gender): Promise<void> {
+    await this.sql`
+      update public.users
+      set gender = ${gender}::public.gender, updated_at = now()
+      where id = ${userId}`;
+  }
+
   async confirmAdult(userId: string, birthYear: number): Promise<void> {
     await this.sql`
       update public.users

@@ -31,15 +31,9 @@ const LANGUAGES = ["한국어", "English", "日本語", "中文"];
 /** 프로필 설정·수정 폼. 외모 점수는 수집하지 않습니다. */
 export function ProfileForm({
   profile,
-  lockedGender = null,
   submitLabel,
 }: {
   profile?: Profile | null;
-  /**
-   * 가입할 때 이미 고른 성별. 있으면 다시 묻지 않고 보여 주기만 합니다 —
-   * 매칭의 기준이라 상대를 만난 뒤 뒤바꿀 수 있으면 안 됩니다.
-   */
-  lockedGender?: Profile["gender"] | null;
   submitLabel?: string;
 }) {
   const t = useT();
@@ -69,30 +63,19 @@ export function ProfileForm({
       </Field>
 
       <Fieldset legend={t("profile.gender")}>
-        {lockedGender ? (
-          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
-            <span className="rounded-full border border-champagne bg-champagne/10 px-4 py-2 text-champagne">
-              {t(`options.gender.${lockedGender}`)}
-            </span>
-            <span className="text-xs break-keep text-faint">
-              {t("profile.genderLocked")}
-            </span>
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2.5">
-            {GENDERS.map((g, i) => (
-              <PillOption
-                key={g.value}
-                type="radio"
-                name="gender"
-                value={g.value}
-                label={t(g.key)}
-                required={i === 0}
-                defaultChecked={profile?.gender === g.value}
-              />
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2.5">
+          {GENDERS.map((g, i) => (
+            <PillOption
+              key={g.value}
+              type="radio"
+              name="gender"
+              value={g.value}
+              label={t(g.key)}
+              required={i === 0}
+              defaultChecked={profile?.gender === g.value}
+            />
+          ))}
+        </div>
       </Fieldset>
 
       <Fieldset legend={t("profile.ageBand")}>

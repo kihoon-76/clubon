@@ -30,7 +30,6 @@ export default async function EditProfilePage() {
           <CardBody>
             <ProfileForm
               profile={profile}
-              lockedGender={user.gender}
               submitLabel={t("feedback.saveChanges")}
             />
           </CardBody>

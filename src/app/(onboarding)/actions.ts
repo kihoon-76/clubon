@@ -126,13 +126,11 @@ export async function saveProfile(
     return { error: t(known ? key : "profile.errors.invalid") };
   }
 
-  // 성별의 진실은 users.gender입니다. 가입할 때 이미 골랐다면 폼 값은
-  // 무시하고 그 값을 그대로 씁니다 — 두 값이 갈라질 여지를 없앱니다.
-  const gender = user.gender ?? (parsed.data.gender as Gender | undefined);
+  const gender = parsed.data.gender as Gender | undefined;
   if (!gender) return { error: t("profile.errors.genderMissing") };
 
   const db = getDb();
-  await db.setGenderIfUnset(user.id, gender);
+  await db.updateGender(user.id, gender);
   await db.upsertProfile(user.id, {
     nickname: parsed.data.nickname,
     gender,

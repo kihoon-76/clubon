@@ -156,6 +156,8 @@ export interface DataAdapter {
    * 매칭의 기준이 되는 값이라, 상대를 만난 뒤 뒤바꿀 수 있으면 안 됩니다.
    */
   setGenderIfUnset(userId: string, gender: Gender): Promise<void>;
+  /** 프로필에서 선택한 성별로 갱신합니다. */
+  updateGender(userId: string, gender: Gender): Promise<void>;
   /** 성인 확인(생년) 기록. */
   confirmAdult(userId: string, birthYear: number): Promise<void>;
   saveConsents(

@@ -441,6 +441,11 @@ export class DevMemoryAdapter implements DataAdapter {
     if (u && u.gender === null) u.gender = gender;
   }
 
+  async updateGender(userId: string, gender: Gender): Promise<void> {
+    const u = store().users.get(userId);
+    if (u) u.gender = gender;
+  }
+
   async createUser(input: CreateUserInput): Promise<User> {
     const s = store();
     const nowIso = new Date().toISOString();

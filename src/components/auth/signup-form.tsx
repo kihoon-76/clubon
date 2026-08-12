@@ -81,9 +81,6 @@ export function SignupForm() {
             </label>
           ))}
         </div>
-        <p className="mt-2 text-xs leading-relaxed break-keep text-faint">
-          {t("auth.genderLocked")}
-        </p>
       </fieldset>
 
       <SubmitButton
