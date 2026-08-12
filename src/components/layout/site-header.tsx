@@ -10,7 +10,6 @@ export async function SiteHeader() {
 
   const nav = [
     { href: "/#how", label: t("footer.howItWorks") },
-    { href: "/#safety", label: t("nav.safety") },
     { href: "/membership", label: t("nav.pricing") },
     { href: "/safety", label: t("footer.safetyCenter") },
   ];
