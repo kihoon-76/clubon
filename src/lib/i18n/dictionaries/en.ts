@@ -59,7 +59,7 @@ export const en: DeepPartial<Dictionary> = {
     demoTitle: "Demo accounts",
     demoIntro:
       "No database is connected yet, so this runs on in-memory demo data. Use the accounts below to look around — everything resets when the server restarts.",
-    demoMember: "Member · Hana",
+    demoMember: "Member · JOHN",
     demoHost: "Other lounge's host · Doyun",
     demoAdmin: "Admin",
     demoPassword: "Shared password",

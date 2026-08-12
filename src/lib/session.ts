@@ -16,7 +16,7 @@ import type { Profile, User } from "@/lib/db/types";
  * 우선순위:
  *   1. 로그인 세션 쿠키(`clubon_session`) — 실제 로그인한 회원
  *   2. 데모 회원 전환 쿠키(`clubon_dev_user`) — 헤더의 회원 전환기
- *   3. 기본 데모 회원(하나)
+ *   3. 기본 데모 회원(JOHN)
  *
  * DATABASE_URL이 설정된 실제 배포에서는 시드 데모 계정이 없으므로 2·3은
  * 동작하지 않고, 로그인한 회원만 통과합니다.

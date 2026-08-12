@@ -58,7 +58,7 @@ export const ko = {
     demoTitle: "데모 계정",
     demoIntro:
       "아직 데이터베이스가 연결되지 않아 인메모리 데모 데이터로 동작합니다. 아래 계정으로 바로 둘러볼 수 있으며, 서버가 재시작되면 초기화됩니다.",
-    demoMember: "일반 회원 · 하나",
+    demoMember: "일반 회원 · JOHN",
     demoHost: "상대 라운지 호스트 · 도윤",
     demoAdmin: "관리자",
     demoPassword: "비밀번호 공통",

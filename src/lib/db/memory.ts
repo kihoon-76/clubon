@@ -87,7 +87,7 @@ interface DemoUser {
 const DEMO_USERS: DemoUser[] = [
   { id: "aaaaaaaa-0000-0000-0000-000000000001", email: "admin@clubon.test", nickname: "관리자", role: "admin", gender: "male", interests: ["와인", "여행", "재즈"], vibe: "relaxed", ageBand: "30대 초반" },
   { id: "aaaaaaaa-0000-0000-0000-000000000002", email: "mod@clubon.test", nickname: "모더레이터", role: "moderator", gender: "male", interests: ["영화", "게임", "음악"], vibe: "lively", ageBand: "30대 초반" },
-  { id: "aaaaaaaa-0000-0000-0000-000000000003", email: "hana@clubon.test", nickname: "하나", role: "user", gender: "female", interests: ["여행", "음악", "영화"], vibe: "balanced", ageBand: "20대 후반" },
+  { id: "aaaaaaaa-0000-0000-0000-000000000003", email: "hana@clubon.test", nickname: "JOHN", role: "user", gender: "female", interests: ["여행", "음악", "영화"], vibe: "balanced", ageBand: "20대 후반" },
   { id: "aaaaaaaa-0000-0000-0000-000000000004", email: "doyun@clubon.test", nickname: "도윤", role: "user", gender: "male", interests: ["음악", "재즈", "책"], vibe: "relaxed", ageBand: "30대 초반" },
   { id: "aaaaaaaa-0000-0000-0000-000000000005", email: "seoyeon@clubon.test", nickname: "서연", role: "user", gender: "female", interests: ["여행", "미식", "사진"], vibe: "balanced", ageBand: "20대 후반" },
   { id: "aaaaaaaa-0000-0000-0000-000000000006", email: "jiho@clubon.test", nickname: "지호", role: "user", gender: "male", interests: ["음악", "영화", "러닝"], vibe: "relaxed", ageBand: "30대 초반" },
@@ -135,7 +135,7 @@ const CANDIDATE_LOUNGES: {
   },
 ];
 
-/** 로그인 없이 둘러볼 때 기본으로 사용하는 데모 회원 (하나). */
+/** 로그인 없이 둘러볼 때 기본으로 사용하는 데모 회원 (JOHN). */
 export const DEFAULT_GUEST_USER_ID = "aaaaaaaa-0000-0000-0000-000000000003";
 
 /** 헤더의 데모 회원 전환기에 노출할 계정 목록. */
