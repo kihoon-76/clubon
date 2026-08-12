@@ -23,7 +23,7 @@ export function CardBody({
   className,
   ...props
 }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cn("p-6 sm:p-7", className)} {...props} />;
+  return <div className={cn("p-5 sm:p-7", className)} {...props} />;
 }
 
 export function CardTitle({

@@ -133,7 +133,7 @@ function PillOption({
   required?: boolean;
 }) {
   return (
-    <label className="cursor-pointer select-none rounded-full border border-line bg-surface-raised px-4 py-2 text-sm text-muted transition-colors has-[:checked]:border-champagne has-[:checked]:bg-champagne/10 has-[:checked]:text-champagne hover:border-champagne-dim/70">
+    <label className="flex min-h-11 cursor-pointer select-none items-center rounded-full border border-line bg-surface-raised px-4 py-2 text-sm text-muted transition-colors has-[:checked]:border-champagne has-[:checked]:bg-champagne/10 has-[:checked]:text-champagne hover:border-champagne-dim/70">
       <input
         type={type}
         name={name}

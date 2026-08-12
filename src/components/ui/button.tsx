@@ -8,7 +8,7 @@ type Size = "sm" | "md" | "lg";
 const base =
   "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] font-medium " +
   "transition-[background-color,border-color,color,opacity] duration-150 ease-[var(--ease-club)] " +
-  "disabled:pointer-events-none disabled:opacity-45 select-none whitespace-nowrap";
+  "min-w-0 disabled:pointer-events-none disabled:opacity-45 select-none whitespace-nowrap";
 
 const variants: Record<Variant, string> = {
   primary:
@@ -22,7 +22,7 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3.5 text-sm",
+  sm: "h-11 px-3.5 text-sm sm:h-9",
   md: "h-11 px-5 text-[0.9375rem]",
   lg: "h-13 px-7 text-base",
 };

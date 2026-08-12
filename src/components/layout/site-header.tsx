@@ -16,7 +16,7 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-ink/80 backdrop-blur-md">
-      <Container className="flex h-16 items-center justify-between gap-6">
+      <Container className="flex min-h-16 items-center justify-between gap-2 py-2 sm:gap-6">
         <Link href="/" className="shrink-0" aria-label="ClubOn">
           <Wordmark />
         </Link>
@@ -36,15 +36,15 @@ export async function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2">
           <div className="hidden sm:block">
             <LanguagePicker />
           </div>
-          <ButtonLink href="/login" variant="ghost" size="sm">
+          <ButtonLink href="/login" variant="ghost" size="sm" className="px-2.5 sm:px-3.5">
             {t("nav.login")}
           </ButtonLink>
           {/* 미리보기 단계 — 로그인 없이 바로 클럽에 입장할 수 있습니다. */}
-          <ButtonLink href="/lobby" size="sm">
+          <ButtonLink href="/lobby" size="sm" className="px-3 sm:px-3.5">
             {t("nav.enterNow")}
           </ButtonLink>
         </div>

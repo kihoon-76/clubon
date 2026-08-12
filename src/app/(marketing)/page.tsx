@@ -45,11 +45,11 @@ function Hero({ t }: { t: Translate }) {
       <div aria-hidden className="hero-atmosphere absolute inset-0" />
       <div aria-hidden className="vignette absolute inset-0" />
 
-      <Container className="relative flex min-h-[86dvh] flex-col justify-center pt-16 pb-20 sm:pt-24 sm:pb-28">
+      <Container className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center py-14 sm:min-h-[86dvh] sm:py-24">
         <div className="reveal max-w-3xl">
           <Badge tone="gold">{t("landing.badge")}</Badge>
 
-          <h1 className="mt-7 font-display text-[2.5rem] leading-[1.08] break-keep text-ivory sm:text-6xl sm:leading-[1.06] lg:text-[4.5rem]">
+          <h1 className="mt-6 font-display text-[2.25rem] leading-[1.1] break-keep text-ivory sm:mt-7 sm:text-6xl sm:leading-[1.06] lg:text-[4.5rem]">
             {t("landing.heroLine1")}
             <br />
             <span className="italic text-champagne">
@@ -57,19 +57,19 @@ function Hero({ t }: { t: Translate }) {
             </span>
           </h1>
 
-          <p className="mt-7 max-w-2xl text-lg leading-relaxed break-keep text-muted sm:text-xl">
+          <p className="mt-6 max-w-2xl text-base leading-relaxed break-keep text-muted sm:mt-7 sm:text-xl">
             {t("landing.heroBody")}
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
-            <ButtonLink href="/lobby" size="lg" className="gold-glow">
+          <div className="mt-8 grid gap-3 sm:mt-10 sm:flex sm:flex-wrap sm:items-center sm:gap-x-7 sm:gap-y-4">
+            <ButtonLink href="/lobby" size="lg" className="w-full gold-glow sm:w-auto">
               {t("landing.heroCta")}
             </ButtonLink>
             <ButtonLink
               href="#how"
               variant="ghost"
               size="lg"
-              className="group px-1 text-ivory/70 hover:text-champagne"
+              className="group w-full text-ivory/70 hover:text-champagne sm:w-auto sm:px-1"
             >
               {t("landing.heroSecondary")}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
@@ -106,7 +106,7 @@ function BentoUsp({ t }: { t: Translate }) {
   return (
     <section className="relative overflow-hidden scroll-mt-20">
       <div aria-hidden className="club-ambience absolute inset-0 opacity-70" />
-      <Container className="relative py-20 text-center break-keep sm:py-28">
+      <Container className="relative py-16 text-center break-keep sm:py-28">
         <p className="label-caps">{t("landing.uspEyebrow")}</p>
 
         {/* 이 화면에서 가장 큰 문장. 강조는 마지막 구절 하나에만 둡니다. */}
@@ -154,7 +154,7 @@ function BentoUsp({ t }: { t: Translate }) {
 function Pricing({ t }: { t: Translate }) {
   return (
     <section id="pricing" className="scroll-mt-20">
-      <Container className="py-20 sm:py-24">
+      <Container className="py-16 sm:py-24">
         <Card hairline className="mx-auto max-w-2xl">
           <CardBody className="text-center break-keep">
             <p className="label-caps">{t("landing.priceEyebrow")}</p>
@@ -186,14 +186,14 @@ const STEP_ICONS: LucideIcon[] = [
 function HowItWorks({ t }: { t: Translate }) {
   return (
     <section id="how" className="scroll-mt-20 border-y border-line/70 bg-surface/50">
-      <Container className="py-20 sm:py-28">
+      <Container className="py-16 sm:py-28">
         <SectionHeading
           eyebrow={t("landing.howEyebrow")}
           title={t("landing.howTitle")}
           description={t("landing.howBody")}
         />
 
-        <ol className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <ol className="mt-10 grid gap-4 sm:mt-14 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {STEP_ICONS.map((Icon, index) => (
             <li key={index}>
               <Card hairline className="h-full transition-colors hover:border-champagne-dim">
@@ -232,7 +232,7 @@ function Waiter({ t }: { t: Translate }) {
 
   return (
     <section>
-      <Container className="grid items-center gap-14 py-20 sm:py-28 lg:grid-cols-2">
+      <Container className="grid items-center gap-10 py-16 sm:gap-14 sm:py-28 lg:grid-cols-2">
         <div>
           <SectionHeading
             eyebrow={t("landing.waiterEyebrow")}
@@ -278,13 +278,13 @@ function Waiter({ t }: { t: Translate }) {
 function Safety({ t }: { t: Translate }) {
   return (
     <section id="safety" className="scroll-mt-20">
-      <Container className="py-20 sm:py-28">
+      <Container className="py-16 sm:py-28">
         <SectionHeading
           eyebrow={t("landing.safetyEyebrow")}
           title={t("landing.safetyTitle")}
         />
 
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (
             <Card key={n} className="h-full">
               <CardBody>
@@ -313,8 +313,8 @@ function ClosingCta({ t }: { t: Translate }) {
   return (
     <section className="relative overflow-hidden">
       <div aria-hidden className="hero-atmosphere absolute inset-0 opacity-70" />
-      <Container className="relative py-24 text-center sm:py-32">
-        <h2 className="mx-auto max-w-2xl font-display text-4xl leading-tight break-keep text-ivory sm:text-5xl">
+      <Container className="relative py-20 text-center sm:py-32">
+        <h2 className="mx-auto max-w-2xl font-display text-3xl leading-tight break-keep text-ivory sm:text-5xl">
           {t("landing.closingLine1")}
           <br />
           <span className="italic text-champagne">
@@ -324,11 +324,11 @@ function ClosingCta({ t }: { t: Translate }) {
         <p className="mx-auto mt-6 max-w-xl text-[0.9375rem] leading-relaxed break-keep text-muted">
           {t("landing.closingBody")}
         </p>
-        <div className="mt-9 flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/lobby" size="lg" className="gold-glow">
+        <div className="mt-9 grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
+          <ButtonLink href="/lobby" size="lg" className="w-full gold-glow sm:w-auto">
             {t("landing.heroCta")}
           </ButtonLink>
-          <ButtonLink href="/membership" variant="secondary" size="lg">
+          <ButtonLink href="/membership" variant="secondary" size="lg" className="w-full sm:w-auto">
             {t("landing.closingSecondary")}
           </ButtonLink>
         </div>
@@ -351,11 +351,11 @@ function SectionHeading({
   return (
     <div className="max-w-2xl break-keep">
       <p className="label-caps">{eyebrow}</p>
-      <h2 className="mt-4 font-display text-3xl leading-tight text-ivory sm:text-[2.5rem]">
+      <h2 className="mt-4 font-display text-[1.75rem] leading-tight text-ivory sm:text-[2.5rem]">
         {title}
       </h2>
       {description ? (
-        <p className="mt-5 text-[1.0625rem] leading-relaxed text-muted">
+        <p className="mt-4 text-base leading-relaxed text-muted sm:mt-5 sm:text-[1.0625rem]">
           {description}
         </p>
       ) : null}

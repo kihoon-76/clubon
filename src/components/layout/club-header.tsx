@@ -31,12 +31,12 @@ export async function ClubHeader({
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-ink/80 backdrop-blur-md">
-      <Container className="flex min-h-16 flex-wrap items-center justify-between gap-3 py-2.5">
+      <Container className="flex min-h-16 items-center justify-between gap-2 py-2.5 sm:gap-3">
         <Link href="/lobby" aria-label={t("nav.toLobby")} className="shrink-0">
           <Wordmark />
         </Link>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
           <span
             className="hidden items-center gap-2 rounded-full border border-line px-3 py-1.5 text-[0.6875rem] tracking-wide text-muted md:inline-flex"
             title={statusText}
@@ -73,7 +73,7 @@ export async function ClubHeader({
                 type="submit"
                 aria-label={t("nav.logout")}
                 title={t("nav.logout")}
-                className="flex size-9 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-champagne-dim hover:text-ivory"
+                className="flex size-11 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-champagne-dim hover:text-ivory sm:size-9"
               >
                 <LogOut aria-hidden className="size-4" />
               </button>
@@ -81,7 +81,7 @@ export async function ClubHeader({
           ) : (
             <Link
               href="/login"
-              className="flex h-9 items-center rounded-full border border-line px-3 text-xs text-muted transition-colors hover:border-champagne-dim hover:text-ivory"
+              className="flex h-11 items-center rounded-full border border-line px-3 text-xs text-muted transition-colors hover:border-champagne-dim hover:text-ivory sm:h-9"
             >
               {t("nav.login")}
             </Link>
@@ -106,7 +106,7 @@ function IconLink({
       href={href}
       title={label}
       aria-label={label}
-      className="flex h-9 items-center gap-2 rounded-full border border-line px-3 text-muted transition-colors hover:border-champagne-dim hover:text-ivory"
+      className="flex h-11 items-center gap-2 rounded-full border border-line px-3 text-muted transition-colors hover:border-champagne-dim hover:text-ivory sm:h-9"
     >
       {children}
     </Link>
