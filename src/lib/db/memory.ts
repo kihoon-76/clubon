@@ -232,8 +232,8 @@ function seed(): Store {
   const operatingHours: OperatingHour[] = Array.from({ length: 7 }, (_, day) => ({
     clubId: CLUB_ID,
     dayOfWeek: day,
-    opensAt: "18:00",
-    closesAt: "04:00",
+    opensAt: "00:00",
+    closesAt: "00:00",
     closesNextDay: true,
   }));
 

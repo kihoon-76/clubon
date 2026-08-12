@@ -31,7 +31,6 @@ export default async function LandingPage() {
       <Pricing t={t} />
       <Waiter t={t} />
       <Safety t={t} />
-      <Hours t={t} />
       <ClosingCta t={t} />
     </>
   );
@@ -306,40 +305,6 @@ function Safety({ t }: { t: Translate }) {
         <p className="mt-8 max-w-3xl text-sm leading-relaxed break-keep text-faint">
           {t("landing.safetyNote")}
         </p>
-      </Container>
-    </section>
-  );
-}
-
-/* ----------------------------------------------------------------- Hours */
-
-function Hours({ t }: { t: Translate }) {
-  return (
-    <section className="border-t border-line/70 bg-surface/50">
-      <Container className="py-20 sm:py-24">
-        <Card hairline className="overflow-hidden">
-          <CardBody className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              <span
-                aria-hidden
-                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-champagne-dim/60 text-champagne"
-              >
-                <Clock className="size-5" />
-              </span>
-              <div>
-                <h2 className="font-display text-2xl break-keep text-ivory">
-                  {t("landing.hoursTitle")}
-                </h2>
-                <p className="mt-2 text-[0.9375rem] leading-relaxed break-keep text-muted">
-                  {t("landing.hoursBody")}
-                </p>
-              </div>
-            </div>
-            <ButtonLink href="/lobby" variant="secondary" className="shrink-0">
-              {t("landing.hoursCta")}
-            </ButtonLink>
-          </CardBody>
-        </Card>
       </Container>
     </section>
   );

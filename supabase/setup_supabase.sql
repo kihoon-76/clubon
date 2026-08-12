@@ -526,7 +526,7 @@ values ('11111111-1111-1111-1111-111111111111','ClubOn Seoul','Asia/Seoul',1,4,2
 on conflict (id) do nothing;
 
 insert into public.operating_hours (club_id,day_of_week,opens_at,closes_at,closes_next_day)
-select '11111111-1111-1111-1111-111111111111', d, time '18:00', time '04:00', true
+select '11111111-1111-1111-1111-111111111111', d, time '00:00', time '00:00', true
 from generate_series(0,6) as d
 on conflict (club_id,day_of_week) do nothing;
 

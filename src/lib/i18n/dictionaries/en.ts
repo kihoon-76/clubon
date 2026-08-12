@@ -440,9 +440,8 @@ export const en: DeepPartial<Dictionary> = {
     safetyNote:
       "Moderation combines automated screening with human review, but cannot be guaranteed to catch every violation. The platform also cannot technically block every screenshot or off-device recording. That is why watermarks and reporting run together.",
 
-    hoursTitle: "Every evening, 6pm to 4am",
-    hoursBody:
-      "Even when the club is closed you can sign up, edit your profile, invite friends, and reserve a table.",
+    hoursTitle: "Open 24/7",
+    hoursBody: "Available worldwide at any time, regardless of time zone.",
     hoursCta: "Sign up ahead of time",
 
     closingLine1: "An evening where conversation comes first,",
@@ -957,7 +956,7 @@ export const en: DeepPartial<Dictionary> = {
     titleLine2: "closed right now.",
     nextOpen: "Opens next",
     nextOpenUnknown: "To be announced",
-    body: "The club opens every evening from 6pm to 4am. While it is closed you can still edit your profile, invite friends, and get ready for your next visit.",
+    body: "ClubOn is available worldwide, 24 hours a day, every day.",
     toDashboard: "Go to my page",
     toHome: "Home",
   },
