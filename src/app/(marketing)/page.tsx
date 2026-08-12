@@ -76,9 +76,6 @@ function Hero({ t }: { t: Translate }) {
             </ButtonLink>
           </div>
 
-          <p className="mt-6 text-sm break-keep text-faint">
-            {t("landing.heroNote")}
-          </p>
         </div>
 
         <a

@@ -364,8 +364,6 @@ export const en: DeepPartial<Dictionary> = {
       "You meet through conversation, not by swiping profiles. Sit at one table with your friends, and start talking with the lounge you are matched with.",
     heroCta: "Request entry",
     heroSecondary: "See how it works",
-    heroNote:
-      "There is no 1-to-1 matching. Every conversation starts as a group of at least two.",
     liveNow: "Live on ClubOn",
     liveNote: "Signed-in users active within the last 90 seconds, refreshed every 15 seconds.",
     liveUsers: "Online now",
@@ -378,7 +376,7 @@ export const en: DeepPartial<Dictionary> = {
     uspHeadlineAccent: "someone new",
     uspSub1: "A private online lounge — no travel, no waiting in line.",
     uspSub2:
-      "Walk in with your friends and meet new people at your own pace.",
+      "Walk in on your own or with friends and meet new people at your own pace.",
     uspCta: "Explore the lounges",
     uspSignature: "CLUB ON — the online social lounge",
 
@@ -389,7 +387,7 @@ export const en: DeepPartial<Dictionary> = {
     howEyebrow: "How it works",
     howTitle: "Start at one table, meet another",
     howBody:
-      "ClubOn is not random video chat. It opens at set hours, you enter as a group, and a match happens only when both sides agree.",
+      "ClubOn is not random video chat. You enter as a group, and a match happens only when both sides agree.",
     step1Title: "Verify your age, then enter",
     step1Body:
       "You register as a member after a year-of-birth check and item-by-item consent.",
