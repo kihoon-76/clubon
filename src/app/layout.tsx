@@ -27,6 +27,7 @@ const notoSansKr = Noto_Sans_KR({
  * 따라 도메인이 달라지므로 환경 변수에서 순서대로 찾고, 없으면 로컬로 둡니다.
  */
 function siteUrl(): string {
+  if (process.env.NODE_ENV === "production") return "https://www.club-on.app";
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
   // 프로덕션 별칭(미리보기 배포에서도 대표 도메인을 가리킵니다)
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
