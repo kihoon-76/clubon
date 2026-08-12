@@ -84,7 +84,7 @@ const profileSchema = z.object({
     .trim()
     .min(2, "profile.errors.nicknameShort")
     .max(20, "profile.errors.nicknameLong"),
-  gender: z.enum(["female", "male", "other"]).optional(),
+  gender: z.enum(["female", "male"]).optional(),
   ageBand: z.enum(AGE_BAND_OPTIONS),
   region: z.string().trim().max(40).optional(),
   groupVibe: z.enum(

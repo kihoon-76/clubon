@@ -23,7 +23,6 @@ import {
 const GENDERS: { value: string; key: string }[] = [
   { value: "female", key: "options.gender.female" },
   { value: "male", key: "options.gender.male" },
-  { value: "other", key: "options.gender.other" },
 ];
 
 const LANGUAGES = ["한국어", "English", "日本語", "中文"];
@@ -103,7 +102,7 @@ export function ProfileForm({
               name="groupVibe"
               value={o.value}
               label={energyLabel(t, o.value)}
-              defaultChecked={(profile?.groupVibe ?? "balanced") === o.value}
+              required={o.value === ENERGY_OPTIONS[0].value}
             />
           ))}
         </div>
