@@ -366,8 +366,8 @@ export const en: DeepPartial<Dictionary> = {
     heroNote:
       "There is no 1-to-1 matching. Every conversation starts as a group of at least two.",
     liveNow: "Live on ClubOn",
-    liveNote: "Members currently active in lounges, refreshed every 15 seconds.",
-    liveUsers: "Members",
+    liveNote: "Signed-in users active within the last 90 seconds, refreshed every 15 seconds.",
+    liveUsers: "Online now",
     waitingLounges: "Waiting",
     liveRooms: "In conversation",
     scrollDown: "Scroll down",

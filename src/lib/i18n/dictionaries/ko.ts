@@ -375,8 +375,8 @@ export const ko = {
     heroNote:
       "1:1 매칭은 제공하지 않습니다. 모든 대화는 최소 2명 이상의 그룹으로 시작됩니다.",
     liveNow: "실시간 ClubOn",
-    liveNote: "현재 라운지에 참여 중인 회원 현황이며 15초마다 갱신됩니다.",
-    liveUsers: "참여 회원",
+    liveNote: "최근 90초 이내 활동한 로그인 사용자이며 15초마다 갱신됩니다.",
+    liveUsers: "현재 접속 중",
     waitingLounges: "매칭 대기",
     liveRooms: "대화 중",
     scrollDown: "아래로 스크롤",
