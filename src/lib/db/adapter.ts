@@ -209,6 +209,8 @@ export interface DataAdapter {
   ): Promise<Booking>;
   getBookingForTable(tableId: string): Promise<Booking | null>;
   getBooking(id: string): Promise<Booking | null>;
+  /** Finds the accepted booking that owns a persisted video session. */
+  getBookingBySessionId(sessionId: string): Promise<Booking | null>;
   /** 한쪽 라운지의 수락/거절을 기록하고 갱신된 제안을 반환합니다. */
   respondToBooking(
     bookingId: string,

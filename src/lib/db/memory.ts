@@ -863,6 +863,11 @@ export class DevMemoryAdapter implements DataAdapter {
     return b ? structuredClone(b) : null;
   }
 
+  async getBookingBySessionId(sessionId: string): Promise<Booking | null> {
+    const booking = [...store().bookings.values()].find((b) => b.sessionId === sessionId);
+    return booking ? { ...booking, reasons: [...booking.reasons] } : null;
+  }
+
   async respondToBooking(
     bookingId: string,
     side: "requester" | "matched",

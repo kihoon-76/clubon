@@ -84,6 +84,8 @@ export interface CreateSessionMember {
 }
 
 export function createSession(input: {
+  /** Persisted id used to restore a room on another serverless instance. */
+  sessionId?: string;
   bookingId: string;
   tableAId: string;
   tableBId: string;
@@ -102,7 +104,7 @@ export function createSession(input: {
   if (existing) return { ...existing };
 
   const session: VideoSession = {
-    id: globalThis.crypto.randomUUID(),
+    id: input.sessionId ?? globalThis.crypto.randomUUID(),
     bookingId: input.bookingId,
     tableAId: input.tableAId,
     tableBId: input.tableBId,

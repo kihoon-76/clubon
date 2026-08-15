@@ -736,6 +736,12 @@ export class PostgresAdapter implements DataAdapter {
     return rows.length ? mapBooking(rows[0]) : null;
   }
 
+  async getBookingBySessionId(sessionId: string): Promise<Booking | null> {
+    const rows = await this.sql`
+      select * from public.bookings where session_id = ${sessionId} limit 1`;
+    return rows.length ? mapBooking(rows[0]) : null;
+  }
+
   async respondToBooking(
     bookingId: string,
     side: "requester" | "matched",

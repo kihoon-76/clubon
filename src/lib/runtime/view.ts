@@ -150,10 +150,33 @@ export async function buildRoomView(
   sessionId: string,
   viewerId: string,
 ): Promise<RoomView | null> {
-  const session = room.getSession(sessionId);
-  if (!session) return null;
-
   const db = getDb();
+  let session = room.getSession(sessionId);
+  if (!session) {
+    const persisted = await db.getBookingBySessionId(sessionId);
+    if (!persisted || persisted.state !== "ACCEPTED") return null;
+    const [tableA, tableB, profilesA, profilesB] = await Promise.all([
+      db.getTable(persisted.requesterTableId),
+      db.getTable(persisted.matchedTableId),
+      db.getProfilesForTable(persisted.requesterTableId),
+      db.getProfilesForTable(persisted.matchedTableId),
+    ]);
+    if (!tableA || !tableB) return null;
+    session = room.createSession({
+      sessionId,
+      bookingId: persisted.id,
+      tableAId: tableA.id,
+      tableBId: tableB.id,
+      hostAUserId: tableA.hostUserId,
+      hostBUserId: tableB.hostUserId,
+      waiterId: persisted.waiterId,
+      members: [
+        ...profilesA.map((p) => ({ userId: p.userId, tableId: tableA.id, nickname: p.nickname, simulated: tableA.isTest })),
+        ...profilesB.map((p) => ({ userId: p.userId, tableId: tableB.id, nickname: p.nickname, simulated: tableB.isTest })),
+      ],
+    });
+  }
+
   const t = await getT();
   const booking = await db.getBooking(session.bookingId);
   const waiterId = booking?.waiterId ?? null;
