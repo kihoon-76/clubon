@@ -10,6 +10,9 @@ import { describeClubStatus } from "@/lib/club/status";
 import { getT } from "@/lib/i18n/server";
 import { getSession } from "@/lib/session";
 import { now } from "@/lib/time";
+import { countTodayUsers } from "@/lib/presence";
+import { isOwner } from "@/lib/owner";
+import { RedeemGiftForm } from "@/components/passes/pass-code-forms";
 
 export async function generateMetadata() {
   return { title: (await getT())("lobby.eyebrow") };
@@ -33,7 +36,11 @@ export default async function LobbyPage({
   // 운영시간 게이트 — 닫혀 있으면 마감 페이지로.
   if (!status.isOpen) redirect("/closed");
 
-  const activeTable = await db.getActiveTableForUser(session.user.id);
+  const [activeTable, wallet, todayUsers] = await Promise.all([
+    db.getActiveTableForUser(session.user.id),
+    db.getWallet(session.user.id),
+    countTodayUsers(),
+  ]);
   const members = activeTable
     ? await db.getActiveTableMembers(activeTable.id)
     : [];
@@ -55,6 +62,12 @@ export default async function LobbyPage({
           ? t("lobby.openUntil", { time: status.closesAtText })
           : t("lobby.openNow")}
       </p>
+      <div className="mt-6 flex flex-wrap gap-3 text-sm">
+        <span className="rounded-full border border-line bg-surface px-4 py-2 text-muted">오늘 접속 회원 <strong className="ml-1 text-ivory">{todayUsers}명</strong></span>
+        <span className="rounded-full border border-line bg-surface px-4 py-2 text-muted">내 이용권 <strong className="ml-1 text-ivory">{isOwner(session.user) ? "무제한" : `${wallet.remainingMatches}회`}</strong></span>
+      </div>
+
+      {isOwner(session.user) ? <ButtonLink href="/owner" className="mt-5">사장 대시보드 · 가상 매치 테스트</ButtonLink> : null}
 
       {sp.staff === "required" ? (
         <p
@@ -121,6 +134,7 @@ export default async function LobbyPage({
       <p className="mt-10 max-w-2xl text-sm leading-relaxed break-keep text-faint">
         {t("lobby.groupNote")}
       </p>
+      {!isOwner(session.user) ? <Card hairline className="mt-6"><CardBody><h2 className="font-display text-xl text-ivory">선물받은 이용권이 있나요?</h2><div className="mt-4 max-w-md"><RedeemGiftForm /></div></CardBody></Card> : null}
     </Container>
   );
 }

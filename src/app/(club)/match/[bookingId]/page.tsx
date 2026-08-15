@@ -75,7 +75,7 @@ export default async function MatchProposalPage({
           waiter={waiter}
           myResponse={myResponse}
           counterpartResponse={counterpartResponse}
-          counterpartIsDemo={isSeededDemoLounge(counterpartId)}
+          counterpartIsDemo={isSeededDemoLounge(counterpartId) || counterpartTable.isTest}
           totalParticipants={myProfiles.length + counterpartProfiles.length}
         />
 

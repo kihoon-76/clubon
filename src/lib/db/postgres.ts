@@ -129,6 +129,8 @@ function mapTable(r: Row): Table {
     inviteCode: r.invite_code as string,
     waiterId: (r.waiter_id as string) ?? null,
     regionCode: (r.region_code as string) ?? null,
+    isTest: Boolean(r.is_test),
+    testImageUrl: (r.test_image_url as string) ?? null,
     createdAt: iso(r.created_at),
     updatedAt: iso(r.updated_at),
     waitingSince: isoOrNull(r.waiting_since),
@@ -638,6 +640,7 @@ export class PostgresAdapter implements DataAdapter {
     const candidateTables = await this.sql`
       select * from public.tables
       where id <> ${tableId}
+        and is_test = false
         and state in ('WAITING', 'READY')
         and closed_at is null
         and (
@@ -931,6 +934,7 @@ export class PostgresAdapter implements DataAdapter {
     ownerUserId: string;
     roomId: string;
     minutes: number;
+    complimentary?: boolean;
   }): Promise<StartUsageResult> {
     return this.sql.begin(async (tx) => {
       await tx`
@@ -948,11 +952,11 @@ export class PostgresAdapter implements DataAdapter {
         where session_id = ${input.sessionId} and user_id = ${input.userId}`;
 
       const alreadyUsed = used.length > 0;
-      if (!alreadyUsed && Number(wallet[0]?.remaining_matches ?? 0) < 1) {
+      if (!input.complimentary && !alreadyUsed && Number(wallet[0]?.remaining_matches ?? 0) < 1) {
         return { ok: false, reason: "no_matches" as const };
       }
 
-      if (!alreadyUsed) {
+      if (!input.complimentary && !alreadyUsed) {
         await tx`
           update public.pass_wallets
           set remaining_matches = remaining_matches - 1, updated_at = now()
@@ -977,7 +981,7 @@ export class PostgresAdapter implements DataAdapter {
         select * from public.lounge_usages
         where session_id = ${input.sessionId}`;
 
-      return { ok: true, usage: mapUsage(usage[0]), charged: !alreadyUsed };
+      return { ok: true, usage: mapUsage(usage[0]), charged: !input.complimentary && !alreadyUsed };
     });
   }
 

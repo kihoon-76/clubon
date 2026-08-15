@@ -269,6 +269,7 @@ export interface DataAdapter {
     ownerUserId: string;
     roomId: string;
     minutes: number;
+    complimentary?: boolean;
   }): Promise<StartUsageResult>;
 
   getLoungeUsage(sessionId: string): Promise<LoungeUsage | null>;

@@ -44,3 +44,8 @@ export async function countOnlineUsers(): Promise<number> {
   const count = await callPresenceRpc<number>("count_online_users", {});
   return typeof count === "number" ? count : 0;
 }
+
+export async function countTodayUsers(): Promise<number> {
+  const count = await callPresenceRpc<number>("count_today_users", {});
+  return typeof count === "number" ? count : 0;
+}

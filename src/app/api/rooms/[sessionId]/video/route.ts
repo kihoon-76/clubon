@@ -5,6 +5,7 @@ import { LOUNGE_MINUTES } from "@/lib/payments/catalog";
 import { roomOwnerId } from "@/lib/runtime/store";
 import { buildRoomView } from "@/lib/runtime/view";
 import { getCurrentUser } from "@/lib/session";
+import { isOwner } from "@/lib/owner";
 import {
   createMeetingToken,
   ensureRoom,
@@ -71,6 +72,7 @@ export async function GET(
     ownerUserId,
     roomId: roomNameFor(sessionId),
     minutes: LOUNGE_MINUTES,
+    complimentary: isOwner(user),
   });
 
   if (!usage.ok) {

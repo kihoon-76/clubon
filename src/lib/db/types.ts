@@ -126,6 +126,10 @@ export interface Table {
    * 후보에서 빠집니다.
    */
   regionCode: string | null;
+  /** Production matching never includes owner-only virtual test lounges. */
+  isTest: boolean;
+  /** Optional promotional image shown only for a clearly labelled test lounge. */
+  testImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
   waitingSince: string | null;

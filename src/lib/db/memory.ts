@@ -255,6 +255,8 @@ function seed(): Store {
       // 데모 라운지에는 지역을 두지 않습니다. 아래 findBestMatch가 시드
       // 라운지만 지역 필터에서 빼 주므로, 어느 지역을 골라도 데모가 돕니다.
       regionCode: null,
+      isTest: true,
+      testImageUrl: null,
       createdAt: nowIso,
       updatedAt: nowIso,
       waitingSince: nowIso,
@@ -618,6 +620,8 @@ export class DevMemoryAdapter implements DataAdapter {
       inviteCode,
       waiterId: input.waiterId,
       regionCode: input.regionCode,
+      isTest: false,
+      testImageUrl: null,
       createdAt: nowIso,
       updatedAt: nowIso,
       waitingSince: null,
@@ -1016,6 +1020,7 @@ export class DevMemoryAdapter implements DataAdapter {
     ownerUserId: string;
     roomId: string;
     minutes: number;
+    complimentary?: boolean;
   }): Promise<StartUsageResult> {
     const s = store();
 
@@ -1024,11 +1029,11 @@ export class DevMemoryAdapter implements DataAdapter {
     const alreadyUsed = s.matchUses.has(useKey);
 
     const w = ensureWallet(input.userId);
-    if (!alreadyUsed && w.remainingMatches < 1) {
+    if (!input.complimentary && !alreadyUsed && w.remainingMatches < 1) {
       return { ok: false, reason: "no_matches" };
     }
 
-    if (!alreadyUsed) {
+    if (!input.complimentary && !alreadyUsed) {
       w.remainingMatches -= 1;
       w.updatedAt = new Date().toISOString();
       s.matchUses.add(useKey);
@@ -1053,7 +1058,7 @@ export class DevMemoryAdapter implements DataAdapter {
       s.usages.set(input.sessionId, usage);
     }
 
-    return { ok: true, usage: { ...usage }, charged: !alreadyUsed };
+    return { ok: true, usage: { ...usage }, charged: !input.complimentary && !alreadyUsed };
   }
 
   async getLoungeUsage(sessionId: string): Promise<LoungeUsage | null> {

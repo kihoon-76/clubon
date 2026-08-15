@@ -53,7 +53,6 @@ export const WAITERS: Waiter[] = [
   { id: "yujin", gender: "male", style: "allblack", accent: "#5b6a86", photoUrl: "/waiters/yujin.webp" },
   { id: "haram", gender: "female", style: "tweed", accent: "#b08d57", photoUrl: "/waiters/haram.webp" },
   { id: "jin", gender: "male", style: "leather", accent: "#7d6a86", photoUrl: "/waiters/jin.webp" },
-  { id: "noah", gender: "male", style: "hospitality", accent: "#5f8a86", photoUrl: "/waiters/noah.webp" },
 ];
 
 export function getWaiter(id: string): Waiter | undefined {

@@ -10,6 +10,7 @@ import { getRegion, KOREA } from "@/lib/regions";
 import { hasBlockBetween } from "@/lib/runtime/store";
 import { requireOnboardedSession } from "@/lib/session";
 import { getWaiter } from "@/lib/waiters";
+import { isOwner } from "@/lib/owner";
 import {
   AGE_BAND_OPTIONS,
   ENERGY_OPTIONS,
@@ -122,6 +123,10 @@ export async function resetEntry(): Promise<void> {
 export async function startMatching(): Promise<void> {
   const { user } = await requireOnboardedSession("/entry");
   const db = getDb();
+
+  if (!isOwner(user) && (await db.getWallet(user.id)).remainingMatches < 1) {
+    redirect("/entry?error=pass_required");
+  }
 
   const myTable = await db.getActiveTableForUser(user.id);
   if (!myTable) redirect("/entry");

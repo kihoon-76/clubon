@@ -10,6 +10,7 @@ import type { Translate } from "@/lib/i18n/types";
 import { describeReason } from "@/lib/match/score";
 import { genderLabel } from "@/lib/match-options";
 import { waiterName, type Waiter } from "@/lib/waiters";
+import Image from "next/image";
 
 /** 프로필의 성별에는 매칭 조건에 없는 "기타"가 있습니다. */
 function profileGenderLabel(t: Translate, gender: Profile["gender"]): string {
@@ -65,6 +66,12 @@ export async function BookingResult({
       </div>
 
       <Card hairline className="overflow-hidden">
+        {counterpartTable.testImageUrl ? (
+          <div className="relative aspect-[16/9] border-b border-line">
+            <Image src={counterpartTable.testImageUrl} alt={`${counterpartTable.name} 가상 테스트 인물`} fill sizes="(max-width: 768px) 100vw, 672px" className="object-cover" />
+            <span className="absolute left-3 top-3 rounded-full border border-champagne-dim bg-ink/85 px-3 py-1 text-xs text-champagne">가상 테스트 라운지 · 실제 회원 아님</span>
+          </div>
+        ) : null}
         <CardBody className="space-y-6">
           <div>
             <p className="label-caps">{t("match.counterpart")}</p>

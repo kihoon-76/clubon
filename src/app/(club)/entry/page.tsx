@@ -22,6 +22,9 @@ import type { Translate } from "@/lib/i18n/types";
 import { requireOnboardedSession } from "@/lib/session";
 import { now } from "@/lib/time";
 import { getWaiter, waiterEpithet, waiterName } from "@/lib/waiters";
+import { isOwner } from "@/lib/owner";
+import { grantTestPass } from "@/app/(club)/passes/actions";
+import { RedeemGiftForm } from "@/components/passes/pass-code-forms";
 
 export async function generateMetadata() {
   return { title: (await getT())("entry.metaTitle") };
@@ -35,6 +38,7 @@ const ERROR_CODES = new Set([
   "unknown",
   "not_configured",
   "creem_error",
+  "pass_required",
 ]);
 
 /**
@@ -103,7 +107,7 @@ export default async function EntryPage({
         </p>
       ) : null}
 
-      <WalletLine t={t} remaining={wallet.remainingMatches} />
+      <WalletLine t={t} remaining={wallet.remainingMatches} unlimited={isOwner(user)} />
 
       {table ? (
         <EntrySummary
@@ -111,6 +115,7 @@ export default async function EntryPage({
           regionCode={table.regionCode}
           waiterId={table.waiterId}
           remaining={wallet.remainingMatches}
+          unlimited={isOwner(user)}
           searched={searched}
         />
       ) : (
@@ -131,13 +136,13 @@ export default async function EntryPage({
 
 /* ------------------------------------------------------------ 잔여 안내 */
 
-function WalletLine({ t, remaining }: { t: Translate; remaining: number }) {
+function WalletLine({ t, remaining, unlimited = false }: { t: Translate; remaining: number; unlimited?: boolean }) {
   return (
     <p className="mt-6 flex items-center gap-2 text-sm text-muted">
       <Ticket aria-hidden className="size-4 text-champagne" />
       {t("entry.remaining")}{" "}
       <strong className="font-mono tabular-nums text-ivory">
-        {t("entry.times", { count: remaining })}
+        {unlimited ? "무제한 (사장 계정)" : t("entry.times", { count: remaining })}
       </strong>
     </p>
   );
@@ -151,16 +156,18 @@ function EntrySummary({
   waiterId,
   remaining,
   searched,
+  unlimited,
 }: {
   t: Translate;
   regionCode: string | null;
   waiterId: string | null;
   remaining: number;
   searched: boolean;
+  unlimited: boolean;
 }) {
   const region = regionCode ? regionLabel(regionCode, t) : null;
   const waiter = waiterId ? getWaiter(waiterId) : null;
-  const canMatch = remaining > 0;
+  const canMatch = unlimited || remaining > 0;
 
   // 결제는 링크(GET)가 아니라 form POST입니다. 프리페치나 크롤러가 결제
   // 세션을 만들지 못하게 하려는 것으로, 방 안의 연장 상품과 같은 규칙입니다.
@@ -209,6 +216,12 @@ function EntrySummary({
                 <Clock aria-hidden className="mt-0.5 size-4 shrink-0 text-champagne" />
                 {t("entry.needPayment", { matches: ENTRY_PASS.matches })}
               </p>
+              <form action={grantTestPass}>
+                <Button type="submit" className="w-full gold-glow">테스트 이용권 5회 받기</Button>
+              </form>
+              <div className="rounded-[var(--radius-control)] border border-line bg-surface p-4">
+                <RedeemGiftForm />
+              </div>
               {canBuy ? (
                 <form action="/api/payments/checkout" method="post">
                   <input type="hidden" name="code" value={product.code} />

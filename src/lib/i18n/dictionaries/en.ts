@@ -232,6 +232,7 @@ export const en: DeepPartial<Dictionary> = {
       unknown: "We do not recognise that item.",
       not_configured: "Payments are not connected yet. Please try again shortly.",
       creem_error: "We could not open the checkout page. Please try again shortly.",
+      pass_required: "You need a pass to enter the lounge. Claim a test pass or redeem a gift code.",
     },
   },
   tableState: {
@@ -799,7 +800,7 @@ export const en: DeepPartial<Dictionary> = {
     fallbackName: "Lounge manager",
     dohyun: {
       name: "Dohyun",
-      epithet: "The classic host",
+      epithet: "20s match specialist",
       outfit: "Classic black-tie tuxedo",
       tagline: "Opens your first seat with impeccable form.",
       personality:
@@ -812,7 +813,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     ian: {
       name: "Iseo",
-      epithet: "The conversation curator",
+      epithet: "30s match specialist",
       outfit: "Three-piece tailored suit",
       tagline: "Reads your taste and picks tonight's topic with elegance.",
       personality:
@@ -825,7 +826,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     jaeha: {
       name: "Jaeha",
-      epithet: "The friendly host",
+      epithet: "40s match specialist",
       outfit: "Knitwear and slacks",
       tagline: "Comfort over formality — awkwardness melts away.",
       personality: "Warm and easygoing; you relax just having him nearby.",
@@ -837,7 +838,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     taeo: {
       name: "Taeo",
-      epithet: "The trendsetter",
+      epithet: "50s match specialist",
       outfit: "Oversized streetwear and chains",
       tagline: "Young and lively — fills the lounge with energy.",
       personality: "Free-spirited, energetic, and always on top of what's new.",
@@ -849,7 +850,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     sunwoo: {
       name: "Serin",
-      epithet: "The chemistry reader",
+      epithet: "Global friend specialist",
       outfit: "Velvet smoking jacket",
       tagline: "Catches the moment two people click.",
       personality:
@@ -862,7 +863,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     seojun: {
       name: "Seojun",
-      epithet: "The traveller",
+      epithet: "Big-talk energy specialist",
       outfit: "White dinner jacket",
       tagline: "Finds common ground through taste and travel.",
       personality:
@@ -875,7 +876,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     yujin: {
       name: "Yujin",
-      epithet: "The measured quiet",
+      epithet: "Shy-person rescue team",
       outfit: "Minimal all-black tailoring",
       tagline: "Respects the pace of those who speak less.",
       personality:
@@ -888,7 +889,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     haram: {
       name: "Harin",
-      epithet: "The culture guide",
+      epithet: "Taste-match specialist",
       outfit: "British tweed jacket",
       tagline: "Deeper conversation, through art and culture.",
       personality:
@@ -901,7 +902,7 @@ export const en: DeepPartial<Dictionary> = {
     },
     jin: {
       name: "Jin",
-      epithet: "The wit",
+      epithet: "Friday-night specialist",
       outfit: "Rock-chic leather jacket",
       tagline: "Bold and quick-witted — builds chemistry fast.",
       personality: "Witty and daring, and lifts the mood in an instant.",
@@ -959,7 +960,7 @@ export const en: DeepPartial<Dictionary> = {
     joinBody: "Use a friend's invite code to join a lounge that already exists.",
     joinCta: "Enter a code",
     waitersTitle: "Meet the AI lounge managers",
-    waitersBody: "Choose tonight's host from ten managers",
+    waitersBody: "Choose tonight's host from nine matching specialists",
     groupNote:
       "Every conversation starts as a group of at least two. A shared room opens only when both lounges accept.",
   },

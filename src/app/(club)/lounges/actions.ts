@@ -221,7 +221,8 @@ export async function respondToProposal(
   // 상대가 데모 라운지면 자동으로 수락합니다.
   const counterpartId =
     side === "requester" ? booking.matchedTableId : booking.requesterTableId;
-  if (updated?.state === "PENDING" && isSeededDemoLounge(counterpartId)) {
+  const counterpartTable = await db.getTable(counterpartId);
+  if (updated?.state === "PENDING" && (isSeededDemoLounge(counterpartId) || counterpartTable?.isTest)) {
     updated = await db.respondToBooking(
       bookingId,
       side === "requester" ? "matched" : "requester",
@@ -251,6 +252,7 @@ async function openRoom(booking: Booking, actingUserId: string): Promise<string>
   }[] = [];
 
   for (const tableId of [booking.requesterTableId, booking.matchedTableId]) {
+    const table = await db.getTable(tableId);
     const profiles = await db.getProfilesForTable(tableId);
     for (const p of profiles) {
       members.push({
@@ -260,7 +262,7 @@ async function openRoom(booking: Booking, actingUserId: string): Promise<string>
         // 시드 데모 라운지의 참가자와 데모 동반자는 시뮬레이션으로 동작합니다.
         simulated:
           p.userId !== actingUserId &&
-          (isSeededDemoLounge(tableId) || isSimulatedUser(p.userId)),
+          (isSeededDemoLounge(tableId) || table?.isTest || isSimulatedUser(p.userId)),
       });
     }
   }

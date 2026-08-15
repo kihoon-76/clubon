@@ -1,0 +1,45 @@
+import { createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { chromium } from "playwright";
+import postgres from "postgres";
+
+const base = process.env.BASE ?? "http://localhost:3000";
+const source = readFileSync(".env.local", "utf8");
+const env = Object.fromEntries(source.split(/\r?\n/).filter((line) => line && !line.startsWith("#") && line.includes("=")).map((line) => {
+  const i = line.indexOf("=");
+  return [line.slice(0, i).trim(), line.slice(i + 1).trim().replace(/^['\"]|['\"]$/g, "")];
+}));
+const databaseUrl = env.DATABASE_URL ?? env.POSTGRES_URL;
+if (!databaseUrl || !env.AUTH_SECRET) throw new Error("DATABASE_URL/POSTGRES_URL and AUTH_SECRET are required");
+const sql = postgres(databaseUrl, { ssl: databaseUrl.includes("localhost") ? false : "require", prepare: false, max: 1 });
+const users = await sql`select id from public.users where lower(email) = 'regiment8@gmail.com' limit 1`;
+await sql.end();
+if (!users.length) throw new Error("Owner account not found");
+const exp = Math.floor(Date.now() / 1000) + 3600;
+const payload = `${users[0].id}.${exp}`;
+const mac = createHmac("sha256", env.AUTH_SECRET).update(payload).digest("base64url");
+const browser = await chromium.launch();
+const context = await browser.newContext({ locale: "ko-KR", viewport: { width: 1440, height: 1000 } });
+await context.addCookies([{ name: "clubon_session", value: `${payload}.${mac}`, url: base, httpOnly: true, sameSite: "Lax" }]);
+const page = await context.newPage();
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+let response = await page.goto(`${base}/owner/match-test`, { waitUntil: "networkidle" });
+if (response?.status() !== 200) throw new Error(`owner test page status ${response?.status()}`);
+const cards = page.getByText("가상 테스트 라운지", { exact: true });
+if (await cards.count() !== 4) throw new Error(`expected 4 virtual rooms, got ${await cards.count()}`);
+await page.getByRole("button", { name: "이 조건으로 실제 매치 테스트" }).first().click();
+await page.waitForURL(/\/match\//, { timeout: 15000 });
+if (!(await page.getByText("실제 회원 아님", { exact: false }).count())) throw new Error("test disclosure missing");
+await page.getByRole("button", { name: "수락" }).click();
+await page.waitForURL(/\/room\//, { timeout: 15000 });
+const videoResult = await page.evaluate(async () => {
+  const sessionId = location.pathname.split("/").pop();
+  const res = await fetch(`/api/rooms/${sessionId}/video`);
+  return { status: res.status, body: await res.json() };
+});
+if (videoResult.status !== 200 || videoResult.body.role !== "camera") throw new Error(`video API failed: ${JSON.stringify(videoResult)}`);
+console.log(JSON.stringify({ virtualRooms: 4, matchProposal: "ok", roomCreated: "ok", videoConfigured: videoResult.body.configured, videoRole: videoResult.body.role, browserErrors: errors.length }));
+await browser.close();
+if (errors.length) throw new Error(errors.join("\n"));
