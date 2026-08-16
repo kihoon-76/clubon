@@ -96,9 +96,7 @@ export default async function LobbyPage({
                 {t("lobby.memberCount", { count: members.length })}
               </p>
             </div>
-            <ButtonLink href={`/lounges/${activeTable.id}`} className="shrink-0">
-              {t("lobby.backToLounge")}
-            </ButtonLink>
+            <div className="flex flex-wrap gap-3"><ButtonLink href="/entry">라운지 둘러보기</ButtonLink><ButtonLink href={`/lounges/${activeTable.id}`} variant="secondary">내 라운지</ButtonLink></div>
           </CardBody>
         </Card>
       ) : (
@@ -122,9 +120,9 @@ export default async function LobbyPage({
         <span className="flex items-center gap-3">
           <Sparkles aria-hidden className="size-5 text-champagne" />
           <span className="flex flex-col items-start">
-            <span className="text-ivory">{t("lobby.waitersTitle")}</span>
+            <span className="text-ivory">도현의 라운지 이용 안내</span>
             <span className="text-xs break-keep text-muted">
-              {t("lobby.waitersBody")}
+              방을 만들고 직접 합석을 요청하는 방법을 알려드립니다.
             </span>
           </span>
         </span>

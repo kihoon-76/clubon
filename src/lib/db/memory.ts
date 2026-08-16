@@ -255,6 +255,9 @@ function seed(): Store {
       // 데모 라운지에는 지역을 두지 않습니다. 아래 findBestMatch가 시드
       // 라운지만 지역 필터에서 빼 주므로, 어느 지역을 골라도 데모가 돕니다.
       regionCode: null,
+      loungeGender: "female",
+      regionText: "서울",
+      description: "가상 테스트 라운지입니다.",
       isTest: true,
       testImageUrl: null,
       createdAt: nowIso,
@@ -571,6 +574,21 @@ export class DevMemoryAdapter implements DataAdapter {
     return t ? { ...t } : null;
   }
 
+  async listDiscoverableLounges(input: {
+    viewerUserId: string;
+    gender?: "female" | "male";
+    includeTests?: boolean;
+  }): Promise<Table[]> {
+    return [...store().tables.values()]
+      .filter((table) => table.hostUserId !== input.viewerUserId)
+      .filter((table) => !table.closedAt)
+      .filter((table) => input.includeTests || !table.isTest)
+      .filter((table) => !input.gender || table.loungeGender === input.gender)
+      .filter((table) => table.isTest || ["FORMING", "READY", "WAITING"].includes(table.state))
+      .sort((a, b) => Number(b.isTest) - Number(a.isTest) || b.updatedAt.localeCompare(a.updatedAt))
+      .map((table) => ({ ...table }));
+  }
+
   async getActiveTableMembers(tableId: string): Promise<TableMember[]> {
     return store()
       .tableMembers.filter((m) => m.tableId === tableId && m.leftAt === null)
@@ -602,6 +620,12 @@ export class DevMemoryAdapter implements DataAdapter {
       const t = s.tables.get(existing.id)!;
       t.waiterId = input.waiterId;
       t.regionCode = input.regionCode;
+      t.name = input.name;
+      t.loungeGender = input.loungeGender ?? t.loungeGender;
+      t.regionText = input.regionText ?? t.regionText;
+      t.description = input.description ?? t.description;
+      t.maxSize = input.maxSize ?? t.maxSize;
+      t.state = "FORMING";
       t.updatedAt = nowIso;
       return { ...t };
     }
@@ -616,10 +640,13 @@ export class DevMemoryAdapter implements DataAdapter {
       hostUserId: input.userId,
       name: input.name,
       state: "FORMING",
-      maxSize: 4,
+      maxSize: input.maxSize ?? 4,
       inviteCode,
       waiterId: input.waiterId,
       regionCode: input.regionCode,
+      loungeGender: input.loungeGender ?? null,
+      regionText: input.regionText ?? null,
+      description: input.description ?? "",
       isTest: false,
       testImageUrl: null,
       createdAt: nowIso,

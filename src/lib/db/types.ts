@@ -126,6 +126,12 @@ export interface Table {
    * 후보에서 빠집니다.
    */
   regionCode: string | null;
+  /** 방장이 방 개설 시 선택한 공개 라운지 성별. */
+  loungeGender: "female" | "male" | null;
+  /** 목록 카드에 그대로 표시하는 자유 입력 지역. */
+  regionText: string | null;
+  /** 방장이 작성한 공개 방 소개. */
+  description: string;
   /** Production matching never includes owner-only virtual test lounges. */
   isTest: boolean;
   /** Optional promotional image shown only for a clearly labelled test lounge. */

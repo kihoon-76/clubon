@@ -45,14 +45,6 @@ export interface Waiter {
 
 export const WAITERS: Waiter[] = [
   { id: "dohyun", gender: "male", style: "tuxedo", accent: "#d8be86", photoUrl: "/waiters/dohyun.webp" },
-  { id: "ian", gender: "female", style: "suit", accent: "#b9bcc2", photoUrl: "/waiters/ian.webp" },
-  { id: "jaeha", gender: "male", style: "casual", accent: "#c2a878", photoUrl: "/waiters/jaeha.webp" },
-  { id: "taeo", gender: "male", style: "hiphop", accent: "#8a8f98", photoUrl: "/waiters/taeo.webp" },
-  { id: "sunwoo", gender: "female", style: "smoking", accent: "#9e6b62", photoUrl: "/waiters/sunwoo.webp" },
-  { id: "seojun", gender: "male", style: "resort", accent: "#6f8f6a", photoUrl: "/waiters/seojun.webp" },
-  { id: "yujin", gender: "male", style: "allblack", accent: "#5b6a86", photoUrl: "/waiters/yujin.webp" },
-  { id: "haram", gender: "female", style: "tweed", accent: "#b08d57", photoUrl: "/waiters/haram.webp" },
-  { id: "jin", gender: "male", style: "leather", accent: "#7d6a86", photoUrl: "/waiters/jin.webp" },
 ];
 
 export function getWaiter(id: string): Waiter | undefined {

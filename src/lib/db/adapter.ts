@@ -27,6 +27,10 @@ export interface CreateLoungeInput {
   name: string;
   /** 라운지 지역 코드 (`lib/regions`). 매칭이 이 값으로 갈립니다. */
   regionCode: string;
+  loungeGender?: "female" | "male";
+  regionText?: string;
+  description?: string;
+  maxSize?: number;
 }
 
 export interface MatchPreferenceInput {
@@ -178,6 +182,11 @@ export interface DataAdapter {
   /** 사용자가 현재 속한 활성 라운지(퇴장하지 않은 멤버십)를 반환합니다. */
   getActiveTableForUser(userId: string): Promise<Table | null>;
   getTable(id: string): Promise<Table | null>;
+  listDiscoverableLounges(input: {
+    viewerUserId: string;
+    gender?: "female" | "male";
+    includeTests?: boolean;
+  }): Promise<Table[]>;
   /** 활성 멤버(퇴장하지 않은) 목록을 joined_at 순으로 반환합니다. */
   getActiveTableMembers(tableId: string): Promise<TableMember[]>;
   /** 라운지 활성 멤버들의 프로필 */

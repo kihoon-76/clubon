@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 
 import { leaveLounge } from "@/app/(club)/lounges/actions";
 import { LoungeRoster } from "@/components/lounge/lounge-roster";
-import { PreferenceForm } from "@/components/lounge/preference-form";
 import { Container } from "@/components/layout/container";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -30,7 +29,7 @@ export default async function LoungePage({
   const { id } = await params;
   const sp = await searchParams;
 
-  const { user, profile } = await requireOnboardedSession(`/lounges/${id}`);
+  const { user } = await requireOnboardedSession(`/lounges/${id}`);
   const db = getDb();
 
   // 자신이 속한 라운지만 접근 가능.
@@ -58,7 +57,6 @@ export default async function LoungePage({
     typeof sp.error === "string" && NOTICE_CODES.has(sp.error)
       ? t(`lounge.errors.${sp.error}`)
       : undefined;
-  const nickname = profile?.nickname ?? t("dashboard.member");
 
   return (
     <Container className="py-14 sm:py-16">
@@ -73,12 +71,7 @@ export default async function LoungePage({
               </span>
               <Badge tone="gold">{waiterEpithet(t, waiter)}</Badge>
             </div>
-            <p className="mt-1 text-sm break-keep text-muted">
-              {t("lounge.hostedBy", {
-                name: waiterName(t, waiter),
-                nickname,
-              })}
-            </p>
+            <p className="mt-1 text-sm break-keep text-muted">도현은 매칭을 대신하지 않고 라운지 이용 방법만 안내합니다.</p>
           </div>
         </div>
       ) : null}
@@ -140,22 +133,9 @@ export default async function LoungePage({
         </Card>
       ) : (
         <div className="mt-10 max-w-2xl">
-          <h2 className="font-display text-2xl break-keep text-ivory">
-            {t("lounge.whoTitle")}
-          </h2>
-          <p className="mt-2 text-[0.9375rem] leading-relaxed break-keep text-muted">
-            {t("lounge.whoBody", {
-              name: waiter
-                ? waiterName(t, waiter)
-                : t("waiters.fallbackName"),
-            })}
-          </p>
-          <div className="mt-8">
-            <PreferenceForm
-              tableId={id}
-              disabled={false}
-            />
-          </div>
+          <h2 className="font-display text-2xl break-keep text-ivory">마음에 드는 라운지를 직접 골라 보세요</h2>
+          <p className="mt-2 text-[0.9375rem] leading-relaxed break-keep text-muted">여성 라운지와 남성 라운지를 둘러보고 방 소개, 지역, 정원을 확인한 뒤 합석을 요청할 수 있습니다.</p>
+          <div className="mt-6 flex flex-wrap gap-3"><ButtonLink href="/entry">라운지 둘러보기</ButtonLink><ButtonLink href="/entry/new" variant="secondary">내 방 정보 수정</ButtonLink></div>
           {editing ? (
             <p className="mt-4 text-xs break-keep text-faint">
               {t("lounge.editingNote")}

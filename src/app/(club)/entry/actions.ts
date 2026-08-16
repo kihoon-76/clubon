@@ -4,144 +4,83 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getDb } from "@/lib/db";
-import type { ConversationEnergy, DesiredGender } from "@/lib/db/types";
-import { getT } from "@/lib/i18n/server";
-import { getRegion, KOREA } from "@/lib/regions";
-import { hasBlockBetween } from "@/lib/runtime/store";
-import { requireOnboardedSession } from "@/lib/session";
-import { getWaiter } from "@/lib/waiters";
+import type { MatchCandidate } from "@/lib/db/adapter";
 import { isOwner } from "@/lib/owner";
-import {
-  AGE_BAND_OPTIONS,
-  ENERGY_OPTIONS,
-  GENDER_OPTIONS,
-  INTEREST_OPTIONS,
-} from "@/lib/match-options";
+import { requireOnboardedSession } from "@/lib/session";
 
-/**
- * 입장 신청.
- *
- * 신청 내용(지역·매니저·원하는 상대)은 **내 라운지에 저장**됩니다. 별도의
- * 신청 테이블을 두지 않은 이유는, 결제하러 Creem에 다녀오는 동안 내용을
- * 어딘가에 붙들어 둬야 하는데 내 라운지가 이미 그 역할을 하기 때문입니다.
- * 돌아오면 라운지가 그대로 있으므로 처음부터 다시 고르지 않아도 됩니다.
- *
- * 매치 횟수는 여기서 빠지지 않습니다. 실제 차감은 **영상방에 들어갈 때**
- * 일어납니다(`/api/rooms/[id]/video`) — 매칭이 성사되지 않았는데 횟수만
- * 사라지는 일을 만들지 않기 위해서입니다.
- */
-
-const entrySchema = z.object({
-  waiterId: z.string().min(1),
-  desiredGender: z.enum(
-    GENDER_OPTIONS.map((o) => o.value) as [string, ...string[]],
-  ),
-  energy: z.enum(ENERGY_OPTIONS.map((o) => o.value) as [string, ...string[]]),
-  interests: z.array(z.enum(INTEREST_OPTIONS)).max(12),
-  ageBands: z.array(z.enum(AGE_BAND_OPTIONS)).max(5),
+const loungeSchema = z.object({
+  name: z.string().trim().min(2).max(40),
+  loungeGender: z.enum(["female", "male"]),
+  regionText: z.string().trim().min(2).max(40),
+  description: z.string().trim().min(5).max(300),
+  maxSize: z.coerce.number().int().min(2).max(6),
 });
 
-export type EntryActionState = {
-  error: "region" | "invalid" | null;
-};
+export async function savePublicLounge(formData: FormData): Promise<void> {
+  const { user } = await requireOnboardedSession("/entry/new");
+  const parsed = loungeSchema.safeParse({
+    name: formData.get("name"),
+    loungeGender: formData.get("loungeGender"),
+    regionText: formData.get("regionText"),
+    description: formData.get("description"),
+    maxSize: formData.get("maxSize"),
+  });
+  if (!parsed.success) redirect("/entry/new?error=invalid");
 
-export async function submitEntry(
-  _previousState: EntryActionState,
-  formData: FormData,
-): Promise<EntryActionState> {
+  await getDb().createLounge({
+    userId: user.id,
+    waiterId: "dohyun",
+    name: parsed.data.name,
+    regionCode: "global",
+    loungeGender: parsed.data.loungeGender,
+    regionText: parsed.data.regionText,
+    description: parsed.data.description,
+    maxSize: parsed.data.maxSize,
+  });
+  redirect("/entry?created=1");
+}
+
+export async function requestPublicMatch(formData: FormData): Promise<void> {
   const { user, profile } = await requireOnboardedSession("/entry");
   const db = getDb();
-
-  // 지역 코드는 폼에서 오므로 카탈로그에 있는 값인지 서버가 다시 확인합니다.
-  const countryCode = String(formData.get("countryCode") ?? "").trim();
-  const krRegionCode = String(formData.get("krRegionCode") ?? "").trim();
-  const submittedRegionCode = String(formData.get("regionCode") ?? "").trim();
-  const derivedRegionCode = countryCode === KOREA ? krRegionCode : countryCode;
-  const regionCode = getRegion(submittedRegionCode)
-    ? submittedRegionCode
-    : derivedRegionCode;
-  const waiterId = String(formData.get("waiterId") ?? "").trim();
-  const region = getRegion(regionCode);
-  if (!region) return { error: "region" };
-
-  const parsed = entrySchema.safeParse({
-    waiterId,
-    desiredGender: formData.get("desiredGender"),
-    energy: formData.get("energy"),
-    interests: formData.getAll("interests"),
-    ageBands: formData.getAll("ageBands"),
-  });
-  if (!parsed.success) return { error: "invalid" };
-
-  const waiter = getWaiter(parsed.data.waiterId);
-  if (!waiter) return { error: "invalid" };
-
-  // 자리 이름은 **저장되고 상대 라운지에도 보입니다**. 만든 사람의 언어로
-  // 굳으므로 고유명사처럼 읽히는 짧은 형태로 둡니다.
-  const t = await getT();
-  const table = await db.createLounge({
-    userId: user.id,
-    waiterId: waiter.id,
-    name: t("entry.seatName", {
-      nickname: profile?.nickname ?? t("dashboard.member"),
-    }),
-    regionCode: region.code,
-  });
-
-  await db.setMatchPreference(table.id, {
-    desiredGender: parsed.data.desiredGender as DesiredGender,
-    energy: parsed.data.energy as ConversationEnergy,
-    interests: [...parsed.data.interests],
-    ageBands: [...parsed.data.ageBands],
-  });
-
-  redirect("/entry");
-}
-
-/**
- * 신청 내용을 지우고 처음부터 다시 고릅니다.
- *
- * 라운지 자체를 닫습니다 — 신청 내용이 라운지에 얹혀 있으므로, 라운지를
- * 남겨 둔 채 "다시 고르기"만 하면 옛 조건이 매칭 후보로 계속 떠다닙니다.
- */
-export async function resetEntry(): Promise<void> {
-  const { user } = await requireOnboardedSession("/entry");
-  const db = getDb();
-
-  const table = await db.getActiveTableForUser(user.id);
-  if (table) await db.leaveTable(user.id, table.id);
-
-  redirect("/entry");
-}
-
-/**
- * 매칭 시작 — 신청한 조건으로 상대 라운지를 찾습니다.
- *
- * 여기서도 횟수는 빠지지 않습니다. 상대를 찾지 못하면 대기 상태로 남고,
- * 찾으면 양쪽 수락을 거쳐 방이 열립니다.
- */
-export async function startMatching(): Promise<void> {
-  const { user } = await requireOnboardedSession("/entry");
-  const db = getDb();
-
+  const targetId = String(formData.get("tableId") ?? "");
+  const target = await db.getTable(targetId);
+  if (!target || target.closedAt || target.hostUserId === user.id) {
+    redirect("/entry?error=unavailable");
+  }
+  if (target.isTest && !isOwner(user)) redirect("/entry?error=unavailable");
   if (!isOwner(user) && (await db.getWallet(user.id)).remainingMatches < 1) {
     redirect("/entry?error=pass_required");
   }
 
-  const myTable = await db.getActiveTableForUser(user.id);
-  if (!myTable) redirect("/entry");
+  let myTable = await db.getActiveTableForUser(user.id);
+  if (!myTable) {
+    if (!isOwner(user)) redirect("/entry/new?required=1");
+    myTable = await db.createLounge({
+      userId: user.id,
+      waiterId: "dohyun",
+      name: `${profile?.nickname ?? "OWNER"}의 테스트 라운지`,
+      regionCode: "global",
+      loungeGender: profile?.gender === "female" ? "female" : "male",
+      regionText: profile?.region ?? "서울",
+      description: "사장 계정 화상 연결 점검용 라운지입니다.",
+      maxSize: 4,
+    });
+  }
 
-  const match = await db.findBestMatch(myTable.id);
-  if (!match) redirect("/entry?searched=1");
+  const profiles = await db.getProfilesForTable(target.id);
+  if (!profiles.length) redirect("/entry?error=unavailable");
+  if (target.isTest) await db.setTableState(target.id, "WAITING");
 
-  // 하드 필터: 차단 관계가 있는 상대는 제외합니다.
-  const members = await db.getActiveTableMembers(myTable.id);
-  const myIds = members.map((m) => m.userId);
-  const blocked = match.profiles.some((p) =>
-    myIds.some((mine) => hasBlockBetween(mine, p.userId)),
-  );
-  if (blocked) redirect("/entry?searched=1");
-
-  const booking = await db.createBooking(myTable.id, match, myTable.waiterId);
+  const candidate: MatchCandidate = {
+    table: target,
+    profiles,
+    score: 100,
+    reasons: [],
+  };
+  let booking = await db.createBooking(myTable.id, candidate, "dohyun");
+  if (target.isTest) {
+    booking = (await db.respondToBooking(booking.id, "matched", "accepted")) ?? booking;
+  }
   redirect(`/match/${booking.id}`);
 }

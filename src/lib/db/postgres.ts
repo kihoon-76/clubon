@@ -129,6 +129,9 @@ function mapTable(r: Row): Table {
     inviteCode: r.invite_code as string,
     waiterId: (r.waiter_id as string) ?? null,
     regionCode: (r.region_code as string) ?? null,
+    loungeGender: (r.lounge_gender as Table["loungeGender"]) ?? null,
+    regionText: (r.region_text as string) ?? null,
+    description: (r.description as string) ?? "",
     isTest: Boolean(r.is_test),
     testImageUrl: (r.test_image_url as string) ?? null,
     createdAt: iso(r.created_at),
@@ -472,6 +475,24 @@ export class PostgresAdapter implements DataAdapter {
     return rows.length ? mapTable(rows[0]) : null;
   }
 
+  async listDiscoverableLounges(input: {
+    viewerUserId: string;
+    gender?: "female" | "male";
+    includeTests?: boolean;
+  }): Promise<Table[]> {
+    const gender = input.gender ?? null;
+    const rows = await this.sql`
+      select * from public.tables
+      where host_user_id <> ${input.viewerUserId}
+        and closed_at is null
+        and (${input.includeTests ?? false} or is_test = false)
+        and (${gender}::text is null or lounge_gender = ${gender})
+        and (state in ('FORMING', 'READY', 'WAITING') or is_test = true)
+      order by is_test desc, updated_at desc
+      limit 100`;
+    return rows.map(mapTable);
+  }
+
   async getActiveTableMembers(tableId: string): Promise<TableMember[]> {
     const rows = await this.sql`
       select * from public.table_members
@@ -500,8 +521,14 @@ export class PostgresAdapter implements DataAdapter {
     if (existing) {
       const rows = await this.sql`
         update public.tables set
+          name = ${input.name},
           waiter_id = ${input.waiterId},
           region_code = ${input.regionCode},
+          lounge_gender = ${input.loungeGender ?? existing.loungeGender},
+          region_text = ${input.regionText ?? existing.regionText},
+          description = ${input.description ?? existing.description},
+          max_size = ${input.maxSize ?? existing.maxSize},
+          state = 'FORMING', closed_at = null,
           updated_at = now()
         where id = ${existing.id} returning *`;
       return mapTable(rows[0]);
@@ -513,12 +540,13 @@ export class PostgresAdapter implements DataAdapter {
         const rows = await this.sql`
           insert into public.tables (
             club_id, host_user_id, name, state, max_size, invite_code,
-            waiter_id, region_code
+            waiter_id, region_code, lounge_gender, region_text, description
           )
           values (
             (select id from public.clubs where is_active order by created_at limit 1),
-            ${input.userId}, ${input.name}, 'FORMING', 4, ${inviteCode()},
-            ${input.waiterId}, ${input.regionCode}
+            ${input.userId}, ${input.name}, 'FORMING', ${input.maxSize ?? 4}, ${inviteCode()},
+            ${input.waiterId}, ${input.regionCode}, ${input.loungeGender ?? null},
+            ${input.regionText ?? null}, ${input.description ?? ""}
           ) returning *`;
         created = mapTable(rows[0]);
       } catch (e) {

@@ -1,57 +1,21 @@
-import { redirect } from "next/navigation";
-import { Clock, MapPin, Sparkles, Ticket } from "lucide-react";
+import Image from "next/image";
+import { MapPin, Plus, Users } from "lucide-react";
 
+import { requestPublicMatch } from "./actions";
 import { Container } from "@/components/layout/container";
-import { EntryForm } from "@/components/entry/entry-form";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
-import { resetEntry, startMatching } from "@/app/(club)/entry/actions";
 import { getDb } from "@/lib/db";
-import { describeClubStatus } from "@/lib/club/status";
-import {
-  ENTRY_PASS,
-  LOUNGE_MINUTES,
-  formatUsd,
-  productName,
-} from "@/lib/payments/catalog";
-import { purchasableCodes } from "@/lib/payments/creem";
-import { regionLabel } from "@/lib/regions";
-import { getT } from "@/lib/i18n/server";
-import type { Translate } from "@/lib/i18n/types";
-import { requireOnboardedSession } from "@/lib/session";
-import { now } from "@/lib/time";
-import { getWaiter, waiterEpithet, waiterName } from "@/lib/waiters";
+import type { Table } from "@/lib/db/types";
 import { isOwner } from "@/lib/owner";
-import { grantTestPass } from "@/app/(club)/passes/actions";
-import { RedeemGiftForm } from "@/components/passes/pass-code-forms";
+import { requireOnboardedSession } from "@/lib/session";
 
-export async function generateMetadata() {
-  return { title: (await getT())("entry.metaTitle") };
-}
+const ERRORS: Record<string, string> = {
+  unavailable: "이 라운지는 지금 합석을 받을 수 없습니다. 다른 방을 골라 주세요.",
+  pass_required: "라운지 합석에는 이용권이 필요합니다. 이용권을 먼저 준비해 주세요.",
+};
 
-/** 쿼리스트링으로 오는 오류 코드 — 사전에 있는 것만 화면에 띄웁니다. */
-const ERROR_CODES = new Set([
-  "region",
-  "invalid",
-  "unavailable",
-  "unknown",
-  "not_configured",
-  "creem_error",
-  "pass_required",
-]);
-
-/**
- * 입장 신청 화면.
- *
- * 두 가지 모습을 오갑니다.
- *
- *   신청 전   지역·매니저·원하는 상대를 고르는 폼
- *   신청 후   고른 내용 요약 + (횟수가 있으면) 매칭 시작 · (없으면) 입장료 결제
- *
- * 결제하러 나갔다 돌아와도 신청 내용이 그대로인 것은, 그 내용이 **내 라운지**에
- * 저장되어 있기 때문입니다.
- */
 export default async function EntryPage({
   searchParams,
 }: {
@@ -59,224 +23,92 @@ export default async function EntryPage({
 }) {
   const sp = await searchParams;
   const { user } = await requireOnboardedSession("/entry");
-  const t = await getT();
-
+  const gender = sp.gender === "female" || sp.gender === "male" ? sp.gender : undefined;
   const db = getDb();
-  const club = await db.getPrimaryClub();
-  const hours = await db.getOperatingHours(club.id);
-  if (!describeClubStatus(club, hours, now(), t).isOpen) redirect("/closed");
-
-  const [table, wallet] = await Promise.all([
+  const owner = isOwner(user);
+  const [myTable, rooms] = await Promise.all([
     db.getActiveTableForUser(user.id),
-    db.getWallet(user.id),
+    db.listDiscoverableLounges({ viewerUserId: user.id, gender, includeTests: owner }),
   ]);
-
-  const error =
-    typeof sp.error === "string" && ERROR_CODES.has(sp.error)
-      ? t(`entry.errors.${sp.error}`)
-      : null;
-  const paying = sp.purchase === "processing";
-  const searched = sp.searched === "1";
+  const roomCards = await Promise.all(
+    rooms.map(async (table) => ({
+      table,
+      members: await db.getActiveTableMembers(table.id),
+    })),
+  );
+  const error = typeof sp.error === "string" ? ERRORS[sp.error] : null;
 
   return (
     <Container className="py-12 sm:py-16">
-      <p className="label-caps">{t("entry.eyebrow")}</p>
-      <h1 className="mt-4 font-display text-3xl leading-tight text-ivory sm:text-4xl">
-        {t("entry.title")}
-      </h1>
-      <p className="mt-4 max-w-2xl text-[0.9375rem] leading-relaxed break-keep text-muted">
-        {t("entry.intro", {
-          price: formatUsd(ENTRY_PASS.priceCents),
-          matches: ENTRY_PASS.matches,
-          minutes: LOUNGE_MINUTES,
-        })}
-      </p>
-
-      {error ? (
-        <p className="mt-6 rounded-[var(--radius-control)] border border-danger/40 bg-danger-dim/40 px-4 py-3 text-sm break-keep text-ivory">
-          {error}
-        </p>
-      ) : null}
-
-      {paying ? (
-        <p
-          role="status"
-          className="mt-6 rounded-[var(--radius-control)] border border-line bg-surface-raised px-4 py-3 text-sm break-keep text-muted"
-        >
-          {t("entry.checking")}
-        </p>
-      ) : null}
-
-      <WalletLine t={t} remaining={wallet.remainingMatches} unlimited={isOwner(user)} />
-
-      {table ? (
-        <EntrySummary
-          t={t}
-          regionCode={table.regionCode}
-          waiterId={table.waiterId}
-          remaining={wallet.remainingMatches}
-          unlimited={isOwner(user)}
-          searched={searched}
-        />
-      ) : (
-        <div className="mt-10">
-          <EntryForm
-            defaultRegion={typeof sp.region === "string" ? sp.region : null}
-            defaultWaiterId={
-              typeof sp.waiter === "string" && getWaiter(sp.waiter)
-                ? sp.waiter
-                : null
-            }
-          />
+      <div className="flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="label-caps">LOUNGE DIRECTORY</p>
+          <h1 className="mt-3 font-display text-4xl text-ivory">오늘 열려 있는 라운지</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+            도현은 이용 방법만 안내합니다. 마음에 드는 방은 직접 보고 직접 합석을 요청하세요.
+          </p>
         </div>
+        <ButtonLink href="/entry/new"><Plus className="size-4" />내 라운지 만들기</ButtonLink>
+      </div>
+
+      {sp.created === "1" ? <Notice>내 라운지가 공개되었습니다. 이제 다른 방에 합석을 요청할 수 있어요.</Notice> : null}
+      {error ? <Notice danger>{error}</Notice> : null}
+      {myTable ? (
+        <div className="mt-6 rounded-[var(--radius-control)] border border-champagne-dim/50 bg-ink px-5 py-4 text-sm text-muted">
+          내 라운지 <strong className="text-ivory">{myTable.name}</strong> · 정보는 언제든 다시 수정할 수 있습니다.
+        </div>
+      ) : null}
+
+      <nav className="mt-8 flex flex-wrap gap-2" aria-label="라운지 성별 필터">
+        <Filter href="/entry" active={!gender}>전체</Filter>
+        <Filter href="/entry?gender=female" active={gender === "female"}>여성 라운지</Filter>
+        <Filter href="/entry?gender=male" active={gender === "male"}>남성 라운지</Filter>
+      </nav>
+
+      {roomCards.length ? (
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {roomCards.map(({ table, members }) => (
+            <LoungeCard key={table.id} table={table} memberCount={members.length} owner={owner} hasMyTable={Boolean(myTable)} />
+          ))}
+        </div>
+      ) : (
+        <Card hairline className="mt-8"><CardBody className="py-12 text-center text-muted">아직 이 구역에 공개된 라운지가 없습니다.</CardBody></Card>
       )}
     </Container>
   );
 }
 
-/* ------------------------------------------------------------ 잔여 안내 */
-
-function WalletLine({ t, remaining, unlimited = false }: { t: Translate; remaining: number; unlimited?: boolean }) {
+function LoungeCard({ table, memberCount, owner, hasMyTable }: { table: Table; memberCount: number; owner: boolean; hasMyTable: boolean }) {
   return (
-    <p className="mt-6 flex items-center gap-2 text-sm text-muted">
-      <Ticket aria-hidden className="size-4 text-champagne" />
-      {t("entry.remaining")}{" "}
-      <strong className="font-mono tabular-nums text-ivory">
-        {unlimited ? "무제한 (사장 계정)" : t("entry.times", { count: remaining })}
-      </strong>
-    </p>
-  );
-}
-
-/* ------------------------------------------------------- 신청 후 요약 */
-
-function EntrySummary({
-  t,
-  regionCode,
-  waiterId,
-  remaining,
-  searched,
-  unlimited,
-}: {
-  t: Translate;
-  regionCode: string | null;
-  waiterId: string | null;
-  remaining: number;
-  searched: boolean;
-  unlimited: boolean;
-}) {
-  const region = regionCode ? regionLabel(regionCode, t) : null;
-  const waiter = waiterId ? getWaiter(waiterId) : null;
-  const canMatch = unlimited || remaining > 0;
-
-  // 결제는 링크(GET)가 아니라 form POST입니다. 프리페치나 크롤러가 결제
-  // 세션을 만들지 못하게 하려는 것으로, 방 안의 연장 상품과 같은 규칙입니다.
-  const sellable = purchasableCodes();
-  const product = ENTRY_PASS;
-  const canBuy = sellable.has(product.code);
-
-  return (
-    <>
-      <Card hairline className="mt-8">
-        <CardBody className="space-y-5">
-          <div className="flex items-center gap-2">
-            <span className="label-caps">{t("entry.summaryTitle")}</span>
-            <Badge tone="gold">{t("entry.accepted")}</Badge>
-          </div>
-
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <Row icon={MapPin} label={t("entry.region")}>
-              {region ?? t("entry.regionUnset")}
-            </Row>
-            <Row icon={Sparkles} label={t("entry.manager")}>
-              {waiter
-                ? `${waiterName(t, waiter)} · ${waiterEpithet(t, waiter)}`
-                : t("entry.managerUnset")}
-            </Row>
-          </dl>
-
-          {searched ? (
-            <p
-              role="status"
-              className="rounded-[var(--radius-control)] border border-warn/40 bg-warn-dim/40 px-4 py-3 text-sm break-keep text-ivory"
-            >
-              {t("entry.noMatch")}
-            </p>
-          ) : null}
-
-          {canMatch ? (
-            <form action={startMatching}>
-              <Button type="submit" className="w-full gold-glow">
-                {t("entry.findMatch")}
-              </Button>
-            </form>
-          ) : (
-            <div className="space-y-3">
-              <p className="flex items-start gap-2 rounded-[var(--radius-control)] border border-champagne-dim/50 bg-champagne/5 px-4 py-3 text-sm leading-relaxed break-keep text-ivory">
-                <Clock aria-hidden className="mt-0.5 size-4 shrink-0 text-champagne" />
-                {t("entry.needPayment", { matches: ENTRY_PASS.matches })}
-              </p>
-              <form action={grantTestPass}>
-                <Button type="submit" className="w-full gold-glow">테스트 이용권 5회 받기</Button>
-              </form>
-              <div className="rounded-[var(--radius-control)] border border-line bg-surface p-4">
-                <RedeemGiftForm />
-              </div>
-              {canBuy ? (
-                <form action="/api/payments/checkout" method="post">
-                  <input type="hidden" name="code" value={product.code} />
-                  <input type="hidden" name="next" value="/entry" />
-                  <Button type="submit" className="w-full gold-glow">
-                    {t("entry.pay", {
-                      name: productName(t, product.code),
-                      price: formatUsd(product.priceCents),
-                    })}
-                  </Button>
-                </form>
-              ) : (
-                <p className="rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3 text-sm text-muted">
-                  {t("entry.notConfigured")}
-                </p>
-              )}
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <form action={resetEntry}>
-          <Button type="submit" variant="secondary" size="sm">
-            {t("entry.reset")}
+    <Card hairline className="overflow-hidden">
+      {table.testImageUrl ? (
+        <div className="relative aspect-[16/9]"><Image src={table.testImageUrl} alt={`${table.name} 가상 테스트 이미지`} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" /></div>
+      ) : null}
+      <CardBody className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={table.loungeGender === "female" ? "gold" : "neutral"}>{table.loungeGender === "female" ? "여성 라운지" : "남성 라운지"}</Badge>
+          {table.isTest ? <Badge tone="gold">가상 테스트방 · 실제 회원 아님</Badge> : null}
+        </div>
+        <div><h2 className="font-display text-2xl text-ivory">{table.name}</h2><p className="mt-2 min-h-10 text-sm leading-relaxed text-muted">{table.description || "편하게 합석할 분을 기다리고 있어요."}</p></div>
+        <div className="flex flex-wrap gap-4 text-sm text-muted">
+          <span className="flex items-center gap-1.5"><MapPin className="size-4 text-champagne" />{table.regionText || "지역 미정"}</span>
+          <span className="flex items-center gap-1.5"><Users className="size-4 text-champagne" />현재 {memberCount}명 · 정원 {table.maxSize}명</span>
+        </div>
+        <form action={requestPublicMatch}>
+          <input type="hidden" name="tableId" value={table.id} />
+          <Button type="submit" className="w-full" disabled={!owner && !hasMyTable}>
+            {table.isTest ? "이 가상방과 화상 매치 테스트" : hasMyTable ? "이 라운지에 합석 요청" : "내 라운지를 먼저 만들어 주세요"}
           </Button>
         </form>
-        <ButtonLink href="/lobby" variant="secondary" size="sm">
-          {t("entry.toLobby")}
-        </ButtonLink>
-      </div>
-
-      <p className="mt-6 max-w-2xl text-xs leading-relaxed break-keep text-faint">
-        {t("entry.deductNote")}
-      </p>
-    </>
+      </CardBody>
+    </Card>
   );
 }
 
-function Row({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: typeof MapPin;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <dt className="flex items-center gap-1.5 text-xs text-faint">
-        <Icon aria-hidden className="size-3.5 text-champagne" />
-        {label}
-      </dt>
-      <dd className="mt-1 text-[0.9375rem] break-keep text-ivory">{children}</dd>
-    </div>
-  );
+function Filter({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+  return <ButtonLink href={href} variant={active ? "primary" : "secondary"} size="sm">{children}</ButtonLink>;
+}
+
+function Notice({ children, danger = false }: { children: React.ReactNode; danger?: boolean }) {
+  return <p role="status" className={`mt-6 rounded-[var(--radius-control)] border px-4 py-3 text-sm ${danger ? "border-danger/40 bg-danger-dim/40 text-ivory" : "border-champagne-dim/50 bg-ink text-muted"}`}>{children}</p>;
 }
