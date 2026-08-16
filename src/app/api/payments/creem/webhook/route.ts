@@ -13,6 +13,7 @@ import {
   readCompletedCheckout,
   readRefundedPaymentId,
   verifyWebhookSignature,
+  productIdFor,
 } from "@/lib/payments/creem";
 
 /**
@@ -90,6 +91,21 @@ async function handleCheckoutCompleted(
   if (!item) {
     console.warn(`[payments] 알 수 없는 상품 코드 ${checkout.planCode}`);
     return NextResponse.json({ received: true, handled: false });
+  }
+
+  const configuredProductId = productIdFor(item);
+  if (!configuredProductId || checkout.productId !== configuredProductId) {
+    console.error(
+      `[payments] 상품 ID 불일치 — 지급하지 않음 (order ${checkout.paymentId})`,
+    );
+    return NextResponse.json({ error: "product_mismatch" }, { status: 400 });
+  }
+
+  if (checkout.status !== "paid" && checkout.status !== "completed") {
+    console.error(
+      `[payments] 미결제 주문 — 지급하지 않음 (order ${checkout.paymentId}, status ${checkout.status || "unknown"})`,
+    );
+    return NextResponse.json({ error: "payment_not_completed" }, { status: 400 });
   }
 
   // 지급 횟수와 연장 분 수는 클라이언트가 아니라 서버 카탈로그가 정합니다.

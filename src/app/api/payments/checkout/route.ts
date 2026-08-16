@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   if (!(await isAuthenticated())) {
     return NextResponse.redirect(
-      new URL(`/login?next=${encodeURIComponent(next)}`, origin),
+      new URL(`/login?next=${encodeURIComponent("/membership")}`, origin),
       303,
     );
   }

@@ -26,9 +26,10 @@ export default async function EntryPage({
   const gender = sp.gender === "female" || sp.gender === "male" ? sp.gender : undefined;
   const db = getDb();
   const owner = isOwner(user);
-  const [myTable, rooms] = await Promise.all([
+  const [myTable, rooms, wallet] = await Promise.all([
     db.getActiveTableForUser(user.id),
     db.listDiscoverableLounges({ viewerUserId: user.id, gender, includeTests: owner }),
+    db.getWallet(user.id),
   ]);
   const roomCards = await Promise.all(
     rooms.map(async (table) => ({
@@ -52,7 +53,8 @@ export default async function EntryPage({
       </div>
 
       {sp.created === "1" ? <Notice>내 라운지가 공개되었습니다. 이제 다른 방에 합석을 요청할 수 있어요.</Notice> : null}
-      {error ? <Notice danger>{error}</Notice> : null}
+      {sp.purchase === "processing" ? <Notice>Creem 결제 확인 후 이용권 5회가 자동 지급됩니다. 현재 잔여 이용권은 <strong className="text-ivory">{wallet.remainingMatches}회</strong>입니다. 잠시 후 새로고침해 주세요.</Notice> : null}
+      {error ? <Notice danger>{error}{sp.error === "pass_required" ? <span className="ml-2"><ButtonLink href="/membership" size="sm">이용권 결제하기</ButtonLink></span> : null}</Notice> : null}
       {myTable ? (
         <div className="mt-6 rounded-[var(--radius-control)] border border-champagne-dim/50 bg-ink px-5 py-4 text-sm text-muted">
           내 라운지 <strong className="text-ivory">{myTable.name}</strong> · 정보는 언제든 다시 수정할 수 있습니다.

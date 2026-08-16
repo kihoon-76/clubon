@@ -115,6 +115,7 @@ export async function createCheckout(
     },
     body: JSON.stringify({
       product_id: productId,
+      units: 1,
       // 이 결제 요청을 추적할 자체 식별자.
       request_id: `${input.userId}:${item.code}:${Date.now()}`,
       success_url: input.successUrl,
@@ -217,6 +218,8 @@ export interface CompletedCheckout {
   /** 최소 화폐 단위 정수 */
   amount: number;
   currency: string;
+  /** Creem order status. Only paid/completed orders may grant passes. */
+  status: string;
 }
 
 function pick(obj: unknown, key: string): unknown {
@@ -249,6 +252,7 @@ export function readCompletedCheckout(
 
   const amountRaw = pick(order, "amount");
   const currencyRaw = pick(order, "currency");
+  const statusRaw = pick(order, "status") ?? pick(object, "status");
 
   return {
     paymentId,
@@ -258,6 +262,7 @@ export function readCompletedCheckout(
     productId: idOf(pick(object, "product")),
     amount: Number(amountRaw ?? 0),
     currency: typeof currencyRaw === "string" ? currencyRaw : "USD",
+    status: typeof statusRaw === "string" ? statusRaw.toLowerCase() : "",
   };
 }
 
